@@ -1,6 +1,8 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { sortedIntents, pendingApprovalCount } from '@/mocks';
+import { pendingApprovalCount } from '@/mocks';
+import type { Intent } from '@/mocks/types';
+import { useIntents } from '@/data/useIntents';
 import { signOut, useSession } from '@/lib/auth';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
@@ -26,7 +28,8 @@ import { cn } from '@/lib/cn';
  *                        plain hover which is bg-base-100/60)
  */
 export function Sidebar({ collapsed = false }: { collapsed?: boolean } = {}) {
-  const recent = sortedIntents().slice(0, 5);
+  const { intents } = useIntents();
+  const recent = intents.slice(0, 5);
   const pending = pendingApprovalCount();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const openLauncher = useUI((s) => s.setLauncherOpen);
@@ -478,7 +481,7 @@ function CollapsedSidebar({
   onExpand,
   onOpenLauncher,
 }: {
-  recent: ReturnType<typeof sortedIntents>;
+  recent: Intent[];
   pending: number;
   isActive: (p: string) => boolean;
   isIntentActive: (id: string) => boolean;

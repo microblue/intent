@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { sortedIntents } from '@/mocks';
+import { useIntents } from '@/data/useIntents';
+import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
 
 /**
@@ -56,18 +57,36 @@ const STARTER_TEMPLATES = [
 ];
 
 export function IntentListPage() {
-  const list = sortedIntents();
-  const isEmpty = list.length === 0;
+  const { intents: list, isLoading, error, isMock } = useIntents();
+  const { user } = useSession();
+  const isEmpty = !isLoading && !error && list.length === 0;
+  // Friendly greeting prefers the user's chosen name / email handle but
+  // falls back to a neutral "你" so anonymous demo visitors don't see a
+  // stranger's name.
+  const greetingName = user?.user_metadata?.full_name
+    ?? user?.email?.split('@')[0]
+    ?? '你';
 
   return (
     <div className="w-full px-4 pb-24 pt-10 sm:px-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">下午好,DZ ☀️</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          下午好,{greetingName} ☀️
+        </h1>
         <p className="mt-1 text-sm text-base-content/60">
-          {isEmpty
-            ? '今天想做点什么?下面是一些常见的事,你可以从这儿开始 ——'
-            : `你有 ${list.length} 件想做的事在跑。最近忙的是「${list[0]?.title}」。`}
+          {isLoading
+            ? '让我看看你正在做的事 ——'
+            : error
+              ? '加载的时候卡了一下,稍等再试。'
+              : isEmpty
+                ? '今天想做点什么?下面是一些常见的事,你可以从这儿开始 ——'
+                : `你有 ${list.length} 件想做的事在跑。最近忙的是「${list[0]?.title}」。`}
         </p>
+        {isMock && (
+          <p className="mt-1 text-[11px] text-base-content/40">
+            演示数据 · 登录后看到的是你自己的
+          </p>
+        )}
       </div>
 
       {/* Starter templates — visible always (inspiration) but emphasized
@@ -108,7 +127,27 @@ export function IntentListPage() {
         </div>
       </section>
 
-      {!isEmpty && (
+      {isLoading && (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="h-44 animate-pulse rounded-2xl bg-base-200/60 ring-1 ring-base-300/40"
+            />
+          ))}
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
+          <div className="font-medium">读取数据的时候出错了</div>
+          <p className="mt-1 text-error/80">
+            {error.message ?? '稍等一下,再刷新一次试试。'}
+          </p>
+        </div>
+      )}
+
+      {!isLoading && !error && list.length > 0 && (
         <>
           <div className="mb-3 text-sm font-semibold text-base-content/70">
             你正在做的事
@@ -123,7 +162,10 @@ export function IntentListPage() {
       )}
 
       {isEmpty && (
-        <div className="rounded-2xl border-2 border-dashed border-base-300/60 bg-base-100/40 p-8 text-center">
+        <div
+          data-testid="intentlist-empty"
+          className="rounded-2xl border-2 border-dashed border-base-300/60 bg-base-100/40 p-8 text-center"
+        >
           <div className="text-4xl">👋</div>
           <div className="mt-3 text-base font-medium">还没有任何事在做</div>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-base-content/55">

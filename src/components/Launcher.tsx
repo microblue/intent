@@ -2,13 +2,15 @@ import { Command } from 'cmdk';
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useUI } from '@/state/ui';
-import { sortedIntents, messages, files } from '@/mocks';
+import { messages, files } from '@/mocks';
+import { useIntents } from '@/data/useIntents';
 
 export function Launcher() {
   const open = useUI((s) => s.launcherOpen);
   const setOpen = useUI((s) => s.setLauncherOpen);
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+  const { intents: launcherIntents } = useIntents();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -115,7 +117,7 @@ export function Launcher() {
             )}
 
             <Command.Group heading="你的项目">
-              {sortedIntents().map((it) => (
+              {launcherIntents.map((it) => (
                 <Command.Item
                   key={it.id}
                   value={`intent ${it.title} ${it.preview}`}
