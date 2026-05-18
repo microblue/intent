@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:deployed": "PLAYWRIGHT_BASE_URL=https://myclaw-aios.vercel.app playwright test --project=chromium",
     "gen:types": "bash -c 'set -a; source ~/.openclaw/credentials/myclaw-supabase.env; set +a; supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" > src/lib/db-types.ts && echo Wrote src/lib/db-types.ts'"
   },
   "dependencies": {
@@ -24,6 +27,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",

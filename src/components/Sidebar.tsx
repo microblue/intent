@@ -1,6 +1,7 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
+import { toast } from 'sonner';
 import { sortedIntents, pendingApprovalCount } from '@/mocks';
-import { useSession } from '@/lib/auth';
+import { signOut, useSession } from '@/lib/auth';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
 
@@ -256,7 +257,22 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean } = {}) {
 }
 
 function AccountFooter() {
-  const { user, signedIn } = useSession();
+  const { user, signedIn, loading } = useSession();
+  const navigate = useNavigate();
+
+  // During initial session resolution, render a placeholder of the same
+  // height so the layout doesn't jump when state lands.
+  if (loading) {
+    return (
+      <div className="flex shrink-0 items-center gap-3 border-t border-base-300/50 px-3 py-3">
+        <span className="h-10 w-10 shrink-0 rounded-full bg-base-300/40" />
+        <div className="flex flex-col gap-1.5">
+          <span className="h-3 w-20 rounded bg-base-300/40" />
+          <span className="h-2.5 w-28 rounded bg-base-300/30" />
+        </div>
+      </div>
+    );
+  }
 
   if (!signedIn) {
     return (
@@ -273,7 +289,7 @@ function AccountFooter() {
             演示模式 · 数据不保存
           </div>
         </div>
-        <Link to="/auth/signin" className="btn btn-primary btn-xs">
+        <Link to="/auth/signin" className="btn btn-primary btn-xs" data-testid="sidebar-signin">
           登录
         </Link>
       </div>
@@ -281,29 +297,62 @@ function AccountFooter() {
   }
 
   const initial = (user?.email?.[0] ?? 'D').toUpperCase();
+  const handleSignOut = async () => {
+    await signOut();
+    toast('已登出');
+    navigate({ to: '/auth/signin' });
+  };
+
+  // DaisyUI dropdown — opens upward (`dropdown-top`) so the menu pops
+  // above the footer at the bottom of the sidebar. Two items: Settings
+  // (the previous click target) + Sign out.
   return (
-    <Link
-      to="/settings"
-      className="flex shrink-0 items-center gap-3 border-t border-base-300/50 px-3 py-3 transition hover:bg-base-100/60"
-    >
-      <span
-        aria-hidden
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-primary-content shadow-sm"
+    <div className="dropdown dropdown-top dropdown-end border-t border-base-300/50">
+      <button
+        type="button"
+        tabIndex={0}
+        className="flex w-full shrink-0 items-center gap-3 px-3 py-3 text-left transition hover:bg-base-100/60"
+        data-testid="sidebar-account"
       >
-        {initial}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium leading-tight">
-          {user?.email?.split('@')[0] ?? '已登录'}
+        <span
+          aria-hidden
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-primary-content shadow-sm"
+        >
+          {initial}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-medium leading-tight">
+            {user?.email?.split('@')[0] ?? '已登录'}
+          </div>
+          <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
+            {user?.email}
+          </div>
         </div>
-        <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
-          {user?.email}
-        </div>
-      </div>
-      <span aria-hidden className="text-base text-base-content/40">
-        ⚙
-      </span>
-    </Link>
+        <span aria-hidden className="text-base text-base-content/40">
+          ⋯
+        </span>
+      </button>
+      <ul
+        tabIndex={0}
+        className="menu dropdown-content z-50 mb-2 w-52 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+      >
+        <li>
+          <Link to="/settings" className="rounded-xl">
+            <span aria-hidden>⚙️</span> 设置
+          </Link>
+        </li>
+        <li>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            data-testid="sidebar-signout"
+            className="rounded-xl text-error hover:bg-error/10"
+          >
+            <span aria-hidden>🚪</span> 登出
+          </button>
+        </li>
+      </ul>
+    </div>
   );
 }
 
@@ -525,14 +574,76 @@ function CollapsedSidebar({
         </>
       )}
 
-      <Link
-        to="/settings"
-        className="mt-auto grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-primary-content shadow-sm"
-        title="DZ · 设置"
-      >
-        D
-      </Link>
+      <CollapsedAccountChip />
     </aside>
+  );
+}
+
+function CollapsedAccountChip() {
+  const { user, signedIn, loading } = useSession();
+  const navigate = useNavigate();
+  const initial = signedIn ? (user?.email?.[0] ?? '?').toUpperCase() : '?';
+
+  if (loading) {
+    return <span className="mt-auto h-10 w-10 rounded-full bg-base-300/40" />;
+  }
+
+  if (!signedIn) {
+    return (
+      <Link
+        to="/auth/signin"
+        className="mt-auto grid h-10 w-10 place-items-center rounded-full bg-base-300/60 text-sm font-bold text-base-content/55"
+        title="登录"
+        data-testid="sidebar-collapsed-signin"
+      >
+        ?
+      </Link>
+    );
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast('已登出');
+    navigate({ to: '/auth/signin' });
+  };
+
+  return (
+    <div className="dropdown dropdown-top dropdown-end mt-auto">
+      <button
+        type="button"
+        tabIndex={0}
+        title={user?.email ?? '已登录'}
+        className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-primary-content shadow-sm"
+        data-testid="sidebar-collapsed-account"
+      >
+        {initial}
+      </button>
+      <ul
+        tabIndex={0}
+        className="menu dropdown-content z-50 mb-2 w-52 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+      >
+        <li className="pointer-events-none px-3 pb-1 pt-1.5">
+          <span className="truncate text-xs text-base-content/55">
+            {user?.email}
+          </span>
+        </li>
+        <li>
+          <Link to="/settings" className="rounded-xl">
+            <span aria-hidden>⚙️</span> 设置
+          </Link>
+        </li>
+        <li>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            data-testid="sidebar-collapsed-signout"
+            className="rounded-xl text-error hover:bg-error/10"
+          >
+            <span aria-hidden>🚪</span> 登出
+          </button>
+        </li>
+      </ul>
+    </div>
   );
 }
 

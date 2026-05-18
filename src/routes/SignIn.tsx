@@ -78,7 +78,7 @@ export function SignInPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset: resetForm,
+    clearErrors,
   } = useForm<FormValues>({
     defaultValues: { email: '', password: '' },
   });
@@ -90,15 +90,17 @@ export function SignInPage() {
     }
   }, [loading, signedIn, navigate]);
 
-  // Mode change resets transient UI state. Form values are cleared so the
-  // password field never leaks across modes (paranoia + ergonomics).
+  // Mode change clears stale errors but preserves the email value so users
+  // who toggle "signin → magic" don't have to retype. Password isn't
+  // shown in magic/forgot modes so its lingering value is invisible; the
+  // submit handler reads `password` only in signin/signup branches.
   useEffect(() => {
     setServerErr(null);
     setMagicSent(null);
     setResetSent(null);
     setConfirmSent(null);
-    resetForm();
-  }, [mode, resetForm]);
+    clearErrors();
+  }, [mode, clearErrors]);
 
   if (signedIn) return null;
 
@@ -225,7 +227,9 @@ export function SignInPage() {
             <h1 className="mb-1 text-2xl font-bold tracking-tight">{copy.title}</h1>
             <p className="mb-6 text-sm text-base-content/60">{copy.subtitle}</p>
 
-            <form onSubmit={onSubmit} className="flex flex-col gap-3">
+            <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
+              {/* noValidate lets our zod checks run instead of the browser's
+                  HTML5 validation popup — friendlier copy, consistent UX. */}
               <label className="form-control">
                 <span className="label-text mb-1.5 text-sm font-medium">邮箱</span>
                 <input
@@ -233,7 +237,7 @@ export function SignInPage() {
                   autoFocus
                   autoComplete="email"
                   placeholder="your@email.com"
-                  {...register('email', { required: true })}
+                  {...register('email', { required: '请输入邮箱' })}
                   className={cn(
                     'input input-bordered w-full',
                     errors.email && 'input-error',
@@ -251,12 +255,15 @@ export function SignInPage() {
                     type="password"
                     autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                     placeholder={mode === 'signup' ? '至少 6 位' : ''}
-                    {...register('password', { required: true })}
+                    {...register('password', { required: '请输入密码' })}
                     className={cn(
                       'input input-bordered w-full',
                       errors.password && 'input-error',
                     )}
                   />
+                  {errors.password && (
+                    <span className="mt-1 text-xs text-error">{errors.password.message}</span>
+                  )}
                 </label>
               )}
 

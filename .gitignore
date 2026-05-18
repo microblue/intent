@@ -12,6 +12,8 @@ phase1-*.png
 # Local Playwright smoke-test screenshots — not part of repo history
 *.png
 coverage/
+playwright-report/
+test-results/
 .vercel/
 src-tauri/target/
 .vercel

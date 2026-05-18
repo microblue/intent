@@ -107,7 +107,7 @@ export function ResetPasswordPage() {
             <h1 className="mb-1 text-2xl font-bold tracking-tight">设置新密码</h1>
             <p className="mb-6 text-sm text-base-content/60">输入一个新密码,至少 6 位。</p>
 
-            <form onSubmit={onSubmit} className="flex flex-col gap-3">
+            <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
               <label className="form-control">
                 <span className="label-text mb-1.5 text-sm font-medium">新密码</span>
                 <input
@@ -115,7 +115,7 @@ export function ResetPasswordPage() {
                   autoFocus
                   autoComplete="new-password"
                   placeholder="至少 6 位"
-                  {...register('password', { required: true })}
+                  {...register('password', { required: '请输入新密码' })}
                   className={cn(
                     'input input-bordered w-full',
                     errors.password && 'input-error',

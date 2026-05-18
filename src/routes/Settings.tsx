@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
+import { signOut, useSession } from '@/lib/auth';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
 
@@ -28,14 +29,64 @@ export function SettingsPage() {
   const [lang, setLang] = useState<LangCode>('zh-CN');
   const activationModal = useRef<HTMLDialogElement | null>(null);
   const [keyInput, setKeyInput] = useState('');
+  const { user, signedIn, loading } = useSession();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const displayName = user?.user_metadata?.full_name
+    ?? user?.email?.split('@')[0]
+    ?? (signedIn ? '已登录' : '游客');
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await signOut();
+    toast('已登出');
+    navigate({ to: '/auth/signin' });
+  };
 
   return (
     <div className="w-full px-4 pb-24 pt-10 sm:px-8">
       <PageHeader emoji="⚙️" title="设置" subtitle="保持简单。多数选项有合理默认值,你可以不动。" />
 
       <Section title="账号">
-        <Row label="姓名" value="DZ" />
-        <Row label="邮箱" value="microblue@gmail.com" hint="登录用" />
+        {loading ? (
+          <li className="px-4 py-6 text-sm text-base-content/55">加载账号信息…</li>
+        ) : !signedIn ? (
+          <li className="flex items-center justify-between gap-4 px-4 py-4">
+            <div>
+              <div className="text-sm">还没有登录</div>
+              <div className="mt-0.5 text-xs text-base-content/55">
+                登录后才能保存数据、跨设备同步
+              </div>
+            </div>
+            <Link to="/auth/signin" className="btn btn-primary btn-sm" data-testid="settings-signin">
+              登录
+            </Link>
+          </li>
+        ) : (
+          <>
+            <Row label="姓名" value={displayName} />
+            <Row label="邮箱" value={user?.email ?? '—'} hint="登录用" />
+            <li className="flex items-center justify-between gap-4 border-b border-base-300/40 px-4 py-3 last:border-b-0">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm">登出当前账号</div>
+                <div className="mt-0.5 text-xs text-base-content/45">
+                  数据留在云端,下次登录还在
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                data-testid="settings-signout"
+                className="btn btn-ghost btn-sm gap-1.5 text-error hover:bg-error/10"
+              >
+                <span aria-hidden>🚪</span>
+                {signingOut ? '登出中…' : '登出'}
+              </button>
+            </li>
+          </>
+        )}
         <SubscriptionRow onEnterKey={() => activationModal.current?.showModal()} />
       </Section>
 
