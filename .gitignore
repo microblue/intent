@@ -5,7 +5,13 @@ dist/
 .env.*.local
 .DS_Store
 *.log
+*.tsbuildinfo
 .vite/
+.playwright-mcp/
+phase1-*.png
+# Local Playwright smoke-test screenshots — not part of repo history
+*.png
 coverage/
 .vercel/
 src-tauri/target/
+.vercel

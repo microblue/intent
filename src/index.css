@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes:
+    aios-light --default,
+    aios-dark --prefersdark;
+}
+
+/*
+ * Typography tokens — refined Latin (Inter) + CJK (Noto Sans SC) pairing.
+ *
+ * Per-character fallback: when text mixes Latin and CJK, browsers walk the
+ * font-family list per glyph. Inter has no CJK coverage, so Chinese chars
+ * fall through to Noto Sans SC. PingFang/HarmonyOS sit ahead of the web
+ * font as native fallbacks on macOS/iOS/Huawei so users on those platforms
+ * get system rendering without a network round-trip.
+ *
+ * Size scale is nudged up ~7% from Tailwind defaults — CJK glyphs need a
+ * touch more height than Latin to read comfortably at small sizes, and the
+ * earlier prototype had several text-[10px] / text-xs spots that felt tight.
+ */
+@theme {
+  --font-sans:
+    'Inter', 'PingFang SC', 'HarmonyOS Sans SC', 'Noto Sans SC',
+    'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', monospace;
+
+  --text-xs: 0.78125rem;   /* 12.5px (was 12) */
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.9375rem;    /* 15px   (was 14) */
+  --text-sm--line-height: 1.55;
+  --text-base: 1rem;       /* 16px */
+  --text-base--line-height: 1.65;
+  --text-lg: 1.125rem;     /* 18px */
+  --text-lg--line-height: 1.55;
+  --text-xl: 1.3125rem;    /* 21px */
+  --text-2xl: 1.625rem;    /* 26px */
+  --text-3xl: 2rem;        /* 32px */
+}
+
+@plugin "daisyui/theme" {
+  name: "aios-dark";
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: oklch(18% 0.012 270);
+  --color-base-200: oklch(22% 0.014 270);
+  --color-base-300: oklch(28% 0.016 270);
+  --color-base-content: oklch(94% 0.005 270);
+
+  --color-primary: oklch(72% 0.16 290);
+  --color-primary-content: oklch(15% 0.02 290);
+  --color-secondary: oklch(70% 0.13 200);
+  --color-secondary-content: oklch(15% 0.02 200);
+  --color-accent: oklch(78% 0.14 80);
+  --color-accent-content: oklch(15% 0.02 80);
+  --color-neutral: oklch(30% 0.014 270);
+  --color-neutral-content: oklch(94% 0.005 270);
+  --color-info: oklch(72% 0.13 230);
+  --color-info-content: oklch(15% 0.02 230);
+  --color-success: oklch(72% 0.14 160);
+  --color-success-content: oklch(15% 0.02 160);
+  --color-warning: oklch(82% 0.15 80);
+  --color-warning-content: oklch(15% 0.02 80);
+  --color-error: oklch(70% 0.18 25);
+  --color-error-content: oklch(15% 0.02 25);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.28rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "aios-light";
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: oklch(99% 0.003 270);
+  --color-base-200: oklch(96% 0.005 270);
+  --color-base-300: oklch(92% 0.008 270);
+  --color-base-content: oklch(20% 0.012 270);
+
+  --color-primary: oklch(58% 0.18 290);
+  --color-primary-content: oklch(98% 0.005 290);
+  --color-secondary: oklch(58% 0.14 200);
+  --color-secondary-content: oklch(98% 0.005 200);
+  --color-accent: oklch(70% 0.15 80);
+  --color-accent-content: oklch(15% 0.02 80);
+  --color-neutral: oklch(28% 0.012 270);
+  --color-neutral-content: oklch(98% 0.005 270);
+  --color-info: oklch(60% 0.14 230);
+  --color-info-content: oklch(98% 0.005 230);
+  --color-success: oklch(62% 0.14 160);
+  --color-success-content: oklch(98% 0.005 160);
+  --color-warning: oklch(75% 0.15 80);
+  --color-warning-content: oklch(15% 0.02 80);
+  --color-error: oklch(60% 0.18 25);
+  --color-error-content: oklch(98% 0.005 25);
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+}
+
+/* App-wide niceties */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+html {
+  /* Slightly larger than browser default (16px) — main lever for the
+     "整站字体偏小" feedback. Tailwind sizes are rem-relative, so this
+     scales the whole rhythm by ~6% without touching any utility class. */
+  font-size: 17px;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* Inter ss03 = curved-rounded letterforms (more modern); cv11 = single-
+     story 'a'; tabular figures keep number columns aligned. CJK reads
+     better with these features off so we scope them to body only. */
+  font-feature-settings: 'cv11', 'ss03', 'tnum';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* CJK breaks awkwardly between syllables without this; English isn't
+     affected because Latin has natural word boundaries. */
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Tighten down kbd which has its own intrinsic mono font */
+kbd {
+  font-family: var(--font-mono);
+}
+
+/* Subtle scrollbar that doesn't feel like a devtool */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, currentColor 20%, transparent) transparent;
+}
+
+/* Resize handles for react-resizable-panels */
+[data-panel-resize-handle-id] {
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+[data-panel-resize-handle-id]:hover,
+[data-panel-resize-handle-id][data-resize-handle-state="drag"] {
+  background-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+}
+
+/* cmdk styles — minimal, lay-user-friendly */
+[cmdk-root] {
+  width: 100%;
+}
+[cmdk-input] {
+  outline: none;
+  width: 100%;
+  background: transparent;
+}
+[cmdk-group-heading] {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+[cmdk-item] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-field);
+  cursor: pointer;
+  user-select: none;
+}
+[cmdk-item][data-selected="true"] {
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+}
+[cmdk-empty] {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+
+/* Soft "warm consumer app" gradient utility used on intent cards */
+.cover-gradient {
+  position: absolute;
+  inset: 0;
+  background: var(--cover, linear-gradient(135deg, oklch(70% 0.16 290), oklch(70% 0.13 200)));
+}
