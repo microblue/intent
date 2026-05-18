@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { sortedIntents, pendingApprovalCount } from '@/mocks';
+import { useSession } from '@/lib/auth';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
 
@@ -249,27 +250,60 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean } = {}) {
       )}
 
       {/* ─── 5. Account footer ────────────────────────────────── */}
-      <Link
-        to="/settings"
-        className="flex shrink-0 items-center gap-3 border-t border-base-300/50 px-3 py-3 transition hover:bg-base-100/60"
-      >
+      <AccountFooter />
+    </aside>
+  );
+}
+
+function AccountFooter() {
+  const { user, signedIn } = useSession();
+
+  if (!signedIn) {
+    return (
+      <div className="flex shrink-0 items-center gap-3 border-t border-base-300/50 px-3 py-3">
         <span
           aria-hidden
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-primary-content shadow-sm"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-base-300/60 text-sm font-bold text-base-content/55"
         >
-          D
+          ?
         </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-medium leading-tight">DZ</div>
-          <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
-            microblue@gmail.com
+          <div className="text-[14px] font-medium leading-tight">未登录</div>
+          <div className="mt-0.5 text-[12px] leading-tight text-base-content/55">
+            演示模式 · 数据不保存
           </div>
         </div>
-        <span aria-hidden className="text-base text-base-content/40">
-          ⚙
-        </span>
-      </Link>
-    </aside>
+        <Link to="/auth/signin" className="btn btn-primary btn-xs">
+          登录
+        </Link>
+      </div>
+    );
+  }
+
+  const initial = (user?.email?.[0] ?? 'D').toUpperCase();
+  return (
+    <Link
+      to="/settings"
+      className="flex shrink-0 items-center gap-3 border-t border-base-300/50 px-3 py-3 transition hover:bg-base-100/60"
+    >
+      <span
+        aria-hidden
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-accent text-sm font-bold text-primary-content shadow-sm"
+      >
+        {initial}
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[14px] font-medium leading-tight">
+          {user?.email?.split('@')[0] ?? '已登录'}
+        </div>
+        <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
+          {user?.email}
+        </div>
+      </div>
+      <span aria-hidden className="text-base text-base-content/40">
+        ⚙
+      </span>
+    </Link>
   );
 }
 

@@ -30,7 +30,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isDesktop = useIsDesktop();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isChatRoute = path.startsWith('/intent/');
+  const isAuthRoute = path.startsWith('/auth/');
   const showMobileDock = !isDesktop && !isChatRoute;
+
+  // Auth surfaces (sign-in / sign-up) own the entire viewport — no
+  // sidebar, no dock, no Launcher. They're standalone funnels.
+  if (isAuthRoute) {
+    return <>{children}</>;
+  }
 
   const sidebarCollapsed = useUI((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useUI((s) => s.setSidebarCollapsed);

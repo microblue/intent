@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "gen:types": "bash -c 'set -a; source ~/.openclaw/credentials/myclaw-supabase.env; set +a; supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" > src/lib/db-types.ts && echo Wrote src/lib/db-types.ts'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.0",
