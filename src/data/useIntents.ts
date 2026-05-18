@@ -106,3 +106,51 @@ export function useIntents(): IntentsResult {
     refetch: () => query.refetch(),
   };
 }
+
+export interface IntentResult {
+  intent: Intent | null;
+  /** True while the underlying query is still resolving for the first time. */
+  isLoading: boolean;
+  /**
+   * True when loading finished and the intent didn't exist (404 case).
+   * Distinguishes "still fetching" from "definitively not found" so the
+   * caller can render a real 404 page only after the data has landed.
+   */
+  notFound: boolean;
+  error: Error | null;
+  isMock: boolean;
+}
+
+export function useIntent(id: string): IntentResult {
+  const { signedIn, user, loading: sessionLoading } = useSession();
+  const useReal = env.useRealData && signedIn;
+
+  const query = useQuery({
+    queryKey: ['intent', { id, real: useReal, userId: user?.id ?? null }],
+    queryFn: async (): Promise<Intent | null> => {
+      if (!useReal) {
+        const list = sortedIntents();
+        return list.find((it) => it.id === id) ?? null;
+      }
+      const { data, error } = await supabase
+        .from('intents')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ? dbRowToIntent(data) : null;
+    },
+    enabled: !sessionLoading && id.length > 0,
+  });
+
+  const isLoading = query.isLoading || sessionLoading;
+  return {
+    intent: query.data ?? null,
+    isLoading,
+    // Only declare "not found" once we know the query landed without error
+    // and the result is null — otherwise we'd flash 404 on every navigation.
+    notFound: !isLoading && !query.error && query.data === null,
+    error: query.error as Error | null,
+    isMock: !useReal,
+  };
+}

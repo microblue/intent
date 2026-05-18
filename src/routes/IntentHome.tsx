@@ -8,7 +8,6 @@ import {
   filesFor,
   findAgent,
   findCapability,
-  findIntent,
   findMemoryFact,
   hermesProfiles,
   memoryFacts,
@@ -25,6 +24,7 @@ import {
   type OutlineStep,
   type ThreadOutlineEntry,
 } from '@/mocks';
+import { useIntent } from '@/data/useIntents';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
@@ -44,13 +44,40 @@ import { useIsDesktop } from '@/lib/useMediaQuery';
  */
 export function IntentHomePage() {
   const { intentId } = useParams({ strict: false }) as { intentId: string };
-  const intent = findIntent(intentId);
+  const { intent, isLoading, notFound, error } = useIntent(intentId);
   const isDesktop = useIsDesktop();
+  // useChatThread keeps message state local; until the messages table
+  // lands in the canonical schema we don't have a real source to swap to.
   const chat = useChatThread(intentId);
 
-  if (!intent) {
+  if (isLoading) {
+    return <IntentHomeSkeleton />;
+  }
+
+  if (error) {
     return (
-      <div className="mx-auto mt-24 max-w-md px-6 text-center">
+      <div
+        data-testid="intent-error"
+        className="mx-auto mt-24 max-w-md px-6 text-center"
+      >
+        <div className="text-5xl">😵</div>
+        <h1 className="mt-4 text-lg font-semibold">加载出错了</h1>
+        <p className="mt-1 text-sm text-base-content/60">
+          {error.message ?? '稍等一下再试。'}
+        </p>
+        <Link to="/" className="btn btn-ghost btn-sm mt-4">
+          回到首页
+        </Link>
+      </div>
+    );
+  }
+
+  if (notFound || !intent) {
+    return (
+      <div
+        data-testid="intent-notfound"
+        className="mx-auto mt-24 max-w-md px-6 text-center"
+      >
         <div className="text-5xl">🤔</div>
         <h1 className="mt-4 text-lg font-semibold">没找到这个项目</h1>
         <p className="mt-1 text-sm text-base-content/60">
@@ -1960,3 +1987,19 @@ function StickyComposer({ onSend }: { onSend?: (text: string) => void }) {
   );
 }
 
+function IntentHomeSkeleton() {
+  return (
+    <div
+      data-testid="intent-skeleton"
+      className="flex h-full flex-col gap-6 px-4 pt-6 sm:px-8"
+    >
+      <div className="h-10 w-2/3 max-w-md animate-pulse rounded-xl bg-base-200/60" />
+      <div className="flex flex-col gap-3">
+        <div className="h-16 w-3/4 max-w-2xl animate-pulse rounded-2xl bg-base-200/60" />
+        <div className="ml-auto h-12 w-2/3 max-w-md animate-pulse rounded-2xl bg-base-200/60" />
+        <div className="h-20 w-3/4 max-w-2xl animate-pulse rounded-2xl bg-base-200/60" />
+      </div>
+      <div className="mt-auto h-14 max-w-3xl animate-pulse rounded-2xl bg-base-200/60" />
+    </div>
+  );
+}
