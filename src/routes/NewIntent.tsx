@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearch, Link } from '@tanstack/react-router';
+import { toast } from 'sonner';
+import { useCreateIntent } from '@/data/useCreateIntent';
 import { cn } from '@/lib/cn';
 
 /*
@@ -337,14 +339,38 @@ export function NewIntentPage() {
     if (stage === 'prompt') inputRef.current?.focus();
   }, [stage]);
 
-  const goSpawn = () => {
+  const { create, isMock } = useCreateIntent();
+
+  const goSpawn = async () => {
+    if (!proposal) return;
     setStage('spawning');
-    setTimeout(() => {
-      navigate({
-        to: '/intent/$intentId',
-        params: { intentId: proposal?.landIntentId ?? 'birthday' },
+    try {
+      const created = await create({
+        title: proposal.title,
+        emoji: proposal.emoji,
       });
-    }, 1100);
+      navigate({ to: '/intent/$intentId', params: { intentId: created.id } });
+    } catch (err) {
+      // Mock mode rejection lands here too — show the friendly copy from
+      // useCreateIntent + drop back to the preview so the user can adjust
+      // or sign in. Production-mode errors (RLS, network) get the same
+      // pattern.
+      const message =
+        err instanceof Error ? err.message : '保存的时候卡了一下,再试试?';
+      toast(message);
+      // The "navigate to the keyword-route mock" was the Phase-1 demo
+      // fallback. Preserve it only when we explicitly know this is mock
+      // mode AND the proposal points at a known mock id — otherwise stay
+      // put so the user understands nothing got saved.
+      if (isMock && proposal.landIntentId) {
+        navigate({
+          to: '/intent/$intentId',
+          params: { intentId: proposal.landIntentId },
+        });
+      } else {
+        setStage('preview');
+      }
+    }
   };
 
   const restart = () => {

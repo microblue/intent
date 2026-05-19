@@ -8,6 +8,9 @@ import {
 } from 'react-resizable-panels';
 import { useUI } from '@/state/ui';
 import { useIsDesktop } from '@/lib/useMediaQuery';
+import { useSession } from '@/lib/auth';
+import { useClaws } from '@/data/useClaws';
+import { env } from '@/lib/env';
 import { Sidebar } from './Sidebar';
 import { BottomDock } from './BottomDock';
 import { Launcher } from './Launcher';
@@ -27,17 +30,65 @@ import { cn } from '@/lib/cn';
  * chat route hides the dock so the composer owns the bottom.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const isDesktop = useIsDesktop();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const isChatRoute = path.startsWith('/intent/');
   const isAuthRoute = path.startsWith('/auth/');
-  const showMobileDock = !isDesktop && !isChatRoute;
 
   // Auth surfaces (sign-in / sign-up) own the entire viewport — no
   // sidebar, no dock, no Launcher. They're standalone funnels.
   if (isAuthRoute) {
     return <>{children}</>;
   }
+
+  // Claw gate: signed-in user with zero claws was never provisioned
+  // (rare — usually means they signed up on the wrong surface or their
+  // myclaw.one purchase didn't fire the default-claw trigger). Bounce
+  // them to the install funnel. Demo viewers + mock mode skip the gate
+  // entirely so the prototype keeps working without backend writes.
+  return <ClawGate>{children}</ClawGate>;
+}
+
+function ClawGate({ children }: { children: React.ReactNode }) {
+  const { signedIn, loading: sessionLoading } = useSession();
+  const { claws, hasResolved, isMock } = useClaws();
+
+  // Skip the gate when:
+  //   - flag is off (demo mode, claws table not consulted)
+  //   - user isn't signed in (anonymous demo viewers)
+  //   - session or claws are still loading (don't flash a redirect)
+  if (isMock || !env.useRealData || !signedIn || sessionLoading || !hasResolved) {
+    return <Chrome>{children}</Chrome>;
+  }
+
+  if (claws.length === 0) {
+    // External redirect — myclaw.one owns the install/purchase flow.
+    // Done via window.location, not <Link>, because the router only knows
+    // aios routes.
+    if (typeof window !== 'undefined') {
+      window.location.replace('https://myclaw.one/aios/install');
+    }
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-100 px-4 text-center">
+        <div className="text-4xl">🛠️</div>
+        <h1 className="text-lg font-semibold">正在带你去安装第一台 claw</h1>
+        <p className="max-w-sm text-sm text-base-content/55">
+          一下就好。如果浏览器没自动跳转,{' '}
+          <a className="text-primary hover:underline" href="https://myclaw.one/aios/install">
+            点这儿
+          </a>
+          。
+        </p>
+      </div>
+    );
+  }
+
+  return <Chrome>{children}</Chrome>;
+}
+
+function Chrome({ children }: { children: React.ReactNode }) {
+  const isDesktop = useIsDesktop();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const isChatRoute = path.startsWith('/intent/');
+  const showMobileDock = !isDesktop && !isChatRoute;
 
   const sidebarCollapsed = useUI((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useUI((s) => s.setSidebarCollapsed);

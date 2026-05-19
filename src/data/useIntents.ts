@@ -48,18 +48,24 @@ function hashString(s: string): number {
   return Math.abs(h);
 }
 
-function dbRowToIntent(row: DbIntent): Intent {
+export function dbRowToIntent(row: DbIntent): Intent {
+  // Source of truth for the card preview line:
+  //   1. user-authored `preview` column (rare; only when they pinned a hint)
+  //   2. `last_message_preview` snapshot the claw / agent pushed
+  //   3. cold-start placeholder
+  const previewText = row.preview ?? row.last_message_preview ?? '还没开始聊';
   return {
     id: row.id,
     title: row.title,
-    preview: row.last_message_preview ?? '还没开始聊',
+    preview: previewText,
     lastActiveAt: row.last_message_at ?? row.updated_at,
     lifecycle: row.archived_at ? 'archived' : 'active',
     trigger: 'manual',
-    // Defaults — UI-layer attributes that aren't in the row yet. When we
-    // add an `intent_cosmetics` column / table these come from there.
-    emoji: '✨',
-    cover: COVER_PALETTE[hashString(row.id) % COVER_PALETTE.length]!,
+    // Per-intent cosmetic columns win; otherwise hash to a stable default
+    // so the same id always renders the same cover.
+    emoji: row.emoji ?? '✨',
+    cover:
+      row.cover ?? COVER_PALETTE[hashString(row.id) % COVER_PALETTE.length]!,
   };
 }
 

@@ -621,10 +621,13 @@ export type Database = {
         Row: {
           archived_at: string | null
           claw_id: string
+          cover: string | null
           created_at: string
+          emoji: string | null
           id: string
           last_message_at: string | null
           last_message_preview: string | null
+          preview: string | null
           title: string
           updated_at: string
           user_id: string
@@ -632,10 +635,13 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           claw_id: string
+          cover?: string | null
           created_at?: string
+          emoji?: string | null
           id: string
           last_message_at?: string | null
           last_message_preview?: string | null
+          preview?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -643,10 +649,13 @@ export type Database = {
         Update: {
           archived_at?: string | null
           claw_id?: string
+          cover?: string | null
           created_at?: string
+          emoji?: string | null
           id?: string
           last_message_at?: string | null
           last_message_preview?: string | null
+          preview?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -936,6 +945,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          default_cover: string | null
+          default_emoji: string | null
+          display_name: string | null
+          preferred_lang: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_cover?: string | null
+          default_emoji?: string | null
+          display_name?: string | null
+          preferred_lang?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_cover?: string | null
+          default_emoji?: string | null
+          display_name?: string | null
+          preferred_lang?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       users: {
         Row: {
