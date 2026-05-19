@@ -91,9 +91,18 @@ export const OPERATOR_SCOPES = [
   'operator.pairing',
 ] as const;
 
-const CLIENT_ID = 'myclaw-aios';
+/**
+ * OpenClaw's connect-schema enforces a constant allowlist on `client.id`
+ * and `client.mode`. The accepted browser profile is the legacy
+ * "openclaw-control-ui" / "webchat" combo that the studio's
+ * `legacy-control-ui` profile uses. Phase 6 reuses that identity so
+ * we can ship without coordinating an allowlist PR on the OpenClaw
+ * side. A follow-up will add an "aios" / "aios" pair upstream and
+ * flip these constants.
+ */
+const CLIENT_ID = 'openclaw-control-ui';
 const CLIENT_PLATFORM = 'web';
-const CLIENT_MODE = 'aios';
+const CLIENT_MODE = 'webchat';
 
 export function buildConnectParams(args: {
   token: string;

@@ -166,3 +166,46 @@ export function __resetGatewaySingletonForTests() {
 export function __getLastEventForTests(): GatewayEventFrame | null {
   return lastEvent;
 }
+
+/**
+ * useGatewayEvent — subscribe to a specific gateway event by name.
+ *
+ * The handler fires on every matching frame and is auto-cleaned up on
+ * unmount. Use this in data hooks (useApprovals, useMessages, …) that
+ * want to invalidate a TanStack Query cache when the gateway emits a
+ * relevant runtime event.
+ *
+ * Mock mode / no real claw → no events ever fire, so handlers can
+ * safely be no-ops and the rest of the page stays on mocks.
+ *
+ * `eventName` can be:
+ *   - a literal string ("exec.approval.requested")
+ *   - "*" to match every event
+ *   - an array of names to match any of several
+ *
+ * Handler is wrapped in a ref so callers can pass an inline closure
+ * without re-subscribing on every render.
+ */
+export function useGatewayEvent(
+  eventName: string | readonly string[],
+  handler: (event: GatewayEventFrame) => void,
+): void {
+  const handlerRef = useRef(handler);
+  handlerRef.current = handler;
+
+  useEffect(() => {
+    const accept = (name: string) => {
+      if (eventName === '*') return true;
+      if (typeof eventName === 'string') return name === eventName;
+      return eventName.includes(name);
+    };
+    const wrapped = (e: GatewayEventFrame) => {
+      if (accept(e.event)) handlerRef.current(e);
+    };
+    eventListeners.add(wrapped);
+    return () => {
+      eventListeners.delete(wrapped);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Array.isArray(eventName) ? eventName.join('|') : eventName]);
+}

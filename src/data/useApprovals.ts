@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { approvals as mockApprovals } from '@/mocks';
 import type { Approval } from '@/mocks/types';
 import type { Database } from '@/lib/db-types';
+import { useGatewayEvent } from '@/gateway/useGateway';
 
 /**
  * useApprovals — pending user-decision items the Now panel surfaces at
@@ -109,6 +110,23 @@ export function useApprovals(): ApprovalsResult {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useReal, user?.id, queryClient]);
+
+  // Gateway event bridge: when OpenClaw raises exec.approval.* or
+  // plugin.approval.*, the canonical source of truth moves (eventually,
+  // when Phase 6 transitions away from Supabase-resident approvals
+  // entirely). Until then, invalidate the cached approvals query so the
+  // SPA refetches against whichever source currently holds them.
+  useGatewayEvent(
+    [
+      'exec.approval.requested',
+      'exec.approval.resolved',
+      'plugin.approval.requested',
+      'plugin.approval.resolved',
+    ],
+    () => {
+      queryClient.invalidateQueries({ queryKey: ['approvals'] });
+    },
+  );
 
   return {
     approvals: query.data ?? [],
