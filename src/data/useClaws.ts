@@ -20,6 +20,23 @@ import type { Database } from '@/lib/db-types';
 
 export type Claw = Database['public']['Tables']['claws']['Row'];
 
+/**
+ * Sentinel-claw marker. The myclaw `handle_new_auth_user()` trigger
+ * inserts a placeholder claw row with `plan_id = SENTINEL_PLAN_ID` for
+ * every new user — purely so aios's claw-gate (0 claws → install
+ * redirect) doesn't fire and lock new users out of the demo. The
+ * sentinel has `subdomain = null`, no real gateway, and can't actually
+ * be connected to. Real claws come from a myclaw.one purchase flow.
+ *
+ * Exported so the UI can detect "user is signed in but has only the
+ * placeholder" and steer them to open a real claw.
+ */
+export const SENTINEL_PLAN_ID = 'aios-prototype';
+
+export function isSentinelClaw(c: Claw): boolean {
+  return c.plan_id === SENTINEL_PLAN_ID;
+}
+
 // Synthetic claw used while we're in mock mode so create-intent has a
 // non-null FK target. The id stays stable across reloads.
 const MOCK_CLAW_ID = '00000000-0000-0000-0000-cccccccccccc';
@@ -58,7 +75,18 @@ const MOCK_CLAW: Claw = {
 
 export interface ClawsResult {
   claws: Claw[];
+  /** Claws excluding the sentinel placeholder — the ones a user can actually connect to. */
+  realClaws: Claw[];
+  /** Most users currently have one claw; default to the first real claw, falling back to whatever's there. */
   defaultClaw: Claw | null;
+  /** True when the user has at least one non-sentinel claw. */
+  hasRealClaw: boolean;
+  /**
+   * True when the user has claws but ALL of them are sentinel placeholders —
+   * they've been auto-provisioned but haven't opened a real claw on
+   * myclaw.one yet. Drives the "go open a real claw" prompt in IntentList.
+   */
+  isSentinelOnly: boolean;
   isLoading: boolean;
   /** True after the query lands; lets the gate distinguish "still fetching" from "empty". */
   hasResolved: boolean;
@@ -85,9 +113,17 @@ export function useClaws(): ClawsResult {
   });
 
   const claws = query.data ?? [];
+  const realClaws = claws.filter((c) => !isSentinelClaw(c));
+  const hasRealClaw = realClaws.length > 0;
+  const isSentinelOnly = useReal && claws.length > 0 && !hasRealClaw;
   return {
     claws,
-    defaultClaw: claws[0] ?? null,
+    realClaws,
+    // Pick the first real claw if one exists; otherwise fall back to whatever's
+    // there (sentinel or mock) so callers still get a non-null FK target.
+    defaultClaw: realClaws[0] ?? claws[0] ?? null,
+    hasRealClaw,
+    isSentinelOnly,
     isLoading: query.isLoading || sessionLoading,
     hasResolved: !sessionLoading && (query.isSuccess || query.isError),
     isMock: !useReal,

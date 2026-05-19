@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { useIntents } from '@/data/useIntents';
 import { useUserPreferences } from '@/data/useUserPreferences';
+import { useClaws } from '@/data/useClaws';
 import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
 import { useUI } from '@/state/ui';
@@ -62,16 +63,21 @@ export function IntentListPage() {
   const { intents: list, isLoading, error, isMock } = useIntents();
   const { user, signedIn } = useSession();
   const { prefs } = useUserPreferences();
+  const { isSentinelOnly } = useClaws();
   const onboardingDismissed = useUI((s) => s.onboardingDismissed);
   const dismissOnboarding = useUI((s) => s.dismissOnboarding);
   const isEmpty = !isLoading && !error && list.length === 0;
+  // Sentinel-claw banner: signed-in real-mode user has only the auto-
+  // provisioned placeholder claw and no actual one to connect to. This
+  // takes precedence over the welcome card — the user can't truly start
+  // until they open a real claw on myclaw.one. Mock-mode and users with
+  // any real claw never see it.
+  const showSentinelBanner = signedIn && isSentinelOnly;
   // Onboarding card: signed-in users with no intents yet and who haven't
-  // already dismissed the welcome. Anonymous demo viewers and existing
-  // users with running intents don't see it. Card lives inline above
-  // the starter templates — not a modal overlay (lay-user-first: the
-  // existing page is the answer to "where do I start?", we just frame
-  // it warmly the first time).
-  const showOnboarding = signedIn && isEmpty && !onboardingDismissed;
+  // already dismissed the welcome. Suppressed when the sentinel banner
+  // is showing so we don't double-prompt cold-start users.
+  const showOnboarding =
+    signedIn && isEmpty && !onboardingDismissed && !showSentinelBanner;
   // Friendly greeting prefers (1) the user's chosen display_name from
   // user_preferences, (2) their email handle, (3) a neutral "你" so
   // anonymous demo visitors don't see a stranger's name.
@@ -102,6 +108,43 @@ export function IntentListPage() {
           </p>
         )}
       </div>
+
+      {showSentinelBanner && (
+        <section
+          data-testid="sentinel-claw-banner"
+          className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-warning/15 via-warning/8 to-base-100 p-6 ring-1 ring-warning/30"
+        >
+          <div className="flex items-start gap-4">
+            <span
+              aria-hidden
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-base-100/80 text-2xl shadow-sm"
+            >
+              🛠️
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold">还差一步,才能真正开始</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-base-content/70">
+                你的账号已经准备好了 ——
+                还需要先去 <span className="font-medium">myclaw.one</span>{' '}
+                开一台你自己的 claw 助手主机,我才能真正帮你做事(发邮件、订机票、记日历)。一次设置,以后都用。
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <a
+                  href="https://myclaw.one/aios/install"
+                  data-testid="sentinel-claw-cta"
+                  className="btn btn-warning btn-sm gap-1.5 rounded-full px-4"
+                >
+                  <span aria-hidden>🚀</span>
+                  去开一台 →
+                </a>
+                <span className="text-xs text-base-content/45">
+                  开通之前,下面的东西都是演示
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {showOnboarding && (
         <section
