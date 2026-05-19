@@ -6,6 +6,7 @@ import { useIntents } from '@/data/useIntents';
 import { signOut, useSession } from '@/lib/auth';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
+import { ClawStatus } from './ClawStatus';
 
 /**
  * Desktop / laptop persistent sidebar.
@@ -329,6 +330,9 @@ function AccountFooter() {
           </div>
           <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
             {user?.email}
+          </div>
+          <div className="mt-1">
+            <ClawStatus />
           </div>
         </div>
         <span aria-hidden className="text-base text-base-content/40">
