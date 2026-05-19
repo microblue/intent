@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { signOut, useSession } from '@/lib/auth';
+import { useUserPreferences } from '@/data/useUserPreferences';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
 
@@ -26,16 +27,35 @@ type LangCode = (typeof LANGUAGES)[number]['code'];
 export function SettingsPage() {
   const devMode = useUI((s) => s.devMode);
   const toggleDevMode = useUI((s) => s.toggleDevMode);
-  const [lang, setLang] = useState<LangCode>('zh-CN');
   const activationModal = useRef<HTMLDialogElement | null>(null);
   const [keyInput, setKeyInput] = useState('');
   const { user, signedIn, loading } = useSession();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 
-  const displayName = user?.user_metadata?.full_name
-    ?? user?.email?.split('@')[0]
-    ?? (signedIn ? '已登录' : '游客');
+  // user_preferences: lazy-upsert source of truth for cosmetic + locale
+  // settings. In mock mode the hook returns a static stub; we still let
+  // the user toggle these — the upsert no-ops without persisting, but
+  // the in-memory React state still reflects their choice for the
+  // session, which is what most demo viewers want.
+  const { prefs, upsert: upsertPrefs, isMock: prefsAreMock } = useUserPreferences();
+  const [lang, setLang] = useState<LangCode>('zh-CN');
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
+
+  // Sync persisted prefs into the form once the query lands. We use a
+  // separate effect (not derived state) so the user can edit the draft
+  // without it snapping back on every render.
+  useEffect(() => {
+    if (!prefs) return;
+    if (
+      prefs.preferred_lang &&
+      LANGUAGES.some((l) => l.code === prefs.preferred_lang)
+    ) {
+      setLang(prefs.preferred_lang as LangCode);
+    }
+    setNameDraft(prefs.display_name ?? '');
+  }, [prefs]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -65,7 +85,40 @@ export function SettingsPage() {
           </li>
         ) : (
           <>
-            <Row label="姓名" value={displayName} />
+            <li className="flex flex-col gap-2 border-b border-base-300/40 px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm">姓名</div>
+                <div className="mt-0.5 text-xs text-base-content/45">
+                  助手怎么称呼你 · 留空就用邮箱前缀
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  className="input input-bordered input-sm w-48"
+                  value={nameDraft}
+                  placeholder={user?.email?.split('@')[0] ?? ''}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  data-testid="settings-display-name"
+                  onBlur={async () => {
+                    const next = nameDraft.trim();
+                    if (next === (prefs?.display_name ?? '')) return;
+                    setSavingName(true);
+                    try {
+                      await upsertPrefs({ display_name: next || null });
+                      toast('已保存');
+                    } catch (err) {
+                      toast(err instanceof Error ? err.message : '保存失败');
+                    } finally {
+                      setSavingName(false);
+                    }
+                  }}
+                />
+                {savingName && (
+                  <span className="loading loading-spinner loading-xs text-base-content/40" />
+                )}
+              </div>
+            </li>
             <Row label="邮箱" value={user?.email ?? '—'} hint="登录用" />
             <li className="flex items-center justify-between gap-4 border-b border-base-300/40 px-4 py-3 last:border-b-0">
               <div className="min-w-0 flex-1">
@@ -102,11 +155,19 @@ export function SettingsPage() {
             <select
               className="select select-bordered select-sm w-44"
               value={lang}
-              onChange={(e) => {
+              data-testid="settings-language"
+              onChange={async (e) => {
                 const next = e.target.value as LangCode;
                 setLang(next);
                 const meta = LANGUAGES.find((l) => l.code === next);
                 if (meta) toast(meta.toast);
+                if (!prefsAreMock) {
+                  try {
+                    await upsertPrefs({ preferred_lang: next });
+                  } catch (err) {
+                    toast(err instanceof Error ? err.message : '保存失败');
+                  }
+                }
               }}
               aria-label="界面语言"
             >

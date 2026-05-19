@@ -48,9 +48,16 @@ export function useCreateIntent(): CreateIntentResult {
       if (!title) throw new Error('给它起个名字吧');
 
       if (!useReal) {
-        throw new Error(
-          '现在是演示模式,新建的事不会被保存。登录后再来试一次?',
-        );
+        // Two reasons we land here: the user isn't signed in (anonymous
+        // demo), or the global VITE_USE_REAL_DATA flag is off (still in
+        // prototype mode). Pick the message that matches the user's
+        // actual situation rather than always nudging them to sign in.
+        if (!signedIn) {
+          throw new Error(
+            '现在是演示模式,新建的事不会被保存。登录后再来试一次?',
+          );
+        }
+        throw new Error('演示模式,新建的事不会被保存。等真实数据接通后再来。');
       }
       if (!user?.id) throw new Error('请先登录');
       if (!defaultClaw) {

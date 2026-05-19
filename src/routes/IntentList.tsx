@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useIntents } from '@/data/useIntents';
+import { useUserPreferences } from '@/data/useUserPreferences';
 import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
 
@@ -59,13 +60,14 @@ const STARTER_TEMPLATES = [
 export function IntentListPage() {
   const { intents: list, isLoading, error, isMock } = useIntents();
   const { user } = useSession();
+  const { prefs } = useUserPreferences();
   const isEmpty = !isLoading && !error && list.length === 0;
-  // Friendly greeting prefers the user's chosen name / email handle but
-  // falls back to a neutral "你" so anonymous demo visitors don't see a
-  // stranger's name.
-  const greetingName = user?.user_metadata?.full_name
-    ?? user?.email?.split('@')[0]
-    ?? '你';
+  // Friendly greeting prefers (1) the user's chosen display_name from
+  // user_preferences, (2) their email handle, (3) a neutral "你" so
+  // anonymous demo visitors don't see a stranger's name.
+  const greetingName = prefs?.display_name?.trim()
+    || user?.email?.split('@')[0]
+    || '你';
 
   return (
     <div className="w-full px-4 pb-24 pt-10 sm:px-8">
@@ -84,7 +86,9 @@ export function IntentListPage() {
         </p>
         {isMock && (
           <p className="mt-1 text-[11px] text-base-content/40">
-            演示数据 · 登录后看到的是你自己的
+            {user
+              ? '演示数据 · 真实数据接通后会显示你自己的'
+              : '演示数据 · 登录后看到的是你自己的'}
           </p>
         )}
       </div>
