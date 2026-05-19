@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
-import { findIntent, sortedSchedule, type ScheduleEvent } from '@/mocks';
+import { findIntent, type ScheduleEvent } from '@/mocks';
+import { useScheduleEvents } from '@/data/useScheduleEvents';
 
 const MOCK_NOW = new Date('2026-05-13T10:30:00+08:00');
 const dayMs = 86_400_000;
@@ -28,7 +29,7 @@ function timeOf(iso: string) {
 }
 
 export function SchedulePage() {
-  const list = sortedSchedule();
+  const { events: list, isLoading, error, isMock } = useScheduleEvents();
   const [draft, setDraft] = useState('');
 
   const buckets: Record<string, ScheduleEvent[]> = { 今天: [], 明天: [], 这周: [], 以后: [] };
@@ -41,9 +42,13 @@ export function SchedulePage() {
         title="提醒"
         term="schedule"
         subtitle={
-          list.length === 0
-            ? '还没有提醒。直接在下面写一句,比如「每周一 9 点开会」。'
-            : `一共 ${list.length} 件事在等时间到。点开任意一条进项目里继续聊。`
+          isLoading
+            ? '让我看看你有什么要提醒的 ——'
+            : error
+              ? '提醒列表读不出来,稍等再试。'
+              : list.length === 0
+                ? '还没有提醒。直接在下面写一句,比如「每周一 9 点开会」。'
+                : `一共 ${list.length} 件事在等时间到。点开任意一条进项目里继续聊。`
         }
       />
 
@@ -52,7 +57,16 @@ export function SchedulePage() {
         onSubmit={(e) => {
           e.preventDefault();
           if (!draft.trim()) return;
-          toast('已记下这个提醒(Phase 6 接 Supabase)', { description: draft });
+          // Quick-add still toast-only — parsing natural-language to a
+          // fire_at + recurrence needs the intent-summariser agent. The
+          // real INSERT path is wired through useAddScheduleEvent for
+          // when the chat agent eventually calls it on the user's behalf.
+          toast(
+            isMock
+              ? '已记下(演示模式不会保存)'
+              : '已记下(自然语言解析等 agent 接入)',
+            { description: draft },
+          );
           setDraft('');
         }}
         className="mb-8 flex items-center gap-2 rounded-2xl bg-base-200 px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/40"

@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
-import { findIntent, memoryByCategory, memoryFacts, type MemoryFact } from '@/mocks';
+import { findIntent, type MemoryFact } from '@/mocks';
+import { useMemoryFacts } from '@/data/useMemoryFacts';
 import { useUI } from '@/state/ui';
 
 const groupOrder: { key: MemoryFact['category']; label: string; emoji: string; hint: string }[] = [
@@ -11,11 +12,11 @@ const groupOrder: { key: MemoryFact['category']; label: string; emoji: string; h
 ];
 
 export function MemoryPage() {
-  const groups = memoryByCategory();
+  const { facts, byCategory: groups, isLoading, error } = useMemoryFacts();
   const userFacts = useUI((s) => s.userMemoryFacts);
   const removeUserFact = useUI((s) => s.removeUserMemoryFact);
-  const total = memoryFacts.length + userFacts.length;
-  const isEmpty = total === 0;
+  const total = facts.length + userFacts.length;
+  const isEmpty = !isLoading && !error && total === 0;
 
   return (
     <div className="w-full px-4 pb-24 pt-10 sm:px-8">

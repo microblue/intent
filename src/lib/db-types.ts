@@ -153,6 +153,53 @@ export type Database = {
           },
         ]
       }
+      approvals: {
+        Row: {
+          agent_key: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          intent_id: string
+          options: Json | null
+          prompt: string
+          resolved_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agent_key?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          intent_id: string
+          options?: Json | null
+          prompt: string
+          resolved_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          agent_key?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          intent_id?: string
+          options?: Json | null
+          prompt?: string
+          resolved_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -677,6 +724,41 @@ export type Database = {
           },
         ]
       }
+      memory_facts: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          origin_intent_id: string | null
+          text: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          origin_intent_id?: string | null
+          text: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          origin_intent_id?: string | null
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memory_facts_origin_intent_id_fkey"
+            columns: ["origin_intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: Json
@@ -834,6 +916,27 @@ export type Database = {
           },
         ]
       }
+      permission_grants: {
+        Row: {
+          capability_id: string
+          mode: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capability_id: string
+          mode?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capability_id?: string
+          mode?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rate_limits: {
         Row: {
           key: string
@@ -913,6 +1016,50 @@ export type Database = {
             columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_events: {
+        Row: {
+          created_at: string
+          fire_at: string
+          id: string
+          intent_id: string
+          recurrence: Json | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fire_at: string
+          id?: string
+          intent_id: string
+          recurrence?: Json | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fire_at?: string
+          id?: string
+          intent_id?: string
+          recurrence?: Json | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_events_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
             referencedColumns: ["id"]
           },
         ]

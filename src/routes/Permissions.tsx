@@ -1,7 +1,10 @@
-import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
-import { capabilities, capabilityGrants, type Capability, type CapabilityGrant } from '@/mocks';
+import { capabilities, type Capability, type CapabilityGrant } from '@/mocks';
+import {
+  usePermissionGrants,
+  useSetPermissionMode,
+} from '@/data/usePermissionGrants';
 import { cn } from '@/lib/cn';
 
 const groupOrder: { key: Capability['group']; label: string; emoji: string; hint: string }[] = [
@@ -17,15 +20,18 @@ const modeLabels: Record<CapabilityGrant['mode'], { label: string; tone: string;
 };
 
 export function PermissionsPage() {
-  const [grants, setGrants] = useState<CapabilityGrant[]>(capabilityGrants);
+  const { modeOf: grantOf } = usePermissionGrants();
+  const { setMode: persistMode } = useSetPermissionMode();
 
-  const setMode = (capId: string, mode: CapabilityGrant['mode']) => {
-    setGrants((prev) => prev.map((g) => (g.capabilityId === capId ? { ...g, mode } : g)));
-    const cap = capabilities.find((c) => c.id === capId);
-    toast(`已改成「${modeLabels[mode].label}」`, { description: cap?.label });
+  const setMode = async (capId: string, mode: CapabilityGrant['mode']) => {
+    try {
+      await persistMode(capId, mode);
+      const cap = capabilities.find((c) => c.id === capId);
+      toast(`已改成「${modeLabels[mode].label}」`, { description: cap?.label });
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '改不动,稍后再试');
+    }
   };
-
-  const grantOf = (capId: string) => grants.find((g) => g.capabilityId === capId)!.mode;
 
   return (
     <div className="w-full px-4 pb-24 pt-10 sm:px-8">
