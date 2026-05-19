@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { toast } from 'sonner';
@@ -25,6 +25,7 @@ import {
   type ThreadOutlineEntry,
 } from '@/mocks';
 import { useIntent } from '@/data/useIntents';
+import { useUpdateIntent } from '@/data/useUpdateIntent';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
@@ -221,9 +222,7 @@ function MobileIntentHome({
               {intent.emoji}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold leading-tight drop-shadow-sm">
-                {intent.title}
-              </div>
+              <MobileTitleEdit intent={intent} />
               <div className="truncate text-[0.8125rem] text-white/75 leading-tight">
                 {timeAgo(intent.lastActiveAt)} · {intent.preview}
               </div>
@@ -668,6 +667,46 @@ function SlimHeader({
   onToggleRail: () => void;
 }) {
   const [reflectOpen, setReflectOpen] = useState(false);
+  // Inline title rename. Phase 1 created intents with the raw prompt as
+  // the title (no LLM polish yet), so users land here with awkward
+  // strings. A pencil affordance + click-to-edit makes that recoverable
+  // without a separate modal — works for both signed-in real mode
+  // (UPDATE intents) and signed-in mock mode (toast-only no-op).
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(intent.title);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { update: updateIntent, isPending: renaming } = useUpdateIntent();
+
+  // Keep the draft in sync if the underlying intent title changes from
+  // elsewhere (e.g. background refetch). Only re-sync while not editing,
+  // otherwise we'd clobber what the user is currently typing.
+  useEffect(() => {
+    if (!editing) setDraft(intent.title);
+  }, [intent.title, editing]);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commitRename = async () => {
+    const next = draft.trim();
+    setEditing(false);
+    if (!next || next === intent.title) {
+      setDraft(intent.title);
+      return;
+    }
+    try {
+      await updateIntent({ id: intent.id, title: next });
+      toast('改好了');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '保存失败,稍后再试');
+      setDraft(intent.title);
+    }
+  };
+
   return (
     <header
       className="sticky top-0 z-20 overflow-hidden border-b border-base-300/40"
@@ -696,9 +735,49 @@ function SlimHeader({
               <span className="badge badge-xs border-0 bg-white/25 text-white">置顶</span>
             )}
           </div>
-          <h1 className="truncate text-base font-semibold leading-tight drop-shadow-sm">
-            {intent.title}
-          </h1>
+          {editing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draft}
+              maxLength={120}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  inputRef.current?.blur();
+                } else if (e.key === 'Escape') {
+                  setDraft(intent.title);
+                  setEditing(false);
+                }
+              }}
+              aria-label="改名"
+              data-testid="intent-title-input"
+              className="w-full truncate rounded-md bg-black/35 px-1.5 py-0.5 text-base font-semibold leading-tight text-white outline-none ring-2 ring-white/40 focus:ring-white"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              aria-label="改名"
+              data-testid="intent-title-button"
+              className="group inline-flex max-w-full items-baseline gap-1.5 truncate text-left"
+            >
+              <h1 className="truncate text-base font-semibold leading-tight drop-shadow-sm">
+                {intent.title}
+              </h1>
+              <span
+                aria-hidden
+                className="text-xs text-white/55 opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                改名
+              </span>
+              {renaming && (
+                <span className="loading loading-spinner loading-xs ml-1 text-white/70" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Wrap up / 复盘 — methodology phase ⑥ */}
@@ -2001,5 +2080,83 @@ function IntentHomeSkeleton() {
       </div>
       <div className="mt-auto h-14 max-w-3xl animate-pulse rounded-2xl bg-base-200/60" />
     </div>
+  );
+}
+
+function MobileTitleEdit({ intent }: { intent: Intent }) {
+  // Same rename UX as desktop SlimHeader, scaled to the thinner mobile
+  // header bar. Kept inline (rather than a modal) because mobile keyboards
+  // still feel responsive against an inline input, and the alternative —
+  // opening the info sheet to find a "rename" row — adds two extra taps
+  // that lay users won't discover.
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(intent.title);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { update: updateIntent, isPending: renaming } = useUpdateIntent();
+
+  useEffect(() => {
+    if (!editing) setDraft(intent.title);
+  }, [intent.title, editing]);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = async () => {
+    const next = draft.trim();
+    setEditing(false);
+    if (!next || next === intent.title) {
+      setDraft(intent.title);
+      return;
+    }
+    try {
+      await updateIntent({ id: intent.id, title: next });
+      toast('改好了');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '保存失败,稍后再试');
+      setDraft(intent.title);
+    }
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={draft}
+        maxLength={120}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            inputRef.current?.blur();
+          } else if (e.key === 'Escape') {
+            setDraft(intent.title);
+            setEditing(false);
+          }
+        }}
+        aria-label="改名"
+        data-testid="intent-title-input-mobile"
+        className="w-full truncate rounded-md bg-black/35 px-1.5 py-0.5 text-sm font-semibold leading-tight text-white outline-none ring-2 ring-white/40 focus:ring-white"
+      />
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      data-testid="intent-title-button-mobile"
+      aria-label="改名"
+      className="block w-full truncate text-left text-sm font-semibold leading-tight text-white drop-shadow-sm"
+    >
+      {intent.title}
+      {renaming && (
+        <span className="loading loading-spinner loading-xs ml-1 align-middle text-white/70" />
+      )}
+    </button>
   );
 }
