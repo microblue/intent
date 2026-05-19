@@ -89,13 +89,16 @@ export async function mintClawToken(clawId: string): Promise<GatewayCredentials>
   }
 
   if (!res.ok) {
+    // myclaw's fail() returns { error, code } — read both shapes so we
+    // stay compatible if a future revision adds `message` too.
     const errObj = (body && typeof body === 'object' ? (body as Record<string, unknown>) : {}) as {
       code?: string;
+      error?: string;
       message?: string;
     };
     throw new MintClawTokenError({
       code: errObj.code ?? `http_${res.status}`,
-      message: errObj.message ?? `mint failed (${res.status})`,
+      message: errObj.message ?? errObj.error ?? `mint failed (${res.status})`,
       status: res.status,
     });
   }
