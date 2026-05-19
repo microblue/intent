@@ -17,6 +17,7 @@ import { HelpPage } from '@/routes/Help';
 import { NowPage } from '@/routes/Now';
 import { SignInPage } from '@/routes/SignIn';
 import { ResetPasswordPage } from '@/routes/ResetPassword';
+import { ArchivePage } from '@/routes/Archive';
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -101,6 +102,12 @@ const resetPasswordRoute = createRoute({
   component: ResetPasswordPage,
 });
 
+const archiveRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/archive',
+  component: ArchivePage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   intentRoute,
@@ -114,6 +121,7 @@ const routeTree = rootRoute.addChildren([
   nowRoute,
   signInRoute,
   resetPasswordRoute,
+  archiveRoute,
 ]);
 
 export const router = createRouter({ routeTree, defaultPreload: 'intent' });

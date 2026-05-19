@@ -201,6 +201,13 @@ export function SettingsPage() {
           to="/permissions"
         />
         <Row
+          label="封存的"
+          value="不显示在主列表"
+          hint="想找回封存过的项目就从这儿"
+          linkLabel="去看看"
+          to="/archive"
+        />
+        <Row
           label="导出我的数据"
           value="JSON / Markdown"
           linkLabel="导出"

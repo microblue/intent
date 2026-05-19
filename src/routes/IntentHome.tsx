@@ -667,6 +667,7 @@ function SlimHeader({
   onToggleRail: () => void;
 }) {
   const [reflectOpen, setReflectOpen] = useState(false);
+  const navigate = useNavigate();
   // Inline title rename. Phase 1 created intents with the raw prompt as
   // the title (no LLM polish yet), so users land here with awkward
   // strings. A pencil affordance + click-to-edit makes that recoverable
@@ -676,6 +677,29 @@ function SlimHeader({
   const [draft, setDraft] = useState(intent.title);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { update: updateIntent, isPending: renaming } = useUpdateIntent();
+
+  const handleArchive = async () => {
+    try {
+      await updateIntent({ id: intent.id, archived: true });
+      navigate({ to: '/' });
+      toast('已封存', {
+        description: '它在「封存的」里,需要的时候可以取出来',
+        action: {
+          label: '撤销',
+          onClick: async () => {
+            try {
+              await updateIntent({ id: intent.id, archived: false });
+              toast('取出来了');
+            } catch (err) {
+              toast(err instanceof Error ? err.message : '撤销失败');
+            }
+          },
+        },
+      });
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '封存失败,稍后再试');
+    }
+  };
 
   // Keep the draft in sync if the underlying intent title changes from
   // elsewhere (e.g. background refetch). Only re-sync while not editing,
@@ -791,6 +815,47 @@ function SlimHeader({
           <span aria-hidden>✓</span>
           <span className="hidden sm:inline">完成</span>
         </button>
+
+        {/* Archive — soft delete. Lay-user copy "封存" beats "删除";
+            an accidental click is recoverable via the toast's 撤销 or
+            the /archive view. */}
+        <div className="dropdown dropdown-end">
+          <button
+            type="button"
+            tabIndex={0}
+            data-testid="intent-actions"
+            className="btn btn-sm border-0 bg-black/30 text-white hover:bg-black/45"
+            aria-label="更多操作"
+            title="更多"
+          >
+            ⋯
+          </button>
+          <ul
+            tabIndex={0}
+            className="menu dropdown-content z-50 mt-2 w-44 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+          >
+            <li>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                data-testid="intent-action-rename"
+                className="rounded-xl"
+              >
+                <span aria-hidden>✏️</span> 改名
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={handleArchive}
+                data-testid="intent-action-archive"
+                className="rounded-xl"
+              >
+                <span aria-hidden>📦</span> 封存
+              </button>
+            </li>
+          </ul>
+        </div>
 
         {/* Detail rail toggle */}
         <label

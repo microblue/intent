@@ -113,6 +113,46 @@ export function useIntents(): IntentsResult {
   };
 }
 
+/**
+ * useArchivedIntents — the same shape as useIntents but the WHERE clause
+ * is flipped: only rows with archived_at IS NOT NULL. Used by the
+ * /archive view so users can find things they封存'd and restore them.
+ *
+ * In mock mode we synthesise from the bundled intents whose lifecycle is
+ * 'archived' — Phase-1 mock data may or may not have any; that's fine,
+ * the empty state is the same as a fresh user.
+ */
+export function useArchivedIntents(): IntentsResult {
+  const { signedIn, user, loading: sessionLoading } = useSession();
+  const useReal = env.useRealData && signedIn;
+
+  const query = useQuery({
+    queryKey: ['intents', { real: useReal, userId: user?.id ?? null, archived: true }],
+    queryFn: async (): Promise<Intent[]> => {
+      if (!useReal) {
+        return sortedIntents().filter((it) => it.lifecycle === 'archived');
+      }
+      const { data, error } = await supabase
+        .from('intents')
+        .select('*')
+        .not('archived_at', 'is', null)
+        .order('updated_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map(dbRowToIntent);
+    },
+    enabled: !sessionLoading,
+  });
+
+  return {
+    intents: query.data ?? [],
+    isLoading: query.isLoading || sessionLoading,
+    isFetching: query.isFetching,
+    error: query.error as Error | null,
+    isMock: !useReal,
+    refetch: () => query.refetch(),
+  };
+}
+
 export interface IntentResult {
   intent: Intent | null;
   /** True while the underlying query is still resolving for the first time. */
