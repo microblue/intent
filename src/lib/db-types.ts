@@ -677,6 +677,44 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          intent_id: string
+          role: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          intent_id: string
+          role: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          intent_id?: string
+          role?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_quotas: {
         Row: {
           created_at: string

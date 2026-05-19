@@ -11,7 +11,6 @@ import {
   findMemoryFact,
   hermesProfiles,
   memoryFacts,
-  messagesFor,
   outlineFor,
   scheduleEvents,
   threadOutlineFor,
@@ -24,8 +23,16 @@ import {
   type OutlineStep,
   type ThreadOutlineEntry,
 } from '@/mocks';
+import { useQueryClient } from '@tanstack/react-query';
 import { useIntent } from '@/data/useIntents';
 import { useUpdateIntent } from '@/data/useUpdateIntent';
+import {
+  useMessages,
+  useSendMessage,
+  appendLocalAssistantMessage,
+} from '@/data/useMessages';
+import { useSession } from '@/lib/auth';
+import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
@@ -117,46 +124,52 @@ export function IntentHomePage() {
 }
 
 /**
- * useChatThread — local-state chat loop on top of mock seed messages.
+ * useChatThread — composes useMessages (read + Realtime) with useSendMessage
+ * (INSERT) and keeps the mock-mode auto-reply alive so the demo
+ * experience still feels conversational.
  *
- * Phase 1 mock: keyword-based reflection so the composer doesn't feel
- * dead. The reply lands after a ~1s delay with a typing indicator. Phase
- * 6 swaps this for a real WebSocket stream from the gateway.
+ * In real mode the user's message persists via Supabase INSERT (RLS
+ * enforces user_id = auth.uid()); the assistant side will arrive via
+ * server-driven agent inserts in a later phase. For now the chat is a
+ * one-way log in real mode — that's the right shape until agents wire in.
+ *
+ * In mock mode the old keyword-based reply behaviour fires on a delay,
+ * so a logged-out demo viewer sees a back-and-forth thread.
  */
 function useChatThread(intentId: string) {
-  const seed = useMemo(() => messagesFor(intentId), [intentId]);
-  const [extra, setExtra] = useState<Message[]>([]);
+  const { messages, isLoading, isMock } = useMessages(intentId);
+  const { send: persistUserMessage } = useSendMessage(intentId);
+  const { signedIn, user } = useSession();
+  const queryClient = useQueryClient();
   const [typing, setTyping] = useState(false);
 
-  const messages = useMemo(() => [...seed, ...extra], [seed, extra]);
+  const send = async (text: string) => {
+    try {
+      await persistUserMessage(text);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '发送失败,稍后再试');
+      return;
+    }
 
-  const send = (text: string) => {
-    const now = new Date().toISOString();
-    const userMsg: Message = {
-      id: `m-user-${Date.now()}`,
-      intentId,
-      role: 'user',
-      content: [{ type: 'text', text }],
-      createdAt: now,
-    };
-    setExtra((prev) => [...prev, userMsg]);
+    // Mock-mode auto-reply keeps the demo interactive. Real mode skips
+    // this — the server (when agents land) is what drives assistant
+    // messages, and faking one client-side would be misleading.
+    if (!isMock) return;
     setTyping(true);
-
     const delay = 900 + Math.random() * 400;
     window.setTimeout(() => {
-      const reply: Message = {
-        id: `m-asst-${Date.now()}`,
+      appendLocalAssistantMessage(
+        queryClient,
         intentId,
-        role: 'assistant',
-        content: [{ type: 'text', text: mockReply(text) }],
-        createdAt: new Date().toISOString(),
-      };
-      setExtra((prev) => [...prev, reply]);
+        mockReply(text),
+        env.useRealData && signedIn,
+        user?.id ?? null,
+      );
       setTyping(false);
     }, delay);
   };
 
-  return { messages, typing, send };
+  return { messages, typing, send, isLoading };
 }
 
 function mockReply(userText: string): string {
