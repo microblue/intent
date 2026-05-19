@@ -11,6 +11,20 @@ import { stubSupabaseSession, SUPABASE_STORAGE_KEY } from './helpers/auth-stub';
  */
 
 test.describe('SignIn — submission paths', () => {
+  // Stub the Supabase auth endpoints (POST /auth/v1/otp, /recover) so the
+  // tests verify the UI's success-confirmation card without sending real
+  // emails or being rate-limited. .test TLD addresses are rejected by
+  // production Supabase, which would otherwise mask a UI regression as a
+  // server error.
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/auth/v1/otp**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+    );
+    await page.route('**/auth/v1/recover**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+    );
+  });
+
   test('magic-link form → confirm card with echoed email', async ({ page }) => {
     await page.goto('/auth/signin');
     await page.getByRole('button', { name: '改用邮件链接' }).click();
@@ -195,13 +209,19 @@ test.describe('Settings — useUserPreferences upsert path', () => {
     });
   });
 
-  test('dev mode toggle flips the visible state', async ({ page }) => {
+  test('dev mode toggle fires a toast and persists the new state', async ({ page }) => {
     await page.goto('/settings');
-    const toggle = page.getByRole('switch', { name: '' }).or(
-      page.locator('button[role="switch"]'),
-    ).first();
+    // The toggle is rendered as <button role="switch">; only one such
+    // button exists on /settings. Read aria-checked before+after to
+    // verify the click actually flipped state.
+    const toggle = page.locator('button[role="switch"]');
+    const beforeChecked = await toggle.getAttribute('aria-checked');
     await toggle.click();
-    await expect(page.getByText(/开发者模式/)).toBeVisible();
+    await expect(
+      page.getByText(/开启开发者模式|关闭开发者模式/),
+    ).toBeVisible({ timeout: 5_000 });
+    const afterChecked = await toggle.getAttribute('aria-checked');
+    expect(afterChecked).not.toBe(beforeChecked);
   });
 });
 
@@ -267,9 +287,13 @@ test.describe('BottomDock — mobile nav', () => {
     await page.waitForURL(/\/schedule$/);
   });
 
-  test('正在做的事 dock item navigates to /now', async ({ page }) => {
+  test('通知 dock item navigates to /now', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: '正在做的事' }).click();
+    // The dock label was renamed from "正在做的事" → "通知" in mobile (the
+    // longer name didn't fit the 5-slot dock and confused with the page
+    // title). The button name in the AX tree includes the pending count
+    // badge as a sibling — match with a regex so `通知 3` etc. still wins.
+    await page.getByRole('button', { name: /^通知( \d+)?$/ }).click();
     await page.waitForURL(/\/now$/);
   });
 });
@@ -321,16 +345,21 @@ test.describe('Memory — read + remove', () => {
 test.describe('Schedule — renders mock buckets', () => {
   test('shows the 提醒 page header + at least one bucket', async ({ page }) => {
     await page.goto('/schedule');
+    // PageHeader renders the emoji aria-hidden, so the AX name is just
+    // "提醒 · Schedule" (no emoji). Match the level-1 heading by title.
     await expect(
-      page.getByRole('heading', { name: '提醒' }),
+      page.getByRole('heading', { level: 1, name: /^提醒/ }),
     ).toBeVisible();
-    // Mock data buckets one or more; at least one of the section headings
-    // (今天 / 明天 / 这周 / 以后) should appear.
-    const buckets = await page
-      .locator('h2')
-      .filter({ hasText: /今天|明天|这周|以后/ })
-      .count();
-    expect(buckets).toBeGreaterThan(0);
+    // Mock data has events in 今天 / 明天 / 这周 / 以后 (MOCK_NOW =
+    // 2026-05-13). Sections only render when their bucket is non-empty.
+    // Wait for any one to become visible — TanStack Query hydration is
+    // async on chromium and Schedule's events list arrives after first
+    // paint.
+    const buckets = page.getByRole('heading', {
+      level: 2,
+      name: /^(今天|明天|这周|以后)$/,
+    });
+    await expect(buckets.first()).toBeVisible({ timeout: 5_000 });
   });
 });
 
