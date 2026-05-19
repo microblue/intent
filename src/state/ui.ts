@@ -78,6 +78,15 @@ type UIState = {
   userMemoryFacts: UserMemoryFact[];
   addUserMemoryFact: (fact: UserMemoryFact) => void;
   removeUserMemoryFact: (id: string) => void;
+
+  /**
+   * Onboarding welcome card has been dismissed. Per-device (localStorage)
+   * not per-user; if the same person signs in on a new device they see
+   * the welcome again, which is fine — the card is helpful, not noisy.
+   */
+  onboardingDismissed: boolean;
+  dismissOnboarding: () => void;
+  resetOnboarding: () => void;
 };
 
 const DEFAULT_MINIMIZED: Record<RailSectionKey, boolean> = {
@@ -169,6 +178,10 @@ export const useUI = create<UIState>()(
         set((s) => ({
           userMemoryFacts: s.userMemoryFacts.filter((f) => f.id !== id),
         })),
+
+      onboardingDismissed: false,
+      dismissOnboarding: () => set({ onboardingDismissed: true }),
+      resetOnboarding: () => set({ onboardingDismissed: false }),
     }),
     {
       name: 'myclaw-ui-v2',
@@ -180,6 +193,7 @@ export const useUI = create<UIState>()(
         railMinimized: s.railMinimized,
         railHidden: s.railHidden,
         userMemoryFacts: s.userMemoryFacts,
+        onboardingDismissed: s.onboardingDismissed,
       }),
     },
   ),

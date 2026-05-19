@@ -3,6 +3,7 @@ import { useIntents } from '@/data/useIntents';
 import { useUserPreferences } from '@/data/useUserPreferences';
 import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
+import { useUI } from '@/state/ui';
 
 /**
  * Starter templates — shown above the intent grid as inspiration. When the
@@ -59,9 +60,18 @@ const STARTER_TEMPLATES = [
 
 export function IntentListPage() {
   const { intents: list, isLoading, error, isMock } = useIntents();
-  const { user } = useSession();
+  const { user, signedIn } = useSession();
   const { prefs } = useUserPreferences();
+  const onboardingDismissed = useUI((s) => s.onboardingDismissed);
+  const dismissOnboarding = useUI((s) => s.dismissOnboarding);
   const isEmpty = !isLoading && !error && list.length === 0;
+  // Onboarding card: signed-in users with no intents yet and who haven't
+  // already dismissed the welcome. Anonymous demo viewers and existing
+  // users with running intents don't see it. Card lives inline above
+  // the starter templates — not a modal overlay (lay-user-first: the
+  // existing page is the answer to "where do I start?", we just frame
+  // it warmly the first time).
+  const showOnboarding = signedIn && isEmpty && !onboardingDismissed;
   // Friendly greeting prefers (1) the user's chosen display_name from
   // user_preferences, (2) their email handle, (3) a neutral "你" so
   // anonymous demo visitors don't see a stranger's name.
@@ -92,6 +102,49 @@ export function IntentListPage() {
           </p>
         )}
       </div>
+
+      {showOnboarding && (
+        <section
+          data-testid="onboarding-welcome"
+          className="mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-secondary/12 to-accent/15 p-6 ring-1 ring-primary/20"
+        >
+          <div className="flex items-start gap-4">
+            <span
+              aria-hidden
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-base-100/80 text-2xl shadow-sm"
+            >
+              👋
+            </span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold">欢迎,我是 myclaw</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-base-content/70">
+                你告诉我你想做什么 —— 旅行、生日、学新东西、给家人选礼物
+                ——我帮你拆开做。下面是几个常见的事,直接点一个就行。
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Link
+                  to="/new"
+                  search={{ seed: undefined }}
+                  data-testid="onboarding-cta"
+                  onClick={dismissOnboarding}
+                  className="btn btn-primary btn-sm gap-1.5 rounded-full px-4"
+                >
+                  <span aria-hidden>✨</span>
+                  起一个新的 →
+                </Link>
+                <button
+                  type="button"
+                  onClick={dismissOnboarding}
+                  data-testid="onboarding-dismiss"
+                  className="btn btn-ghost btn-sm rounded-full text-xs text-base-content/55"
+                >
+                  先看看,以后再说
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Starter templates — visible always (inspiration) but emphasized
           when the user has no intents yet (cold start). */}
