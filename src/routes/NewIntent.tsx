@@ -49,6 +49,61 @@ type Proposal = {
 
 /* ───── Mock proposal templates ───── */
 
+/**
+ * Rule-based title extraction for the generic fallback path.
+ *
+ * Lay users phrase wishes as polite requests: "帮我准备一次东京樱花
+ * 季旅行 4 月初出发" — stuffing that as a literal intent title makes
+ * the card unreadable. We strip leading polite/imperative prefixes
+ * and trailing helper clauses, then truncate to a card-friendly
+ * length. Phase 1 quality bar: the result should look like something
+ * a person would actually call their project, not a raw sentence.
+ *
+ * This is a placeholder until we have a real intent-summariser agent
+ * doing this server-side. Once that's in place, this function becomes
+ * the offline-mode / pre-network fallback.
+ */
+export function extractTitle(raw: string): string {
+  let s = raw.trim();
+  if (!s) return '新事情';
+
+  // Strip leading polite / imperative prefixes. Order matters: longest
+  // patterns first so they don't get partially consumed.
+  const POLITE_PREFIXES = [
+    /^麻烦(你|您)?(帮|替)我/,
+    /^可以(帮|替|麻烦|让)我/,
+    /^请(你|您)?(帮|替)?我/,
+    /^我(想|要|想要|希望|打算|准备|计划)(去|要|做|开始)?/,
+    /^(帮|替|给|让|为)我/,
+    /^我(觉得)?需要/,
+    /^请(求|你)?(帮忙)?/,
+    /^你(能不能|可不可以|能否)/,
+    /^能否(帮我)?/,
+  ];
+  for (let i = 0; i < 3; i++) {
+    const before = s;
+    for (const re of POLITE_PREFIXES) s = s.replace(re, '').trimStart();
+    if (s === before) break;
+  }
+
+  // Trim trailing helper clauses that explain timing / preferences but
+  // aren't part of the noun the project is "about". Keep the comma-
+  // separated head; the rest belongs in the chat thread, not the title.
+  const FIRST_CLAUSE = /^([^,，。!?！？\n]+)/;
+  const m = s.match(FIRST_CLAUSE);
+  if (m && m[1]) s = m[1];
+
+  // Drop a hanging "一下" / "下" at the tail that adds no signal.
+  s = s.replace(/(一下|一次|下)$/, '').trim();
+
+  // Card budget: ~16 CJK chars renders cleanly without truncation
+  // ellipsis at the default card width. Longer strings get cut here;
+  // the chat thread retains the full prompt as the first message.
+  if (s.length > 16) s = s.slice(0, 16).trim();
+
+  return s || '新事情';
+}
+
 function proposeIntent(text: string): Proposal {
   const t = text.toLowerCase();
 
@@ -283,7 +338,7 @@ function proposeIntent(text: string): Proposal {
   // Generic fallback
   return {
     emoji: '✨',
-    title: text.slice(0, 18).trim() || '新事情',
+    title: extractTitle(text),
     cover: 'linear-gradient(135deg, oklch(72% 0.16 290), oklch(70% 0.13 200))',
     intro: '收到。我想先问你三件事,这样能帮得更准 ——',
     questions: [
@@ -735,7 +790,10 @@ function PreviewStage({
             <div className="text-[11px] uppercase tracking-wide text-white/70 drop-shadow-sm">
               准备开个
             </div>
-            <div className="truncate text-lg font-bold text-white drop-shadow-sm">
+            <div
+              data-testid="preview-title"
+              className="truncate text-lg font-bold text-white drop-shadow-sm"
+            >
               {proposal.title}
             </div>
           </div>
