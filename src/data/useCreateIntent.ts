@@ -38,8 +38,7 @@ export interface CreateIntentResult {
 
 export function useCreateIntent(): CreateIntentResult {
   const { signedIn, user } = useSession();
-  const { defaultClaw, isLoading: clawsLoading, hasResolved: clawsResolved } =
-    useClaws();
+  const { defaultClaw, hasResolved: clawsResolved } = useClaws();
   const queryClient = useQueryClient();
   const useReal = env.useRealData && signedIn;
 
