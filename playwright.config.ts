@@ -18,6 +18,15 @@ import { defineConfig, devices } from '@playwright/test';
 const externalUrl = process.env.PLAYWRIGHT_BASE_URL;
 const baseURL = externalUrl ?? 'http://127.0.0.1:4173';
 
+// Vercel deployment-protection bypass — preview URLs are SSO-protected
+// by default. When VERCEL_AUTOMATION_BYPASS is set, append it as a
+// query param on the initial page.goto so Vercel sets the bypass
+// cookie; subsequent navigations carry the cookie. We can't use
+// extraHTTPHeaders for this because that sends the header on every
+// fetch (including cross-origin to Supabase, which trips CORS).
+// Production custom-domain deploys are open and don't need this.
+export const vercelBypass = process.env.VERCEL_AUTOMATION_BYPASS;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
