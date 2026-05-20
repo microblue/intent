@@ -14,6 +14,7 @@ import { env } from '@/lib/env';
 import { Sidebar } from './Sidebar';
 import { BottomDock } from './BottomDock';
 import { Launcher } from './Launcher';
+import { ClawStatus } from './ClawStatus';
 import { cn } from '@/lib/cn';
 
 /**
@@ -113,6 +114,13 @@ function Chrome({ children }: { children: React.ReactNode }) {
         </main>
         {showMobileDock && <BottomDock />}
         <Launcher />
+        {/* Mobile mounts ClawStatus off-screen so the singleton-backed
+            gateway client stays subscribed (the singleton only stays
+            up as long as at least one consumer is rendered). Also lets
+            e2e read data-status on mobile without taking layout. */}
+        <div className="sr-only" aria-hidden>
+          <ClawStatus />
+        </div>
       </div>
     );
   }
