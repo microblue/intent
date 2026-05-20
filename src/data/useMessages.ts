@@ -50,7 +50,7 @@ export interface MessagesResult {
   isMock: boolean;
 }
 
-const messagesQueryKey = (
+export const messagesQueryKey = (
   intentId: string,
   real: boolean,
   userId: string | null,

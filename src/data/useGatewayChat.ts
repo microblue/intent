@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/lib/auth';
+import { env } from '@/lib/env';
+import { supabase } from '@/lib/supabase';
 import { useGateway, useGatewayEvent } from '@/gateway/useGateway';
-import { upsertLocalAssistantMessage } from '@/data/useMessages';
+import {
+  messagesQueryKey,
+  upsertLocalAssistantMessage,
+} from '@/data/useMessages';
+import type { Message } from '@/mocks/types';
+import type { Database } from '@/lib/db-types';
+
+type DbMessageInsert = Database['public']['Tables']['messages']['Insert'];
 
 /**
  * useGatewayChat — bridge between an aios Intent and an OpenClaw chat
@@ -81,6 +90,10 @@ export function useGatewayChat(intentId: string): GatewayChatResult {
   // new token — so we upsert by a stable per-run id and let the
   // message render its current text. The user sees the agent typing
   // instead of one long pause.
+  // Track which run IDs we've already persisted on `final` so a
+  // delayed/duplicated final event doesn't double-insert.
+  const persistedFinalsRef = useRef<Set<string>>(new Set());
+
   useGatewayEvent('chat', (event) => {
     const payload = event.payload as
       | {
@@ -117,6 +130,54 @@ export function useGatewayChat(intentId: string): GatewayChatResult {
       true,
       userIdRef.current,
     );
+
+    // On `final`, also persist the assistant message to Supabase so
+    // it survives reloads and reaches other devices via Realtime.
+    // RLS allows the user to INSERT messages tied to their own
+    // user_id; role='assistant' is just a tag. We do this only once
+    // per runId to avoid duplicates if the server replays.
+    if (
+      payload.state === 'final' &&
+      env.useRealData &&
+      userIdRef.current &&
+      payload.runId &&
+      !persistedFinalsRef.current.has(payload.runId)
+    ) {
+      persistedFinalsRef.current.add(payload.runId);
+      const insertRow: DbMessageInsert = {
+        intent_id: intentId,
+        user_id: userIdRef.current,
+        role: 'assistant',
+        content: [{ type: 'text', text }] as unknown as DbMessageInsert['content'],
+      };
+      void supabase
+        .from('messages')
+        .insert(insertRow)
+        .select('*')
+        .single()
+        .then(({ data, error }) => {
+          if (error || !data) {
+            console.warn('[gateway-chat] persist final assistant failed', error?.message);
+            persistedFinalsRef.current.delete(payload.runId!);
+            return;
+          }
+          // Swap the streaming-id message for the persisted row so
+          // that when Supabase Realtime fans this INSERT back, the
+          // dedupe-by-id in useMessages doesn't create a duplicate.
+          const qKey = messagesQueryKey(intentId, true, userIdRef.current);
+          queryClient.setQueryData<Message[]>(qKey, (old = []) => {
+            const idx = old.findIndex((m) => m.id === msgId);
+            if (idx < 0) return old;
+            const next = old.slice();
+            next[idx] = {
+              ...next[idx],
+              id: data.id,
+              createdAt: data.created_at ?? next[idx].createdAt,
+            };
+            return next;
+          });
+        });
+    }
   });
 
   const sendViaGateway = useCallback(
