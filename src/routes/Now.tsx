@@ -233,7 +233,7 @@ function ApprovalCard({ activity, devMode }: { activity: NowActivity; devMode: b
               key={o.label}
               type="button"
               onClick={() =>
-                toast(`已选:${o.label}`, { description: '(Phase 6 真实接入 OpenClaw)' })
+                toast(`已选:${o.label}`, { description: '演示模式 · 登录后会真处理' })
               }
               className={cn(
                 'btn btn-sm rounded-full',

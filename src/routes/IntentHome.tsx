@@ -227,7 +227,7 @@ function mockReply(userText: string): string {
   if (t.includes('改') || t.includes('换') || t.includes('不行') || t.includes('重新')) {
     return '好,我换个思路再试。\n\n你刚才说的是想往哪个方向调?给我一个关键词或例子就行,我立刻去改。';
   }
-  return '懂了,我记下来了。\n\n等我整理一下,有进展就告诉你 ——\n(目前是演示版,真实助手会在 Phase 6 接入)';
+  return '懂了,我记下来了。\n\n等我整理一下,有进展就告诉你 ——\n(演示模式 · 登录后跟你自己的 claw 真聊)';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2118,7 +2118,10 @@ function StickyComposer({ onSend }: { onSend?: (text: string) => void }) {
     if (onSend) {
       onSend(text);
     } else {
-      toast('已发送(Phase 6 接入 OpenClaw)', { description: text });
+      // No onSend handler wired (anonymous demo viewer with no chat
+      // thread context). Just toast the input echo so the user
+      // sees something happened.
+      toast('演示模式 · 登录后会真发给你的 claw', { description: text });
     }
     setDraft('');
   };

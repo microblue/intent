@@ -166,7 +166,7 @@ function FactRow({ fact }: { fact: MemoryFact }) {
       </div>
       <button
         type="button"
-        onClick={() => toast('我会忘掉这件事(Phase 6 真删除)', { description: fact.text })}
+        onClick={() => toast('演示模式不会真删除', { description: fact.text })}
         className="rounded-lg p-1.5 text-base-content/45 transition hover:bg-base-300 hover:text-error sm:opacity-0 sm:group-hover:opacity-100"
         aria-label="忘掉这件事"
         title="忘掉这件事"

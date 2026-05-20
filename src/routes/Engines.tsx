@@ -208,7 +208,7 @@ export function EnginesPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        toast('改 Intent 引擎绑定 — Phase 2 后落 Supabase + RLS', {
+                        toast('引擎切换 — 多 agent 编排正在开发', {
                           description: `把 ${it.title} 切到不同 agent 或 profile`,
                         })
                       }

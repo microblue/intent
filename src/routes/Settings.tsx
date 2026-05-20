@@ -211,7 +211,7 @@ export function SettingsPage() {
           label="导出我的数据"
           value="JSON / Markdown"
           linkLabel="导出"
-          onLink={() => toast('导出排队(Phase 6)')}
+          onLink={() => toast('导出功能正在做中,稍后开放')}
         />
       </Section>
 
@@ -256,7 +256,7 @@ export function SettingsPage() {
               className="btn btn-primary"
               disabled={!keyInput.trim()}
               onClick={() => {
-                toast('激活码已提交(Phase 6 接 Polar)');
+                toast('激活码已提交,稍后处理');
                 setKeyInput('');
                 activationModal.current?.close();
               }}
@@ -357,7 +357,7 @@ function SubscriptionRow({ onEnterKey }: { onEnterKey: () => void }) {
         </button>
         <button
           type="button"
-          onClick={() => toast('订阅管理 — Phase 6 接 Polar')}
+          onClick={() => toast('订阅管理在 myclaw.one 后台 — 稍后接入到这里')}
           className="btn btn-primary btn-sm"
         >
           管理 →
