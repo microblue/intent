@@ -103,10 +103,25 @@ async function mintViaMagiclink(email: string): Promise<MintedSession> {
 
 // Process-scoped session cache. Supabase rate-limits parallel + rapid
 // magic-link mints to the same email; with serialized workers we still
-// burn through 2-3 in a row. Cache by email and reuse until ~5 min
-// before expiry. This is safe because the cached session was minted by
-// us this run — it's not crossing process boundaries.
+// burn through 2-3 in a row. Cache by email; reuse only while there's
+// a comfortable margin of validity (>20 min) — going below this often
+// surfaces as `invalid_jwt` mid-run when a downstream call refreshes
+// state. New mints are throttled to one every 4s per email to avoid
+// hitting Supabase's anti-abuse limits.
 const sessionCache = new Map<string, MintedSession>();
+const lastMintAt = new Map<string, number>();
+
+async function freshMintWithBackoff(email: string): Promise<MintedSession> {
+  const lastAt = lastMintAt.get(email) ?? 0;
+  const gap = Date.now() - lastAt;
+  if (gap < 4_000) {
+    await new Promise((r) => setTimeout(r, 4_000 - gap));
+  }
+  const minted = await mintViaMagiclink(email);
+  sessionCache.set(email, minted);
+  lastMintAt.set(email, Date.now());
+  return minted;
+}
 
 export async function injectRealSession(
   context: BrowserContext,
@@ -115,11 +130,10 @@ export async function injectRealSession(
   const cached = sessionCache.get(email);
   const nowSec = Math.floor(Date.now() / 1000);
   let minted: MintedSession;
-  if (cached && cached.expires_at - nowSec > 300) {
+  if (cached && cached.expires_at - nowSec > 1_200) {
     minted = cached;
   } else {
-    minted = await mintViaMagiclink(email);
-    sessionCache.set(email, minted);
+    minted = await freshMintWithBackoff(email);
   }
   const sessionBlob = {
     access_token: minted.access_token,

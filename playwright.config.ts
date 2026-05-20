@@ -38,7 +38,11 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: !realMode,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // Real-mode runs share one Supabase user; magic-link rotation under
+  // serial load occasionally invalidates a cached session mid-run. One
+  // retry absorbs that without masking real regressions (the retried
+  // run gets a fresh mint).
+  retries: process.env.CI ? 2 : realMode ? 1 : 0,
   workers: realMode ? 1 : process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   timeout: 30_000,
