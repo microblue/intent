@@ -1,4 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { skipIfRealMode } from './helpers/build-mode';
+
+// Mock-mode bundle assumed. When running against a real-mode preview
+// build, anonymous visitors trip Supabase RLS errors and these
+// "renders without errors" assertions spuriously fail. Auto-skip in
+// that case — real-mode previews use `pnpm test:e2e:realmode`.
+test.beforeEach(async ({ page }) => {
+  await skipIfRealMode(page);
+});
 
 /**
  * Phase 1 — UX prototype surface coverage.

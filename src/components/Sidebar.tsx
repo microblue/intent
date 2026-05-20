@@ -7,6 +7,7 @@ import { signOut, useSession } from '@/lib/auth';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
 import { ClawStatus } from './ClawStatus';
+import { ClawPicker } from './ClawPicker';
 
 /**
  * Desktop / laptop persistent sidebar.
@@ -331,7 +332,13 @@ function AccountFooter() {
           <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
             {user?.email}
           </div>
-          <div className="mt-1">
+          <div className="mt-1.5">
+            <ClawPicker />
+          </div>
+          {/* ClawStatus stays as a hidden test hook so e2e can keep
+              probing data-status without taking layout. ClawPicker
+              shows the same info visibly. */}
+          <div className="sr-only" aria-hidden>
             <ClawStatus />
           </div>
         </div>
