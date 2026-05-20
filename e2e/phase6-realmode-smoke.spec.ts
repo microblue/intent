@@ -39,6 +39,11 @@ const skipUnlessRealMode = () => {
   }
 };
 
+// Serialize real-mode specs: they share one test user, and the
+// Supabase admin/generate_link endpoint rate-limits two parallel
+// magic-link mints for the same email.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Phase 6 — real-mode preview smoke', () => {
   test.beforeEach(skipUnlessRealMode);
 

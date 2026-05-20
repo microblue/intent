@@ -27,12 +27,19 @@ const baseURL = externalUrl ?? 'http://127.0.0.1:4173';
 // Production custom-domain deploys are open and don't need this.
 export const vercelBypass = process.env.VERCEL_AUTOMATION_BYPASS;
 
+// Real-mode runs (against a preview build, signed in as a fixed
+// shared test user) share one Supabase account. Supabase's
+// admin/generate_link endpoint rate-limits parallel mints to the same
+// address, so the smokes need to run serially to avoid flakes. We
+// detect this by presence of REAL_TEST_EMAIL.
+const realMode = Boolean(process.env.REAL_TEST_EMAIL);
+
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: !realMode,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: realMode ? 1 : process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   timeout: 30_000,
   expect: { timeout: 5_000 },

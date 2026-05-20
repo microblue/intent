@@ -89,6 +89,11 @@ const skipUnlessRealMode = () => {
   }
 };
 
+// Serialize real-mode specs: they share one test user, and the
+// Supabase admin/generate_link endpoint rate-limits two parallel
+// magic-link mints for the same email.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Phase 6 — real-mode chat smoke', () => {
   test.beforeEach(skipUnlessRealMode);
   test.skip(({ isMobile }) => isMobile === true, 'desktop-only smoke');
@@ -97,6 +102,9 @@ test.describe('Phase 6 — real-mode chat smoke', () => {
     page,
     context,
   }) => {
+    // The default 30s budget is too tight for: mint session + create
+    // intent + connect WS + LLM round-trip. Bump for this spec only.
+    test.setTimeout(90_000);
     await unlockVercelPreview(page);
     const email = process.env.REAL_TEST_EMAIL!;
     const minted = await injectRealSession(context, email);
