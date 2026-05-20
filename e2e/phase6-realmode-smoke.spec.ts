@@ -28,13 +28,14 @@ import { injectRealSession } from './helpers/real-session';
  */
 
 const skipUnlessRealMode = () => {
-  const baseUrl = process.env.PLAYWRIGHT_BASE_URL;
-  const email = process.env.REAL_TEST_EMAIL;
-  const bypass = process.env.VERCEL_AUTOMATION_BYPASS;
-  if (!baseUrl || !email || !bypass) {
+  // PLAYWRIGHT_BASE_URL + REAL_TEST_EMAIL are the gates. VERCEL_AUTOMATION_BYPASS
+  // is optional — only required for SSO-protected preview URLs. The
+  // unlockVercelPreview helper no-ops when it's unset, so against the
+  // public prod URL the spec runs without it.
+  if (!process.env.PLAYWRIGHT_BASE_URL || !process.env.REAL_TEST_EMAIL) {
     test.skip(
       true,
-      'real-mode smoke needs PLAYWRIGHT_BASE_URL + VERCEL_AUTOMATION_BYPASS + REAL_TEST_EMAIL',
+      'real-mode smoke needs PLAYWRIGHT_BASE_URL + REAL_TEST_EMAIL',
     );
   }
 };

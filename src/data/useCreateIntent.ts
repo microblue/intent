@@ -38,7 +38,8 @@ export interface CreateIntentResult {
 
 export function useCreateIntent(): CreateIntentResult {
   const { signedIn, user } = useSession();
-  const { defaultClaw } = useClaws();
+  const { defaultClaw, isLoading: clawsLoading, hasResolved: clawsResolved } =
+    useClaws();
   const queryClient = useQueryClient();
   const useReal = env.useRealData && signedIn;
 
@@ -60,7 +61,30 @@ export function useCreateIntent(): CreateIntentResult {
         throw new Error('演示模式,新建的事不会被保存。等真实数据接通后再来。');
       }
       if (!user?.id) throw new Error('请先登录');
-      if (!defaultClaw) {
+
+      // Wait briefly for the claws query to resolve. A fast user can hit
+      // the "开始这件事" button before useClaws has finished its initial
+      // SELECT — in that case defaultClaw is transiently null and the
+      // friendly "还没有给你分配实例" error fires misleadingly. Poll the
+      // React-Query cache for up to 3s, which beats showing the install
+      // redirect to a user who's actually fine.
+      let liveDefaultClaw = defaultClaw;
+      if (!liveDefaultClaw && !clawsResolved) {
+        const deadline = Date.now() + 3_000;
+        while (Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, 100));
+          const cached = queryClient.getQueriesData<{ id: string; plan_id?: string | null }[]>({
+            queryKey: ['claws'],
+          });
+          const claws = cached.flatMap(([, rows]) => rows ?? []);
+          const real = claws.find((c) => c.plan_id !== 'aios-prototype');
+          if (real) {
+            liveDefaultClaw = real as typeof defaultClaw;
+            break;
+          }
+        }
+      }
+      if (!liveDefaultClaw) {
         throw new Error('还没有给你分配实例,正在带你去安装');
       }
 
@@ -72,7 +96,7 @@ export function useCreateIntent(): CreateIntentResult {
         .insert({
           id,
           user_id: user.id,
-          claw_id: defaultClaw.id,
+          claw_id: liveDefaultClaw.id,
           title,
           emoji: input.emoji ?? null,
           cover: input.cover ?? null,

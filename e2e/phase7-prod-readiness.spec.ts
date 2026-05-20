@@ -46,7 +46,6 @@ const skipUnlessRealMode = () => {
   if (
     !process.env.PLAYWRIGHT_BASE_URL ||
     !process.env.REAL_TEST_EMAIL ||
-    !process.env.VERCEL_AUTOMATION_BYPASS ||
     !process.env.SUPABASE_URL
   ) {
     test.skip(true, 'phase 7 prod-readiness smoke needs all four env vars');

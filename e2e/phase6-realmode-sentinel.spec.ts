@@ -20,7 +20,6 @@ import { createTestUser, deleteTestUser } from './helpers/test-user';
 const skipUnlessRealMode = () => {
   if (
     !process.env.PLAYWRIGHT_BASE_URL ||
-    !process.env.VERCEL_AUTOMATION_BYPASS ||
     !process.env.SUPABASE_URL
   ) {
     test.skip(true, 'sentinel smoke needs PLAYWRIGHT_BASE_URL + VERCEL_AUTOMATION_BYPASS + SUPABASE_URL');
