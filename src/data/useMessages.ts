@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { messagesFor } from '@/mocks';
 import type { Message, MessageContentPart } from '@/mocks/types';
 import type { Database } from '@/lib/db-types';
-import { useGatewayEvent } from '@/gateway/useGateway';
 
 /**
  * useMessages — the chat thread for a given intent.
@@ -112,18 +111,11 @@ export function useMessages(intentId: string): MessagesResult {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useReal, intentId, queryClient, user?.id]);
 
-  // Gateway event bridge: OpenClaw raises session.message + chat events
-  // when an agent emits a turn. Invalidate so the SPA refetches against
-  // the canonical source (Supabase today; will move to gateway-resident
-  // session state in a later phase per ~/myclaw-studio/docs/aios-plan.md
-  // §"数据边界" — agent runtime state stays on the claw, not in central
-  // DB). The intent-scoped guard avoids re-fetching unrelated threads.
-  useGatewayEvent(['session.message', 'chat'], (event) => {
-    const payload = event.payload as { intentId?: string; intent_id?: string } | null;
-    const eventIntent = payload?.intentId ?? payload?.intent_id;
-    if (eventIntent && eventIntent !== intentId) return;
-    queryClient.invalidateQueries({ queryKey });
-  });
+  // Note: assistant messages from the live agent flow through
+  // useGatewayChat, which writes them into THIS query's cache via
+  // upsertLocalAssistantMessage. We intentionally don't invalidate
+  // here on `chat` events — that would round-trip to Supabase
+  // (which doesn't have the message yet) and clobber the cache.
 
   return {
     messages: query.data ?? [],
