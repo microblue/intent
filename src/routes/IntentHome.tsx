@@ -32,6 +32,7 @@ import {
   appendLocalAssistantMessage,
 } from '@/data/useMessages';
 import { useGatewayChat } from '@/data/useGatewayChat';
+import { AgentPicker } from '@/components/AgentPicker';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
@@ -111,6 +112,8 @@ export function IntentHomePage() {
       onSend={chat.send}
       outline={outline}
       files={files}
+      activeAgentId={chat.activeAgentId}
+      onAgentChange={chat.setActiveAgentId}
     />
   ) : (
     <MobileIntentHome
@@ -120,6 +123,8 @@ export function IntentHomePage() {
       onSend={chat.send}
       outline={outline}
       files={files}
+      activeAgentId={chat.activeAgentId}
+      onAgentChange={chat.setActiveAgentId}
     />
   );
 }
@@ -140,7 +145,10 @@ export function IntentHomePage() {
 function useChatThread(intentId: string) {
   const { messages, isLoading, isMock } = useMessages(intentId);
   const { send: persistUserMessage } = useSendMessage(intentId);
-  const { connected: gatewayConnected, sendViaGateway } = useGatewayChat(intentId);
+  // Active agent picker. Default 'main' (general Claw); can be set to
+  // one of the specialized personas by the AgentPicker UI.
+  const [activeAgentId, setActiveAgentId] = useState('main');
+  const { connected: gatewayConnected, sendViaGateway } = useGatewayChat(intentId, activeAgentId);
   const { signedIn, user } = useSession();
   const queryClient = useQueryClient();
   const [typing, setTyping] = useState(false);
@@ -210,7 +218,15 @@ function useChatThread(intentId: string) {
     }, delay);
   };
 
-  return { messages, typing, send, isLoading };
+  return {
+    messages,
+    typing,
+    send,
+    isLoading,
+    activeAgentId,
+    setActiveAgentId,
+    gatewayConnected,
+  };
 }
 
 function mockReply(userText: string): string {
@@ -241,6 +257,8 @@ function MobileIntentHome({
   onSend,
   outline,
   files,
+  activeAgentId,
+  onAgentChange,
 }: {
   intent: Intent;
   msgs: Message[];
@@ -248,6 +266,8 @@ function MobileIntentHome({
   onSend: (text: string) => void;
   outline: OutlineNode[];
   files: IntentFile[];
+  activeAgentId: string;
+  onAgentChange: (agentId: string) => void;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const counts = conceptCountsFor(intent.id);
@@ -322,7 +342,7 @@ function MobileIntentHome({
         </div>
       </main>
 
-      <StickyComposer onSend={onSend} />
+      <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} />
 
       <InfoSheet
         open={infoOpen}
@@ -651,6 +671,8 @@ function DesktopIntentHome({
   onSend,
   outline,
   files,
+  activeAgentId,
+  onAgentChange,
 }: {
   intent: Intent;
   msgs: Message[];
@@ -658,6 +680,8 @@ function DesktopIntentHome({
   onSend: (text: string) => void;
   outline: OutlineNode[];
   files: IntentFile[];
+  activeAgentId: string;
+  onAgentChange: (agentId: string) => void;
 }) {
   const railOpen = useUI((s) => s.intentRailOpen);
   const toggleRail = useUI((s) => s.toggleIntentRail);
@@ -671,7 +695,7 @@ function DesktopIntentHome({
             <div className="flex-1 overflow-y-auto">
               <Conversation messages={msgs} typing={typing} />
             </div>
-            <StickyComposer onSend={onSend} />
+            <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} />
           </div>
         </Panel>
         {railOpen && (
@@ -2109,7 +2133,15 @@ function AssistantMessage({ message }: { message: Message }) {
  * larger send button that pulses while idle. Bigger placeholder, more
  * vertical breathing room, and a hint row with two assist chips below.
  */
-function StickyComposer({ onSend }: { onSend?: (text: string) => void }) {
+function StickyComposer({
+  onSend,
+  activeAgentId,
+  onAgentChange,
+}: {
+  onSend?: (text: string) => void;
+  activeAgentId?: string;
+  onAgentChange?: (agentId: string) => void;
+}) {
   const [draft, setDraft] = useState('');
 
   const submit = () => {
@@ -2166,14 +2198,9 @@ function StickyComposer({ onSend }: { onSend?: (text: string) => void }) {
                 <span aria-hidden>📎</span>
                 <span className="hidden sm:inline">附件</span>
               </button>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm gap-1.5"
-                onClick={() => toast('指定助手 — 多 agent 编排开发中')}
-              >
-                <span aria-hidden>@</span>
-                <span className="hidden sm:inline">叫某位助手</span>
-              </button>
+              {activeAgentId && onAgentChange && (
+                <AgentPicker activeAgentId={activeAgentId} onChange={onAgentChange} />
+              )}
               <kbd className="kbd kbd-sm ml-auto hidden text-[0.7rem] opacity-60 sm:inline-flex">⌘ ↵</kbd>
               <button
                 type="submit"

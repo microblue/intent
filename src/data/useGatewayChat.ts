@@ -36,10 +36,10 @@ type DbMessageInsert = Database['public']['Tables']['messages']['Insert'];
  * reloads ⇒ same key ⇒ same conversation history on the claw side.
  */
 
-const AGENT_ID = 'main';
+const DEFAULT_AGENT_ID = 'main';
 
-function sessionKeyFor(intentId: string): string {
-  return `agent:${AGENT_ID}:aios:${intentId}`;
+function sessionKeyFor(intentId: string, agentId: string): string {
+  return `agent:${agentId}:aios:${intentId}`;
 }
 
 interface GatewayChatResult {
@@ -53,7 +53,10 @@ interface GatewayChatResult {
   sendViaGateway: (text: string) => Promise<void>;
 }
 
-export function useGatewayChat(intentId: string): GatewayChatResult {
+export function useGatewayChat(
+  intentId: string,
+  agentId: string = DEFAULT_AGENT_ID,
+): GatewayChatResult {
   const { status, send: gatewaySend } = useGateway();
   const { user } = useSession();
   const queryClient = useQueryClient();
@@ -61,25 +64,25 @@ export function useGatewayChat(intentId: string): GatewayChatResult {
   userIdRef.current = user?.id ?? null;
 
   const connected = status === 'connected';
-  const key = sessionKeyFor(intentId);
+  const key = sessionKeyFor(intentId, agentId);
 
   // Lazy session creation. We don't block on this — if the session
   // already exists OpenClaw returns ok (the call is idempotent for
   // explicit keys), and if it didn't, sessions.send below will surface
-  // the error. We only attempt once per (intentId, connected) so we
-  // don't thrash on every render.
+  // the error. We only attempt once per (intentId, agentId, connected)
+  // so we don't thrash on every render.
   const createdRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!connected) return;
     if (createdRef.current.has(key)) return;
     createdRef.current.add(key);
-    gatewaySend('sessions.create', { agentId: AGENT_ID, key }).catch(() => {
+    gatewaySend('sessions.create', { agentId, key }).catch(() => {
       // Swallow — sessions.send below will reveal the real reason if
       // the create attempt actually failed (vs. session-already-exists,
       // which is the expected case after the first turn).
       createdRef.current.delete(key);
     });
-  }, [connected, key, gatewaySend]);
+  }, [connected, key, agentId, gatewaySend]);
 
   // Listen for chat events on this session and stream them into the
   // message cache.
@@ -191,7 +194,7 @@ export function useGatewayChat(intentId: string): GatewayChatResult {
       // raced and lost (cleared from createdRef), retry it inline.
       if (!createdRef.current.has(key)) {
         createdRef.current.add(key);
-        await gatewaySend('sessions.create', { agentId: AGENT_ID, key }).catch(
+        await gatewaySend('sessions.create', { agentId, key }).catch(
           () => {
             createdRef.current.delete(key);
           },
