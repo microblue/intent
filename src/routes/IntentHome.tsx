@@ -1985,7 +1985,12 @@ function UserMessage({ message }: { message: Message }) {
     .join('\n');
 
   return (
-    <div id={`msg-${message.id}`} className="flex flex-col items-end gap-1 scroll-mt-24 transition">
+    <div
+      id={`msg-${message.id}`}
+      data-testid="chat-message"
+      data-role="user"
+      className="flex flex-col items-end gap-1 scroll-mt-24 transition"
+    >
       <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-content shadow-sm">
         <div className="whitespace-pre-wrap">{text}</div>
       </div>
@@ -2008,7 +2013,12 @@ function AssistantMessage({ message }: { message: Message }) {
   const leadAgent = traces[0] ? findAgent(traces[0].agentKey) : undefined;
 
   return (
-    <article id={`msg-${message.id}`} className="flex gap-3 scroll-mt-24 transition">
+    <article
+      id={`msg-${message.id}`}
+      data-testid="chat-message"
+      data-role="assistant"
+      className="flex gap-3 scroll-mt-24 transition"
+    >
       <span
         aria-hidden
         className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-base-200 text-[16px] ring-1 ring-base-300/40"

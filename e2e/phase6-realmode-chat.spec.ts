@@ -43,6 +43,8 @@ async function createTestIntent(userId: string): Promise<IntentRow> {
   if (!claws.length) {
     throw new Error(`test user has no real claw to bind intent to`);
   }
+  // intents.id is text PK with no default — generate a stable test id.
+  const intentId = `aios-smoke-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const res = await fetch(`${url}/rest/v1/intents`, {
     method: 'POST',
     headers: {
@@ -52,6 +54,7 @@ async function createTestIntent(userId: string): Promise<IntentRow> {
       Prefer: 'return=representation',
     },
     body: JSON.stringify({
+      id: intentId,
       user_id: userId,
       claw_id: claws[0].id,
       title: TEST_INTENT_TITLE,
@@ -120,15 +123,20 @@ test.describe('Phase 6 — real-mode chat smoke', () => {
       await page.getByRole('button', { name: '发送' }).click();
 
       // The user's own message shows up first (Supabase persistence).
-      await expect(page.getByText('一句话回我:你是谁。').first()).toBeVisible({
-        timeout: 5_000,
-      });
+      const userBubble = page
+        .locator('[data-testid="chat-message"][data-role="user"]')
+        .filter({ hasText: '一句话回我:你是谁。' });
+      await expect(userBubble).toBeVisible({ timeout: 5_000 });
 
-      // Then the agent reply. Match anything that looks like Claw's
-      // self-identifying answer; if the model paraphrases differently
-      // the test still passes as long as a non-user message lands.
-      const assistantReply = page.getByText(/Claw|claw|助手|AI/).first();
-      await expect(assistantReply).toBeVisible({ timeout: 30_000 });
+      // Then the assistant turn — anchored on data-role so we can't be
+      // fooled by the brand chrome ("myclaw" appears in headers, etc).
+      // Wait up to 45s for the LLM round-trip on cool-brook.
+      const assistantTurn = page
+        .locator('[data-testid="chat-message"][data-role="assistant"]')
+        .first();
+      await expect(assistantTurn).toBeVisible({ timeout: 45_000 });
+      // Sanity: the assistant turn should contain non-empty text.
+      await expect(assistantTurn).not.toHaveText('');
     } finally {
       if (intent) await deleteTestIntent(intent.id);
     }
