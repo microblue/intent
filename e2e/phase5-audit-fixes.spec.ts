@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { skipIfRealMode } from './helpers/build-mode';
 import { stubSupabaseSession } from './helpers/auth-stub';
+
+// Mock-mode assumptions throughout this file. When running against a
+// real-mode preview/prod build (VITE_USE_REAL_DATA=true), these tests
+// auto-skip — real-mode has different copy and different write paths.
+test.beforeEach(async ({ page }) => {
+  await skipIfRealMode(page);
+});
 
 /**
  * Self-audit follow-up — verify the copy + Settings wiring fixes.
