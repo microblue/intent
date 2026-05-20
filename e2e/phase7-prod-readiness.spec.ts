@@ -23,17 +23,21 @@ import { injectRealSession } from './helpers/real-session';
 
 const ANON_HEADER_BY_PATH: Record<string, RegExp> = {
   '/auth/signin': /欢迎|登录|sign in/i,
-  '/auth/reset-password': /重置密码|reset/i,
+  // Without a recovery token in the URL, this page shows the
+  // "链接好像失效了" error state — that's the right behavior cold.
+  '/auth/reset-password': /重置密码|reset|链接好像失效了/i,
 };
 
+// Each surface's H1 / level-1 heading copy. Anchoring on
+// getByRole('heading', { level: 1 }) avoids sidebar nav-link collisions.
 const SIGNED_IN_HEADER_BY_PATH: Record<string, RegExp> = {
-  '/': /下午好|早上好|晚上好|你好|下面是一些常见|想做什么/,
+  '/': /下午好|早上好|晚上好|你好/,
   '/new': /想做什么/,
   '/schedule': /^提醒/,
   '/memory': /助手记得你的事/,
   '/now': /正在为你做的事/,
   '/permissions': /助手能做什么/,
-  '/settings': /设置/,
+  '/settings': /^设置/,
   '/help': /帮助/,
   '/archive': /封存|archive/i,
 };
@@ -96,9 +100,11 @@ test.describe('Phase 7 — signed-in surfaces (real claw user)', () => {
       await injectRealSession(context, process.env.REAL_TEST_EMAIL!);
       await unlockVercelPreview(page);
       await page.goto(path);
-      await expect(page.getByText(header).first()).toBeVisible({
-        timeout: 10_000,
-      });
+      // Anchor on the page's h1, not free text, so sidebar nav-link
+      // labels (which use the same word in many cases) don't false-match.
+      await expect(
+        page.getByRole('heading', { level: 1, name: header }),
+      ).toBeVisible({ timeout: 10_000 });
       const real = filterErrors(errors);
       expect(real, `unexpected console errors on ${path}:\n${real.join('\n')}`).toEqual([]);
     });
