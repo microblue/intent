@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/lib/auth';
 import { useGateway, useGatewayEvent } from '@/gateway/useGateway';
-import { appendLocalAssistantMessage } from '@/data/useMessages';
+import { upsertLocalAssistantMessage } from '@/data/useMessages';
 
 /**
  * useGatewayChat — bridge between an aios Intent and an OpenClaw chat
@@ -72,16 +72,21 @@ export function useGatewayChat(intentId: string): GatewayChatResult {
     });
   }, [connected, key, gatewaySend]);
 
-  // Listen for chat events on this session and surface the final
-  // assistant message into the message cache. Streaming deltas are
-  // ignored for the first cut — we wait for state='final' to keep the
-  // UI from flashing intermediate tokens. A future polish pass can
-  // wire delta updates for streaming typing animation.
+  // Listen for chat events on this session and stream them into the
+  // message cache.
+  //
+  // OpenClaw emits the same `chat` frame for both intermediate deltas
+  // (`state: 'delta'`) and the final turn (`state: 'final'`). Each
+  // frame carries the FULL accumulated message content — not just the
+  // new token — so we upsert by a stable per-run id and let the
+  // message render its current text. The user sees the agent typing
+  // instead of one long pause.
   useGatewayEvent('chat', (event) => {
     const payload = event.payload as
       | {
           sessionKey?: string;
           state?: string;
+          runId?: string;
           message?: {
             role?: string;
             content?: { type: string; text?: string }[];
@@ -90,16 +95,24 @@ export function useGatewayChat(intentId: string): GatewayChatResult {
       | null;
     if (!payload) return;
     if (payload.sessionKey !== key) return;
-    if (payload.state !== 'final') return;
+    if (payload.state !== 'delta' && payload.state !== 'final') return;
     if (payload.message?.role !== 'assistant') return;
     const text = payload.message.content
       ?.filter((part) => part?.type === 'text' && typeof part.text === 'string')
       .map((part) => part.text)
       .join('') ?? '';
     if (!text) return;
-    appendLocalAssistantMessage(
+    // Stable per-run id keeps every delta updating the same DOM node;
+    // when the agent runs again it'll have a new runId and produce a
+    // fresh message. Fall back to a session-scoped id if the gateway
+    // omits runId for some reason (defensive).
+    const msgId = payload.runId
+      ? `stream-${payload.runId}`
+      : `stream-${key}-${Date.now()}`;
+    upsertLocalAssistantMessage(
       queryClient,
       intentId,
+      msgId,
       text,
       true,
       userIdRef.current,

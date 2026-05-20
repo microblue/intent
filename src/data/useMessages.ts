@@ -241,3 +241,43 @@ export function appendLocalAssistantMessage(
   };
   queryClient.setQueryData<Message[]>(key, (old = []) => [...old, msg]);
 }
+
+/**
+ * Upsert a streaming assistant message keyed by msgId. Used by the
+ * gateway-chat bridge to update the same message in place as `chat`
+ * delta events arrive — the user sees the agent typing instead of a
+ * long pause followed by a complete reply.
+ */
+export function upsertLocalAssistantMessage(
+  queryClient: ReturnType<typeof useQueryClient>,
+  intentId: string,
+  msgId: string,
+  text: string,
+  useReal: boolean,
+  userId: string | null,
+) {
+  const key = messagesQueryKey(intentId, useReal, userId);
+  queryClient.setQueryData<Message[]>(key, (old = []) => {
+    const existingIdx = old.findIndex((m) => m.id === msgId);
+    if (existingIdx >= 0) {
+      // Update in place — keep createdAt stable so message ordering
+      // doesn't jump around mid-stream.
+      const next = old.slice();
+      next[existingIdx] = {
+        ...next[existingIdx],
+        content: [{ type: 'text', text }],
+      };
+      return next;
+    }
+    return [
+      ...old,
+      {
+        id: msgId,
+        intentId,
+        role: 'assistant',
+        content: [{ type: 'text', text }],
+        createdAt: new Date().toISOString(),
+      },
+    ];
+  });
+}
