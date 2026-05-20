@@ -2160,7 +2160,7 @@ function StickyComposer({ onSend }: { onSend?: (text: string) => void }) {
               <button
                 type="button"
                 className="btn btn-ghost btn-sm gap-1.5"
-                onClick={() => toast('附件 — Phase 6')}
+                onClick={() => toast('附件上传正在做中')}
                 aria-label="附件"
               >
                 <span aria-hidden>📎</span>
@@ -2169,7 +2169,7 @@ function StickyComposer({ onSend }: { onSend?: (text: string) => void }) {
               <button
                 type="button"
                 className="btn btn-ghost btn-sm gap-1.5"
-                onClick={() => toast('@提到 — Phase 6')}
+                onClick={() => toast('指定助手 — 多 agent 编排开发中')}
               >
                 <span aria-hidden>@</span>
                 <span className="hidden sm:inline">叫某位助手</span>
