@@ -30,10 +30,12 @@ import type { GatewayEventFrame } from './protocol';
 
 interface ModuleSingleton {
   client: GatewayClient | null;
+  /** clawId the live singleton was started for; null when stopped. */
+  startedFor: string | null;
   refs: number;
 }
 
-const singleton: ModuleSingleton = { client: null, refs: 0 };
+const singleton: ModuleSingleton = { client: null, startedFor: null, refs: 0 };
 const listeners = new Set<(s: GatewayStatus, reason: string | null) => void>();
 const eventListeners = new Set<(e: GatewayEventFrame) => void>();
 let currentStatus: { status: GatewayStatus; reason: string | null } = {
@@ -66,6 +68,7 @@ function ensureClient(clawId: string, appVersion: string): GatewayClient {
 function teardown() {
   singleton.client?.stop();
   singleton.client = null;
+  singleton.startedFor = null;
   currentStatus = { status: 'stopped', reason: null };
   lastEvent = null;
 }
@@ -87,7 +90,6 @@ export function useGateway(): UseGatewayResult {
   const { defaultClaw, hasRealClaw, isMock } = useClaws();
   const [status, setStatus] = useState(currentStatus.status);
   const [reason, setReason] = useState<string | null>(currentStatus.reason);
-  const startedForRef = useRef<string | null>(null);
 
   const targetClawId = hasRealClaw && defaultClaw ? defaultClaw.id : null;
   const shouldConnect =
@@ -105,27 +107,29 @@ export function useGateway(): UseGatewayResult {
     };
   }, []);
 
-  // Lifecycle. We don't tear down on every re-render — only when the
-  // claw changes or the connection should no longer be active.
+  // Lifecycle. The singleton lives at module scope so multiple
+  // consumers (ClawPicker, ClawStatus, useGatewayChat per intent…)
+  // share the SAME socket. Only switch clients when the targetClawId
+  // changes across consumers; otherwise just bump the refcount.
   useEffect(() => {
     if (!shouldConnect || !targetClawId) {
-      if (singleton.refs === 0 && singleton.client) teardown();
+      // This consumer doesn't need a connection. Don't tear down the
+      // singleton here — another consumer may still want it.
       return;
     }
     singleton.refs += 1;
-    if (startedForRef.current !== targetClawId) {
+    if (singleton.startedFor !== targetClawId) {
       // Different claw than the singleton was started for — recycle.
       if (singleton.client) teardown();
       const appVersion = (import.meta.env.VITE_APP_VERSION as string | undefined) ?? 'dev';
       const client = ensureClient(targetClawId, appVersion);
-      startedForRef.current = targetClawId;
+      singleton.startedFor = targetClawId;
       client.start();
     }
     return () => {
       singleton.refs -= 1;
       if (singleton.refs <= 0) {
         teardown();
-        startedForRef.current = null;
       }
     };
   }, [shouldConnect, targetClawId]);
