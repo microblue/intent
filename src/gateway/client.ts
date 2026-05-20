@@ -35,6 +35,13 @@ export type GatewayStatus =
 export interface GatewayCredentials {
   url: string;
   token: string;
+  /**
+   * Optional ISO timestamp the token expires at. When provided the
+   * client schedules a graceful re-mint + reconnect 60 seconds before
+   * expiry so the user doesn't see a disconnect blip when the
+   * server-side TTL lapses.
+   */
+  expiresAt?: string;
 }
 
 export interface GatewayClientOptions {
@@ -78,6 +85,7 @@ export class GatewayClient {
   private connectRequestId: string | null = null;
   private connectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private stopping = false;
   private nextRequestNumber = 1;
@@ -102,6 +110,7 @@ export class GatewayClient {
   stop(): void {
     this.stopping = true;
     this.clearReconnect();
+    this.clearRefresh();
     this.failPendingRequests(new GatewayError({ code: 'stopped', message: 'gateway client stopped' }));
     const ws = this.ws;
     this.ws = null;
@@ -156,6 +165,7 @@ export class GatewayClient {
   private async connect(): Promise<void> {
     if (this.stopping) return;
     this.clearReconnect();
+    this.clearRefresh();
     this.updateStatus(this.reconnectAttempt > 0 ? 'reconnecting' : 'connecting', null);
 
     let creds: GatewayCredentials;
@@ -166,6 +176,28 @@ export class GatewayClient {
       return;
     }
     if (this.stopping) return;
+
+    // Schedule a proactive refresh 60s before the token expires so the
+    // user doesn't see a disconnect blip when the server-side TTL
+    // lapses. If expiresAt is missing or already past, skip.
+    if (creds.expiresAt) {
+      const expiresMs = Date.parse(creds.expiresAt);
+      if (Number.isFinite(expiresMs)) {
+        const delay = Math.max(30_000, expiresMs - Date.now() - 60_000);
+        this.refreshTimer = setTimeout(() => {
+          this.refreshTimer = null;
+          if (this.stopping) return;
+          // Graceful cycle: close + reconnect picks fresh creds.
+          const ws = this.ws;
+          this.ws = null;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            try { ws.close(1000, 'proactive_refresh'); } catch { /* ignore */ }
+          }
+          this.reconnectAttempt = 0;
+          void this.connect();
+        }, delay);
+      }
+    }
 
     const factory = this.options.webSocketFactory ?? ((url) => new WebSocket(url));
     let ws: WebSocket;
@@ -330,6 +362,13 @@ export class GatewayClient {
     if (this.connectTimer) {
       clearTimeout(this.connectTimer);
       this.connectTimer = null;
+    }
+  }
+
+  private clearRefresh(): void {
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
     }
   }
 

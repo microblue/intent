@@ -112,5 +112,5 @@ export async function mintClawToken(clawId: string): Promise<GatewayCredentials>
     });
   }
 
-  return { url: parsed.url, token: parsed.token };
+  return { url: parsed.url, token: parsed.token, expiresAt: parsed.expires_at };
 }
