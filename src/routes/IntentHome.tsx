@@ -31,6 +31,7 @@ import {
   useSendMessage,
   appendLocalAssistantMessage,
 } from '@/data/useMessages';
+import { useGatewayChat } from '@/data/useGatewayChat';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
@@ -139,9 +140,28 @@ export function IntentHomePage() {
 function useChatThread(intentId: string) {
   const { messages, isLoading, isMock } = useMessages(intentId);
   const { send: persistUserMessage } = useSendMessage(intentId);
+  const { connected: gatewayConnected, sendViaGateway } = useGatewayChat(intentId);
   const { signedIn, user } = useSession();
   const queryClient = useQueryClient();
   const [typing, setTyping] = useState(false);
+  const typingResetRef = useRef<number | null>(null);
+
+  // When the gateway delivers an assistant reply, useGatewayChat pushes
+  // it into the message cache via appendLocalAssistantMessage. The
+  // "typing" indicator is driven locally: turn it on at send time, turn
+  // it off when the messages list grows by an assistant message OR a
+  // safety timeout fires (so a dropped event doesn't strand the spinner).
+  useEffect(() => {
+    if (!typing) return;
+    const last = messages[messages.length - 1];
+    if (last && last.role === 'assistant') {
+      setTyping(false);
+      if (typingResetRef.current !== null) {
+        window.clearTimeout(typingResetRef.current);
+        typingResetRef.current = null;
+      }
+    }
+  }, [messages, typing]);
 
   const send = async (text: string) => {
     try {
@@ -151,9 +171,30 @@ function useChatThread(intentId: string) {
       return;
     }
 
-    // Mock-mode auto-reply keeps the demo interactive. Real mode skips
-    // this — the server (when agents land) is what drives assistant
-    // messages, and faking one client-side would be misleading.
+    // Real mode + gateway connected: hand off to the live claw. The
+    // assistant reply will arrive via the chat event subscription in
+    // useGatewayChat and land in the message cache.
+    if (gatewayConnected) {
+      setTyping(true);
+      // Safety net — if the claw doesn't reply in 60s the typing
+      // indicator clears so the UI doesn't lie about activity.
+      typingResetRef.current = window.setTimeout(() => {
+        setTyping(false);
+        typingResetRef.current = null;
+      }, 60_000);
+      try {
+        await sendViaGateway(text);
+      } catch (err) {
+        setTyping(false);
+        toast(err instanceof Error ? err.message : 'claw 没回应,稍后再试');
+      }
+      return;
+    }
+
+    // Mock-mode auto-reply keeps the demo interactive when there's no
+    // real claw to talk to. Skipped in real mode + disconnected — that
+    // state already surfaces via the ClawStatus indicator and faking a
+    // reply would be misleading.
     if (!isMock) return;
     setTyping(true);
     const delay = 900 + Math.random() * 400;
