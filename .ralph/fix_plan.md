@@ -41,7 +41,15 @@ either been fixed or filed as a new Phase H/J item.
   - Screenshots: `test-results/walkthrough-home-{desktop,mobile}.png`.
   - Ralph read both — no placeholder copy, no English leakage, no
     decorative buttons. Click smoke opens Launcher.
-- [ ] **F2.** `/intent/<id>` — chat surface, both empty and with history
+- [x] **F2.** `/intent/<id>` — chat surface, both empty and with history
+  - Spec: `e2e/walkthrough-intent.spec.ts`. Real-mode chromium + mobile,
+    creates throwaway intents (empty + 2-turn seeded) per pass and
+    cleans up in finally.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-intent-{desktop,mobile}-{empty,history}.png`.
+  - Ralph read all four — empty-state copy is friendly, chrome buttons
+    all labelled, message bubbles render correctly, composer send button
+    is disabled-correctly when empty. No findings.
 - [ ] **F3.** `/new` (NewIntent)
 - [ ] **F4.** `/schedule`
 - [ ] **F5.** `/memory`
