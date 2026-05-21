@@ -558,8 +558,8 @@ function InfoSheet({
         )}
       </div>
       <form method="dialog" className="modal-backdrop">
-        <button type="button" onClick={onClose}>
-          close
+        <button type="button" onClick={onClose} aria-label="关闭">
+          <span className="sr-only">关闭</span>
         </button>
       </form>
     </dialog>
@@ -1103,7 +1103,9 @@ function ReflectionModal({
         </div>
       </div>
       <form method="dialog" className="modal-backdrop">
-        <button type="button" onClick={onClose}>close</button>
+        <button type="button" onClick={onClose} aria-label="关闭">
+          <span className="sr-only">关闭</span>
+        </button>
       </form>
     </dialog>
   );

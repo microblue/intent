@@ -361,6 +361,28 @@ actual.
     for the signed-out demo viewer (3/3 mobile dock tests green).
   - Verified on prod: `phase6-realmode-mobile-chat.spec.ts` 1/1 green
     (real signed-in mobile session round-trips correctly).
+- [ ] **E6.** Intent modals · click outside the modal to close ·
+  expected: nothing user-visible inside the backdrop (or a Chinese
+  label) · actual: two DaisyUI modal-backdrop forms render a literal
+  `<button>close</button>` (`src/routes/IntentHome.tsx:561` +
+  `src/routes/IntentHome.tsx:1106`) — English "close" text inside a
+  Chinese UI, announced to screen readers, sometimes briefly visible
+  before backdrop styling applies. Fix: replace text with
+  `<span className="sr-only">关闭</span>` + `aria-label="关闭"` on the
+  button so the accessible name is correct and no English leaks in.
+- [ ] **E7.** Error toasts · trigger a transient network blip (mint /
+  WS / Supabase fetch) · expected: friendly natural-language nudge per
+  CLAUDE.md ("Errors are friendly natural-language suggestions, not
+  status codes") · actual: 10+ sites use the pattern
+  `toast(err instanceof Error ? err.message : '友好兜底')` which leaks
+  raw lib messages like "Failed to fetch", "NetworkError",
+  "AuthApiError: rate limit exceeded" verbatim. Fix shape: introduce
+  `src/lib/friendlyError.ts:friendlyError(err, fallback)` that prefers
+  known app-class messages (MintClawTokenError, GatewayError) and
+  swaps generic network/fetch-shaped strings for friendly copy.
+  Then `replace_all` the pattern across `IntentHome.tsx`,
+  `Settings.tsx`, `Memory.tsx`, `Permissions.tsx`, etc. Bundle delta
+  ≈ negligible; UX delta is meaningful for lay users.
 
 ---
 
