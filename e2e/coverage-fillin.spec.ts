@@ -267,7 +267,9 @@ test.describe('Cmd+K Launcher', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.keyboard.press('Control+k');
+    // Use the visible 搜索 button — keyboard shortcut requires window focus
+    // which Playwright sometimes loses before the listener attaches.
+    await page.getByRole('button', { name: /搜索|搜一下/ }).first().click();
     await expect(page.locator('[cmdk-root]').first()).toBeVisible();
     await page.keyboard.type('生日');
     // cmdk surfaces the "老婆 Lisa 的生日" intent.
@@ -279,7 +281,7 @@ test.describe('Cmd+K Launcher', () => {
 
   test('Escape closes the launcher', async ({ page }) => {
     await page.goto('/');
-    await page.keyboard.press('Control+k');
+    await page.getByRole('button', { name: /搜索|搜一下/ }).first().click();
     await expect(page.locator('[cmdk-root]').first()).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('[cmdk-root]')).toHaveCount(0);
