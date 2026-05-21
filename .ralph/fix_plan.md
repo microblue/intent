@@ -310,7 +310,24 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 Append discovered items here. Format: surface · step · expected vs
 actual.
 
-(none yet)
+- [ ] **E1.** `/new` · click 🎙️ 说一句 voice button · expected: a
+  friendly "coming soon" nudge in the app's normal toast style ·
+  actual: fires browser-native `alert('语音输入开发中')`
+  (`src/routes/NewIntent.tsx:594`). Native `alert()` feels like a
+  status-code error popup and is inconsistent with the rest of the
+  app's `sonner` toasts. Per CLAUDE.md lay-user rules ("no half-finished
+  implementations" + "friendly natural-language suggestions, not status
+  codes"), either remove the button entirely until voice ships, or
+  swap `alert()` for a `toast('稍后再来,语音还在做 🎙️')`. Prefer removal
+  to keep the surface honest.
+- [ ] **E2.** `/now` · land here with nothing pending · expected: a
+  clear empty state (already present), no element that looks
+  clickable-but-isn't · actual: the empty-state final line "去看看你正在做的事 →"
+  (`src/routes/Now.tsx:64–66`) is a static `<p>` that ends with the `→`
+  arrow glyph. A lay user reads it as a CTA and tries to tap it; nothing
+  happens. Either wrap the text in a `<Link to="/">` (the intent list is
+  where "你正在做的事" lives) or drop the arrow so the line reads as
+  descriptive copy, not a button.
 
 ---
 
