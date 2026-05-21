@@ -477,15 +477,13 @@ actual.
     established. No bundle delta.
   - Verified on prod: phase8 Intent + TeamPanel real-mode + C4
     AgentPicker-disconnected → 3 passed / 1 expected skip on prod.
-- [ ] **E15.** `/now` approval action buttons · land on a pending
-  approval card · expected: primary CTAs are `btn-md` per CLAUDE.md
-  rule 8 ("primary buttons are `btn-md` not `btn-sm`") + "big buttons,
-  big text, large hit targets — even on desktop" · actual: both
-  `RealApprovalCard` (`src/routes/Now.tsx:200`) and the mock-mode
-  `ApprovalCard` (`src/routes/Now.tsx:252`) use
-  `btn btn-sm rounded-full`. Approval prompts ("助手想花 $50 — 可以吗?")
-  are load-bearing primary CTAs — a thumb on mobile needs the larger
-  hit target. Fix: drop `btn-sm` to use DaisyUI's default `btn-md`.
+- [x] **E15.** `/now` approval action buttons · expected: primary CTAs
+  are `btn-md` per CLAUDE.md rule 8 · actual: both `RealApprovalCard`
+  and the mock `ApprovalCard` used `btn btn-sm rounded-full`.
+  - Fixed by dropping the `btn-sm` modifier at both call sites — DaisyUI
+    defaults to `btn-md`, mobile thumbs get the larger hit target.
+  - Mock-mode `Now panel — approvals card` stayed green; phase8 `/now`
+    + phaseB2 + phaseL4 real-mode → 4 passed / 0 failed on prod.
 
 ---
 
