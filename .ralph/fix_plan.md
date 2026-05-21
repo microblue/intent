@@ -32,6 +32,13 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     + locks in oldest-wins fallback for when multi-claw picker lands.
 - [ ] **A3.** Tick `aios-ui-spec.md §3` surfaces against `src/routes/`.
   Missing route → add item. Extra route → remove or document.
+  - All 10 spec routes present in `src/router.tsx` ✓
+  - 3 extras shipped (all legitimate, in active use):
+    `/auth/signin`, `/auth/reset-password`, `/archive`.
+  - Hand-off written: `docs/handoff/aios-ui-spec-3.1-extra-routes.md`
+    asks `~/myclaw` to append the three rows to §3.1.
+  - In-progress: mark `[x]` after spec is updated and hand-off file
+    deleted; aios-side has no code change to make.
 - [ ] **A4.** Audit shipped UI against `aios-ui-spec.md §10`
   (lay-user-first rules). One fix_plan item per violation.
 
