@@ -272,6 +272,20 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 - [ ] **D4.** Audit `gh secret list --repo microblue/myclaw-aios`
   against `.github/workflows/ci.yml`. Missing → write
   `docs/handoff/github-secrets.md`.
+  - Audit done: `gh secret list` is empty; `ci.yml` references 4
+    secrets (`REAL_TEST_EMAIL`, `SUPABASE_URL`, `SUPABASE_PUB_KEY`,
+    `SUPABASE_SERVICE_ROLE_KEY`) in the `realmode-e2e-prod` job. All 4
+    missing — that job has been silently skipping real-mode coverage
+    on every push to `main`. `typecheck-and-build` + `mock-e2e` are
+    unaffected (they use inline placeholders).
+  - Hand-off written: `docs/handoff/github-secrets.md` — covers the 4
+    secrets, their canonical source paths in
+    `~/.openclaw/credentials/myclaw-supabase.env`, and the
+    `printf '%s' "$VAR" | gh secret set NAME --repo ...` snippets that
+    keep values out of shell history.
+  - In-progress: aios-side has nothing to ship. Flip `[x]` after DZ
+    runs the snippets and the next push produces a green
+    `realmode-e2e-prod` job.
 - [ ] **D5.** Rate-limit smoke: fire 20 messages in quick succession,
   assert client surfaces backoff toast, no LLM-token blowup.
 
