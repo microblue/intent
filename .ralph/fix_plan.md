@@ -189,7 +189,17 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     start/done, unknown-agent fallback, cross-intent isolation. All
     green locally; phase8 + C1 regression suites stayed green on
     prod after deploy.
-- [ ] **C3.** e2e for orchestrator-removal guard in TeamPanel.
+- [x] **C3.** e2e for orchestrator-removal guard in TeamPanel.
+  - New `e2e/phaseC3-team-orchestrator-guard.spec.ts` covers both
+    layers of the guard:
+    - UI layer (mock-mode): `team-member-main` mounts with "主理"
+      tag; `team-remove-main` testid has count 0 — no remove path
+      exists for the orchestrator.
+    - Real-mode: seeds an intent with main + planner via service-
+      role INSERT into `intent_agents`. Both rows render; main has
+      no remove button, planner does.
+  - Mock-mode green locally; real-mode green against
+    `https://app.myclaw.one`.
 - [ ] **C4.** AgentPicker disabled state when gateway disconnected —
   see Notes C4.
 
