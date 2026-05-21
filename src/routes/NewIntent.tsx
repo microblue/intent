@@ -416,23 +416,36 @@ export function NewIntentPage() {
         title: proposal.title,
         emoji: proposal.emoji,
       });
-      // Persist the recommended team into intent_agents so IntentHome's
-      // TeamPanel + AgentPicker see it immediately. Best-effort: a
-      // failure here doesn't block the navigation — the user can add
-      // members later from the panel.
+      // Persist the recommended team into intent_agents.
+      //
+      // The Supabase trigger `seed_intent_main_agent` already inserts
+      // `main` on every intent INSERT, so we only push the SPECIALISTS
+      // here. If the client INSERT fails for any reason (network drop,
+      // bad RLS state, race), the user still has `main` from the
+      // trigger + can add specialists from TeamPanel.
+      //
+      // Use upsert with ignoreDuplicates so partial state is OK and
+      // retries are safe.
       if (env.useRealData && signedIn && recommendedTeam.length > 0) {
-        const rows = recommendedTeam.map((agentKey) => {
-          const a = findBuiltinAgent(agentKey);
-          return {
-            intent_id: created.id,
-            agent_key: agentKey,
-            display_name: a?.name ?? agentKey,
-            is_orchestrator: agentKey === 'main',
-          };
-        });
-        await supabase.from('intent_agents').insert(rows).then(({ error }) => {
-          if (error) console.warn('[new] team seed failed:', error.message);
-        });
+        const specialists = recommendedTeam.filter((id) => id !== 'main');
+        if (specialists.length > 0) {
+          const rows = specialists.map((agentKey) => {
+            const a = findBuiltinAgent(agentKey);
+            return {
+              intent_id: created.id,
+              agent_key: agentKey,
+              display_name: a?.name ?? agentKey,
+              is_orchestrator: false,
+            };
+          });
+          const { error } = await supabase
+            .from('intent_agents')
+            .upsert(rows, { onConflict: 'intent_id,agent_key', ignoreDuplicates: true });
+          if (error) {
+            console.warn('[new] specialist team seed failed:', error.message);
+            toast(`助手团队推荐没保存上(${error.message})。可在意图详情里手动加。`);
+          }
+        }
       }
       navigate({ to: '/intent/$intentId', params: { intentId: created.id } });
     } catch (err) {
