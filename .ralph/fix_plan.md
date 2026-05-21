@@ -62,7 +62,14 @@ either been fixed or filed as a new Phase H/J item.
     跳过 + free-text input. Fixed in same commit by adding
     `whitespace-nowrap` + `shrink-0` to both buttons. Re-snap confirms
     single-line label.
-- [ ] **F4.** `/schedule`
+- [x] **F4.** `/schedule`
+  - Spec: `e2e/walkthrough-schedule.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has an accessible name. Click
+    smoke: schedule-add-cta navigates to `/new`.
+  - Screenshots: `test-results/walkthrough-schedule-{desktop,mobile}.png`.
+  - Ralph read both — header + hint card + empty state all render
+    correctly. (Hint card is intentional Phase 1 surface; G2 tracks
+    rebuilding the real NL composer.) No findings.
 - [ ] **F5.** `/memory`
 - [ ] **F6.** `/permissions`
 - [ ] **F7.** `/now`
