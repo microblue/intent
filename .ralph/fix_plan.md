@@ -171,8 +171,24 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     assistant turns (main + planner) via service-role INSERT and
     asserts the second has `data-agent-id="planner"` + header text
     "规划员" + emoji "🗺". Green on `https://app.myclaw.one`.
-- [ ] **C2.** Inline "🗺️ 规划员 正在拆步骤..." badge during in-flight
+- [x] **C2.** Inline "🗺️ 规划员 正在拆步骤..." badge during in-flight
   delegation, driven by `agent` lifecycle events.
+  - New `useAgentActivity(intentId)` hook subscribes to `agent.start`
+    / `agent.done` / `agent.error` gateway events with intentId
+    scoping + 60s auto-clear safety net.
+  - New `phaseVerbFor(agentKey)` in `lib/agents` maps known
+    specialists to verb phrases (planner→"正在拆步骤",
+    researcher→"正在查资料", …) with "正在想…" fallback.
+  - `TypingIndicator` upgraded to render `{emoji} {name} {verb}`
+    + `data-testid="typing-indicator"` + `data-agent-key`. Wired
+    through both Desktop + Mobile IntentHome via `agentActivity` prop.
+  - Test escape hatch on `window.__aios.emitGatewayEvent(event,
+    payload)` (src/main.tsx) lets e2e drive synthetic events
+    without a live OpenClaw.
+  - New `e2e/phaseC2-agent-activity.spec.ts` (3 tests) — planner
+    start/done, unknown-agent fallback, cross-intent isolation. All
+    green locally; phase8 + C1 regression suites stayed green on
+    prod after deploy.
 - [ ] **C3.** e2e for orchestrator-removal guard in TeamPanel.
 - [ ] **C4.** AgentPicker disabled state when gateway disconnected —
   see Notes C4.
