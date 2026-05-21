@@ -207,12 +207,6 @@ export function SettingsPage() {
           linkLabel="去看看"
           to="/archive"
         />
-        <Row
-          label="导出我的数据"
-          value="JSON / Markdown"
-          linkLabel="导出"
-          onLink={() => toast('导出功能正在做中,稍后开放')}
-        />
       </Section>
 
       <Section title="读懂 MyClaw">

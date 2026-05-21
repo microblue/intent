@@ -342,6 +342,12 @@ actual.
     right via `ml-auto`, send button is last.
   - Verified on prod: full phase8-realmode-audit sweep stayed green
     (17/17). No e2e or src references to "附件" left after the fix.
+- [ ] **E4.** `/settings` · click 导出 link in "导出我的数据" row · expected:
+  a real export (or no row if not implemented) · actual: toasts
+  "导出功能正在做中,稍后开放" (`src/routes/Settings.tsx:210–215`). Fourth
+  half-finished surface in a row — same removal call as E1/E3 per
+  CLAUDE.md. Data-export is also a privacy-policy commitment, so
+  shipping a fake button is worse than no button.
 
 ---
 
