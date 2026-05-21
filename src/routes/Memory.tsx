@@ -28,9 +28,13 @@ export function MemoryPage() {
         title="助手记得你的事"
         term="memory"
         subtitle={
-          isEmpty
-            ? '助手还没有记下任何事 —— 跟我聊起来,我会顺手把重要的事写下来。'
-            : `我记得你的 ${total} 件事 — 看到不该记的,点 ✕ 让我忘掉。`
+          isLoading
+            ? '让我看看你记下的事 ——'
+            : error
+              ? '记忆读不出来,稍等再试。'
+              : isEmpty
+                ? '助手还没有记下任何事 —— 跟我聊起来,我会顺手把重要的事写下来。'
+                : `我记得你的 ${total} 件事 — 看到不该记的,点 ✕ 让我忘掉。`
         }
       />
 
@@ -43,6 +47,23 @@ export function MemoryPage() {
 
       <AddFactComposer />
 
+      {isLoading && (
+        <div data-testid="memory-skeleton" className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-14 animate-pulse rounded-2xl bg-base-200/60 ring-1 ring-base-300/40"
+            />
+          ))}
+        </div>
+      )}
+
+      {error && !isLoading && (
+        <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
+          <div className="font-medium">读取记忆的时候出错了</div>
+          <p className="mt-1 text-error/80">{friendlyError(error, '稍等一下,再刷新一次试试。')}</p>
+        </div>
+      )}
 
       {isEmpty && (
         <div className="mb-6 rounded-2xl border-2 border-dashed border-base-300/60 bg-base-100/40 p-8 text-center">
@@ -60,7 +81,7 @@ export function MemoryPage() {
         </div>
       )}
 
-      {!isEmpty && groupOrder.map((g) => (
+      {!isLoading && !error && !isEmpty && groupOrder.map((g) => (
         <section key={g.key} className="mb-7">
           <header className="mb-3 flex items-baseline gap-3 px-1">
             <h2 className="text-base font-semibold">

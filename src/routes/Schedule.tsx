@@ -81,7 +81,18 @@ export function SchedulePage() {
         </div>
       </article>
 
-      {(['今天', '明天', '这周', '以后'] as const).map((b) =>
+      {isLoading && (
+        <div data-testid="schedule-skeleton" className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-14 animate-pulse rounded-2xl bg-base-200/60 ring-1 ring-base-300/40"
+            />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && (['今天', '明天', '这周', '以后'] as const).map((b) =>
         buckets[b].length === 0 ? null : (
           <section key={b} className="mb-7">
             <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/45">
@@ -96,7 +107,7 @@ export function SchedulePage() {
         ),
       )}
 
-      {list.length === 0 && (
+      {!isLoading && !error && list.length === 0 && (
         <div className="rounded-2xl border-2 border-dashed border-base-300/60 bg-base-100/40 p-8 text-center">
           <div className="text-4xl">🔔</div>
           <div className="mt-3 text-base font-medium">没有要提醒的事</div>
