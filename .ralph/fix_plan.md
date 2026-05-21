@@ -102,7 +102,19 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     `docs/handoff/now-running-done-tables.md` — describes the
     `agent_calls` / `agent_traces` schema work that needs to land
     in `~/myclaw` before the buckets come back.
-- [ ] **B3.** `/schedule` add-reminder real persistence — see Notes B3.
+- [x] **B3.** `/schedule` add-reminder real persistence — see Notes B3.
+  - Picked option (c): removed the toast-only NL composer; spec
+    says natural-language time parsing belongs in a reminder agent,
+    and the SPA was lying ("已记下" with nothing persisted).
+  - `src/routes/Schedule.tsx` now shows a hint card pointing at the
+    chat path ("跟某件事里的助手说一句"), with a CTA `➕ 起一件新事`
+    that links to `/new`. Empty-state copy tightened.
+  - e2e updates: `phase11-14-data-swap.spec.ts` and
+    `phaseL2-data-surfaces.spec.ts` assert the new hint card +
+    CTA + composer-gone. Real-mode L2 green on prod.
+  - Deferral handoff: `docs/handoff/schedule-reminder-agent.md`
+    describes the reminder agent + non-intent gateway routing work
+    that needs to land in `~/myclaw` before the form comes back.
 - [ ] **B4.** `/memory` add-fact path + DB INSERT + e2e.
 - [ ] **B5.** Cross-browser smoke (WebKit + Firefox) for `/`,
   `/intent/<id>` chat-send, `/settings` signout. 6 new tests.
