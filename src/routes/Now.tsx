@@ -197,7 +197,7 @@ function RealApprovalCard({
               type="button"
               onClick={() => choose(o.label, o.kind)}
               className={cn(
-                'btn btn-sm rounded-full',
+                'btn rounded-full',
                 o.kind === 'primary' ? 'btn-primary' : 'btn-ghost',
               )}
             >
@@ -249,7 +249,7 @@ function ApprovalCard({ activity, devMode }: { activity: NowActivity; devMode: b
                 toast(`已选:${o.label}`, { description: '演示模式 · 登录后会真处理' })
               }
               className={cn(
-                'btn btn-sm rounded-full',
+                'btn rounded-full',
                 o.kind === 'primary' ? 'btn-primary' : 'btn-ghost',
               )}
             >
