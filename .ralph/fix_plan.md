@@ -222,6 +222,18 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 - [ ] **D1.** Write `docs/handoff/vault-key-provision.md` with exact
   Dashboard SQL to INSERT `aios_gateway_token_key` into Vault. Mark
   `[x]` only after human confirms it ran.
+  - Hand-off written: `docs/handoff/vault-key-provision.md`.
+    Covers the 3-step provisioning (Vault INSERT + bulk-encrypt
+    self-update + spot-check via SPA + ClawStatus connected),
+    verification queries, the future column-drop migration, and the
+    rollback DELETE.
+  - Migration source-of-truth referenced:
+    `~/myclaw/supabase/migrations/20260520000001_gateway_token_encryption.sql`
+    (trigger + decrypt RPC already in place; short-circuit until
+    Vault key lands).
+  - In-progress: aios-side has nothing to ship. Flip `[x]` after DZ
+    runs the SQL on the myclaw-v2 Supabase project and confirms
+    `plaintext_remaining = 0` + real-mode smoke green.
 - [ ] **D2.** Token-refresh e2e: WS close mid-stream → reconnect picks
   up fresh JWT.
 - [ ] **D3.** Wire `@sentry/react` prod-only via `env.isProd`. Dev-only
