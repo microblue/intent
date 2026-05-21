@@ -15,7 +15,6 @@ import {
   scheduleEvents,
   threadOutlineFor,
   tracesForMessage,
-  nowActivities,
   type Intent,
   type IntentFile,
   type Message,
@@ -34,6 +33,7 @@ import {
 import { useGatewayChat } from '@/data/useGatewayChat';
 import { AgentPicker } from '@/components/AgentPicker';
 import { Markdown } from '@/components/Markdown';
+import { TeamPanel } from '@/components/TeamPanel';
 import { findBuiltinAgent } from '@/lib/agents';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
@@ -1209,7 +1209,7 @@ function IntentRail({
       case 'files':
         return <FilesList files={files} />;
       case 'team':
-        return <TeamList intentId={intent.id} />;
+        return <TeamPanel intentId={intent.id} />;
       case 'memory':
         return (
           <ul className="space-y-1.5">
@@ -1744,51 +1744,8 @@ function FilesList({ files }: { files: IntentFile[] }) {
   );
 }
 
-function TeamList({ intentId }: { intentId: string }) {
-  const bind = bindingsFor(intentId);
-  if (!bind) {
-    return <div className="text-xs text-base-content/55">还没绑定助手。</div>;
-  }
-  const team = bind.agentKeys.map(findAgent).filter(Boolean);
-  const activityFor = (k: string) =>
-    nowActivities.find((a) => a.intentId === intentId && a.agentKey === k);
-
-  return (
-    <ul className="space-y-2">
-      {team.map((a) => {
-        const act = activityFor(a!.key);
-        return (
-          <li
-            key={a!.key}
-            className="flex items-start gap-2.5 rounded-lg bg-base-100 p-2.5 ring-1 ring-base-300/40"
-          >
-            <span
-              aria-hidden
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-base-200 text-base"
-            >
-              {a!.emoji}
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[0.9rem] font-medium">{a!.displayName}</span>
-                {act?.kind === 'running' && (
-                  <span className="badge badge-info badge-soft badge-xs">在干活</span>
-                )}
-                {act?.kind === 'awaiting_approval' && (
-                  <span className="badge badge-warning badge-soft badge-xs">等你点头</span>
-                )}
-              </div>
-              <div className="mt-0.5 text-xs text-base-content/60">{a!.description}</div>
-              {act && (
-                <div className="mt-1 text-[0.8125rem] text-base-content/55">现在:{act.summary}</div>
-              )}
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
+// (TeamList removed — replaced by <TeamPanel> which reads the real
+//  intent_agents table instead of the mock bindings catalog.)
 
 /* ───── OutlineItem (shared) ───── */
 

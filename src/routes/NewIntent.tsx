@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearch, Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useCreateIntent } from '@/data/useCreateIntent';
+import { findBuiltinAgent, recommendAgentTeam } from '@/lib/agents';
+import { supabase } from '@/lib/supabase';
+import { env } from '@/lib/env';
+import { useSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 
 /*
@@ -390,11 +394,19 @@ export function NewIntentPage() {
 
   const proposal = useMemo(() => (prompt ? proposeIntent(prompt) : null), [prompt]);
 
+  // Recommended team from prompt keywords. Always at least [main],
+  // plus up to 2 specialists matched by the lib/agents catalog.
+  const recommendedTeam = useMemo(
+    () => recommendAgentTeam(prompt),
+    [prompt],
+  );
+
   useEffect(() => {
     if (stage === 'prompt') inputRef.current?.focus();
   }, [stage]);
 
   const { create, isMock } = useCreateIntent();
+  const { signedIn } = useSession();
 
   const goSpawn = async () => {
     if (!proposal) return;
@@ -404,6 +416,24 @@ export function NewIntentPage() {
         title: proposal.title,
         emoji: proposal.emoji,
       });
+      // Persist the recommended team into intent_agents so IntentHome's
+      // TeamPanel + AgentPicker see it immediately. Best-effort: a
+      // failure here doesn't block the navigation — the user can add
+      // members later from the panel.
+      if (env.useRealData && signedIn && recommendedTeam.length > 0) {
+        const rows = recommendedTeam.map((agentKey) => {
+          const a = findBuiltinAgent(agentKey);
+          return {
+            intent_id: created.id,
+            agent_key: agentKey,
+            display_name: a?.name ?? agentKey,
+            is_orchestrator: agentKey === 'main',
+          };
+        });
+        await supabase.from('intent_agents').insert(rows).then(({ error }) => {
+          if (error) console.warn('[new] team seed failed:', error.message);
+        });
+      }
       navigate({ to: '/intent/$intentId', params: { intentId: created.id } });
     } catch (err) {
       // Mock mode rejection lands here too — show the friendly copy from
@@ -490,6 +520,7 @@ export function NewIntentPage() {
           prompt={prompt}
           proposal={proposal}
           answers={answers}
+          recommendedTeam={recommendedTeam}
           onBack={() => setStage('clarifying')}
           onRestart={restart}
           onConfirm={goSpawn}
@@ -743,6 +774,7 @@ function PreviewStage({
   prompt,
   proposal,
   answers,
+  recommendedTeam,
   onBack,
   onRestart,
   onConfirm,
@@ -750,6 +782,7 @@ function PreviewStage({
   prompt: string;
   proposal: Proposal;
   answers: Record<string, string>;
+  recommendedTeam: string[];
   onBack: () => void;
   onRestart: () => void;
   onConfirm: () => void;
@@ -821,18 +854,24 @@ function PreviewStage({
             <div className="text-[11px] font-semibold uppercase tracking-wide text-base-content/45">
               会帮你的助手
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {proposal.agents.map((a) => (
-                <span
-                  key={a.name}
-                  className="badge badge-soft badge-primary gap-1.5"
-                >
-                  <span aria-hidden>{a.emoji}</span>
-                  {a.name}
-                </span>
-              ))}
+            <div data-testid="preview-team" className="mt-2 flex flex-wrap gap-1.5">
+              {recommendedTeam.map((id) => {
+                const a = findBuiltinAgent(id);
+                if (!a) return null;
+                return (
+                  <span
+                    key={a.id}
+                    data-testid={`preview-team-${a.id}`}
+                    className="badge badge-soft badge-primary gap-1.5"
+                    title={a.pitch}
+                  >
+                    <span aria-hidden>{a.emoji}</span>
+                    {a.name}
+                  </span>
+                );
+              })}
               <span className="text-[11px] text-base-content/45 self-center pl-0.5">
-                · 需要时还会自动叫别人来
+                · 进去后可以加 / 移除
               </span>
             </div>
           </div>
