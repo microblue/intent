@@ -48,12 +48,29 @@ test.describe('L2 — Memory', () => {
   test.beforeEach(skip);
   test.skip(({ isMobile }) => isMobile === true, 'desktop sweep');
 
-  test('all 4 category sections render', async ({ page, context }) => {
-    await injectRealSession(context, process.env.REAL_TEST_EMAIL!);
+  test('all 4 category sections render once at least one fact exists', async ({ page, context, request }) => {
+    // E9 hides the category sections behind the empty-state card when
+    // total=0 (better lay-user UX). Seed a fact so the page is in the
+    // 4-sections-render state we want to assert.
+    const minted = await injectRealSession(context, process.env.REAL_TEST_EMAIL!);
     await unlockVercelPreview(page);
-    await page.goto('/memory');
-    for (const cat of ['关于你', '你的偏好', '重要的人', '项目相关']) {
-      await expect(page.getByRole('heading', { name: new RegExp(cat) })).toBeVisible();
+
+    const tag = `L2-mem-${Date.now()}`;
+    const seedRes = await request.post(`${process.env.SUPABASE_URL}/rest/v1/memory_facts`, {
+      headers: { ...hdr(), 'content-type': 'application/json', prefer: 'return=representation' },
+      data: { user_id: minted.user_id, text: tag, category: 'about-you' },
+    });
+    const seedRow = (await seedRes.json())[0];
+
+    try {
+      await page.goto('/memory');
+      for (const cat of ['关于你', '你的偏好', '重要的人', '项目相关']) {
+        await expect(page.getByRole('heading', { name: new RegExp(cat) })).toBeVisible();
+      }
+    } finally {
+      await request.delete(`${process.env.SUPABASE_URL}/rest/v1/memory_facts?id=eq.${seedRow.id}`, {
+        headers: hdr(),
+      });
     }
   });
 });
