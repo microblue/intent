@@ -76,8 +76,21 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 
 ## Phase B — e2e coverage gaps
 
-- [ ] **B1.** Real-mode chat markdown edge cases: js code block, table,
+- [x] **B1.** Real-mode chat markdown edge cases: js code block, table,
   long-line wrap, mid-stream reload persistence.
+  - New spec `e2e/phaseB1-markdown-edge.spec.ts` (4 tests, all green
+    against `https://app.myclaw.one`).
+  - JS code block: asserts `<pre><code>` with the function body; raw
+    triple-backticks absent from rendered text.
+  - GFM table: asserts `<thead>` × 3 headers + `<tbody>` × 3 rows;
+    raw `| --- |` separator absent.
+  - Long URL: asserts `scrollWidth ≤ clientWidth + 2` on the chat
+    message so a 220-char unbreakable URL doesn't push the bubble
+    wider than its panel.
+  - Mid-stream reload: seeds a partial-shaped assistant message
+    (unclosed `**` bold) → reload → verifies the message comes back
+    from Supabase. Stand-in for "user reloaded mid-stream and didn't
+    lose what the gateway already pushed."
 - [ ] **B2.** `/now` activity feed (real-mode) — see Notes B2.
 - [ ] **B3.** `/schedule` add-reminder real persistence — see Notes B3.
 - [ ] **B4.** `/memory` add-fact path + DB INSERT + e2e.
