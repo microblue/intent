@@ -10,6 +10,8 @@ import {
   type Agent,
 } from '@/mocks';
 import { cn } from '@/lib/cn';
+import { env } from '@/lib/env';
+import { throwTestError } from '@/lib/sentry';
 
 export function EnginesPage() {
   const clawes = Array.from(new Set(agents.filter((a) => a.source === 'openclaw').map((a) => a.clawId!)));
@@ -227,6 +229,26 @@ export function EnginesPage() {
       <p className="mt-6 text-xs text-base-content/45">
         提示:这一页只对开发者可见 —— lay-user 看到的是 Intent home / 提醒 / 助手能做什么 这些封装后的入口。
       </p>
+
+      {env.isDev && (
+        <section className="mt-6 rounded-2xl bg-base-200/60 p-4 ring-1 ring-base-300/40">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/45">
+            Sentry · dev tools
+          </h2>
+          <p className="mb-3 text-xs text-base-content/55">
+            点一下抛个错。本地 dev 只会在 console 报红;生产构建会上送到 Sentry
+            (前提是 <code className="font-mono">VITE_SENTRY_DSN</code> 已设)。
+          </p>
+          <button
+            type="button"
+            data-testid="sentry-test-throw"
+            onClick={throwTestError}
+            className="rounded-full bg-error/20 px-3 py-1 text-xs text-error-content hover:bg-error/30"
+          >
+            🧨 抛一个测试错
+          </button>
+        </section>
+      )}
     </div>
   );
 }

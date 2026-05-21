@@ -6,11 +6,14 @@ import { Toaster } from 'sonner';
 import { router } from './router';
 import { queryClient } from './lib/queryClient';
 import { env } from './lib/env';
+import { initSentry } from './lib/sentry';
 import {
   __emitGatewayEventForTests,
   __simulateGatewayWsCloseForTests,
 } from './gateway/useGateway';
 import './index.css';
+
+initSentry();
 
 // Stamp the build flags onto window for e2e — lets the test runner
 // detect which mode the running bundle is in without parsing the

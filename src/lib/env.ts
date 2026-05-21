@@ -38,4 +38,11 @@ export const env = {
   useRealData: flag('VITE_USE_REAL_DATA', false),
   isProd: import.meta.env.PROD,
   isDev: import.meta.env.DEV,
+  /**
+   * Sentry DSN — empty string disables capture entirely (no-op init).
+   * Production deploys set this in Vercel; dev/local leaves it blank so
+   * console logging is the only feedback. Provision steps live in
+   * `docs/handoff/sentry-setup.md`.
+   */
+  sentryDsn: (import.meta.env.VITE_SENTRY_DSN as string | undefined) ?? '',
 } as const;
