@@ -322,14 +322,17 @@ actual.
     `e2e/coverage-fillin.spec.ts` dropped at the same time.
   - Verified on prod: `phase8-realmode-audit.spec.ts /new` green;
     coverage-fillin mock-mode green (25/3 skip).
-- [ ] **E2.** `/now` · land here with nothing pending · expected: a
-  clear empty state (already present), no element that looks
-  clickable-but-isn't · actual: the empty-state final line "去看看你正在做的事 →"
-  (`src/routes/Now.tsx:64–66`) is a static `<p>` that ends with the `→`
-  arrow glyph. A lay user reads it as a CTA and tries to tap it; nothing
-  happens. Either wrap the text in a `<Link to="/">` (the intent list is
-  where "你正在做的事" lives) or drop the arrow so the line reads as
-  descriptive copy, not a button.
+- [x] **E2.** `/now` · land here with nothing pending · expected: a
+  clear empty state, no element that looks clickable-but-isn't ·
+  actual: the empty-state line "去看看你正在做的事 →" was a static `<p>`
+  reading as a CTA but doing nothing on tap.
+  - Fixed by wrapping the line in a `<Link to="/">` styled with DaisyUI
+    `btn btn-ghost btn-sm rounded-full` so it looks like a quiet
+    secondary CTA without overpowering the empty state. Added
+    `data-testid="now-empty-cta"` for future e2e selection.
+  - Verified on prod: `phase8-realmode-audit.spec.ts /now` green;
+    `phaseB2-now-realmode.spec.ts` 2/2 green (the real-mode collapse
+    behavior is unchanged).
 
 ---
 
