@@ -1949,6 +1949,18 @@ function Conversation({
   typing?: boolean;
   agentActivity?: AgentActivity | null;
 }) {
+  // Auto-scroll to the latest on initial mount + whenever the message
+  // count grows. Matches every consumer chat app's convention — landing
+  // at the top of a 30-message thread to read upward isn't a thing.
+  // No "user scrolled up" tracking yet; if that bites we add the
+  // new-message pill. block: 'end' anchors the sentinel's bottom to
+  // the viewport; behavior: 'auto' avoids the animation jitter when
+  // multiple Realtime frames arrive in quick succession.
+  const endRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+  }, [messages.length]);
+
   return (
     <div className="flex-1 bg-base-100 pb-48 pt-6 sm:pt-10">
       <div className="flex w-full flex-col gap-7 px-4 sm:px-8">
@@ -1958,6 +1970,7 @@ function Conversation({
           messages.map((m) => <ChatMessage key={m.id} message={m} />)
         )}
         {(typing || agentActivity) && <TypingIndicator activity={agentActivity} />}
+        <div ref={endRef} data-testid="chat-end" aria-hidden />
       </div>
     </div>
   );

@@ -454,6 +454,17 @@ actual.
   - Symmetric with C4 (AgentPicker disables in this state).
   - Verified on prod: phase6 real-mode smoke green (signed-in user
     sees connected ClawStatus — the happy path is unaffected).
+- [ ] **E13.** Intent chat · open a thread with 20+ messages · expected:
+  land at the bottom like every consumer chat app (ChatGPT, iMessage,
+  WhatsApp) · actual: `Conversation` at `src/routes/IntentHome.tsx:1952`
+  renders messages top-to-bottom and never scrolls — the user lands at
+  the top, has to scroll down to see the latest. Same after a new
+  message arrives via Realtime: no auto-scroll. Minimal fix: a sentinel
+  `<div ref={endRef}>` at the bottom of the messages list + a
+  `useEffect` on `messages.length` that calls
+  `endRef.current?.scrollIntoView({ block: 'end' })`. Skip the "user
+  scrolled up" tracking for now — if it bites, add the new-message
+  pill later.
 
 ---
 
