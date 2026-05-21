@@ -82,9 +82,10 @@ export function AgentPicker({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'flex items-center gap-1.5 rounded-full bg-base-200/70 px-2.5 py-1 text-xs',
-          'hover:bg-base-200 disabled:opacity-50',
+          'hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-50',
         )}
-        title="切换助手"
+        title={disabled ? '等连上 claw 才能切换助手' : '切换助手'}
+        aria-disabled={disabled || undefined}
       >
         <span aria-hidden>{active.emoji}</span>
         <span className="text-base-content/80">{active.name}</span>

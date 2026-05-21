@@ -36,6 +36,7 @@ import { Markdown } from '@/components/Markdown';
 import { TeamPanel } from '@/components/TeamPanel';
 import { findBuiltinAgent, phaseVerbFor } from '@/lib/agents';
 import { useAgentActivity, type AgentActivity } from '@/data/useAgentActivity';
+import { useGateway } from '@/gateway/useGateway';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
@@ -2141,6 +2142,13 @@ function StickyComposer({
   onAgentChange?: (agentId: string) => void;
 }) {
   const [draft, setDraft] = useState('');
+  const { status: gatewayStatus, isMock: gatewayMock } = useGateway();
+  // Real-mode + WS not connected → disable the picker. In mock-mode
+  // the gateway never connects (by design) so we keep the picker
+  // enabled — clicking it is a no-op locally but isn't misleading
+  // because the rest of the demo is mocked too. C4 spec rationale
+  // in fix_plan Notes: pick (a) disable picker.
+  const pickerDisabled = !gatewayMock && gatewayStatus !== 'connected';
 
   const submit = () => {
     const text = draft.trim();
@@ -2197,7 +2205,11 @@ function StickyComposer({
                 <span className="hidden sm:inline">附件</span>
               </button>
               {activeAgentId && onAgentChange && (
-                <AgentPicker activeAgentId={activeAgentId} onChange={onAgentChange} />
+                <AgentPicker
+                  activeAgentId={activeAgentId}
+                  onChange={onAgentChange}
+                  disabled={pickerDisabled}
+                />
               )}
               <kbd className="kbd kbd-sm ml-auto hidden text-[0.7rem] opacity-60 sm:inline-flex">⌘ ↵</kbd>
               <button
