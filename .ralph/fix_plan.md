@@ -372,19 +372,23 @@ actual.
     is unchanged.
   - Verified on prod: phase8 Intent + TeamPanel real-mode regression
     sweep 4/4 green (rename + archive + open + not-found paths).
-- [ ] **E7.** Error toasts · trigger a transient network blip (mint /
+- [x] **E7.** Error toasts · trigger a transient network blip (mint /
   WS / Supabase fetch) · expected: friendly natural-language nudge per
-  CLAUDE.md ("Errors are friendly natural-language suggestions, not
-  status codes") · actual: 10+ sites use the pattern
-  `toast(err instanceof Error ? err.message : '友好兜底')` which leaks
+  CLAUDE.md · actual: 14 sites used the pattern
+  `toast(err instanceof Error ? err.message : '友好兜底')` which leaked
   raw lib messages like "Failed to fetch", "NetworkError",
-  "AuthApiError: rate limit exceeded" verbatim. Fix shape: introduce
-  `src/lib/friendlyError.ts:friendlyError(err, fallback)` that prefers
-  known app-class messages (MintClawTokenError, GatewayError) and
-  swaps generic network/fetch-shaped strings for friendly copy.
-  Then `replace_all` the pattern across `IntentHome.tsx`,
-  `Settings.tsx`, `Memory.tsx`, `Permissions.tsx`, etc. Bundle delta
-  ≈ negligible; UX delta is meaningful for lay users.
+  "AuthApiError: rate limit exceeded" verbatim.
+  - Added `src/lib/friendlyError.ts:friendlyError(err, fallback)` (~30
+    LOC, regex decision tree, zero deps). Network-shaped →
+    "网络好像不太通,稍后再试"; rate-limit → "请求太频繁了,稍等一下再来";
+    auth → "登录状态不对,刷新一下页面试试"; any CJK in `err.message` →
+    pass through (our own friendly throws); else → fallback.
+  - Updated 14 call sites across
+    `src/routes/{Settings,IntentHome,Permissions,Memory,Now,Archive}.tsx`
+    and `src/components/TeamPanel.tsx`. No remaining
+    `toast(err instanceof Error …)` patterns in src/.
+  - Bundle delta ≈ negligible. Mock-mode regression 27/4 skip;
+    real-mode phase8 sweep on prod 17/17 green.
 
 ---
 
