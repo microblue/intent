@@ -142,7 +142,16 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     auto-skips against `https://app.myclaw.one`); the existing
     chromium realmode specs cover the same paths on prod.
   - 6/6 passed locally against `vite preview` on Firefox + WebKit.
-- [ ] **B6.** Mobile viewport markdown render spec.
+- [x] **B6.** Mobile viewport markdown render spec.
+  - New `e2e/phaseB6-mobile-markdown.spec.ts` (3 tests) runs on the
+    `mobile` project (Chromium 390×844). Each test seeds an assistant
+    message via service-role INSERT and asserts:
+    1. Long unbreakable URL — bubble doesn't overflow + page
+       `documentElement.scrollWidth ≤ clientWidth + 2`
+    2. GFM table — thead + 2 rows render + no horizontal page scroll
+    3. Fenced JS code block — `<pre>` can scroll horizontally inside
+       (overflow-x-auto), page itself does not scroll horizontally
+  - Real-mode against `https://app.myclaw.one` → 3 passed, 0 failed.
 
 ## Phase C — Multi-agent orchestration polish
 
