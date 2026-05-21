@@ -6,19 +6,30 @@ import { Toaster } from 'sonner';
 import { router } from './router';
 import { queryClient } from './lib/queryClient';
 import { env } from './lib/env';
+import { __emitGatewayEventForTests } from './gateway/useGateway';
 import './index.css';
 
 // Stamp the build flags onto window for e2e — lets the test runner
 // detect which mode the running bundle is in without parsing the
 // asset hash or replicating the env logic. Safe to expose: these are
 // already public (`import.meta.env.VITE_USE_REAL_DATA` is in the
-// minified bundle anyway).
+// minified bundle anyway). `emitGatewayEvent` is a test escape
+// hatch for cases where e2e wants to simulate a gateway event
+// (e.g. `agent.start`) without a live OpenClaw backend.
 declare global {
   interface Window {
-    __aios?: { useRealData: boolean; isProd: boolean };
+    __aios?: {
+      useRealData: boolean;
+      isProd: boolean;
+      emitGatewayEvent: (event: string, payload?: unknown) => void;
+    };
   }
 }
-window.__aios = { useRealData: env.useRealData, isProd: env.isProd };
+window.__aios = {
+  useRealData: env.useRealData,
+  isProd: env.isProd,
+  emitGatewayEvent: __emitGatewayEventForTests,
+};
 
 declare module '@tanstack/react-router' {
   interface Register {

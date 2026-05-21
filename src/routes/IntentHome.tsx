@@ -34,7 +34,8 @@ import { useGatewayChat } from '@/data/useGatewayChat';
 import { AgentPicker } from '@/components/AgentPicker';
 import { Markdown } from '@/components/Markdown';
 import { TeamPanel } from '@/components/TeamPanel';
-import { findBuiltinAgent } from '@/lib/agents';
+import { findBuiltinAgent, phaseVerbFor } from '@/lib/agents';
+import { useAgentActivity, type AgentActivity } from '@/data/useAgentActivity';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
@@ -61,6 +62,12 @@ export function IntentHomePage() {
   // useChatThread keeps message state local; until the messages table
   // lands in the canonical schema we don't have a real source to swap to.
   const chat = useChatThread(intentId);
+  // Subagent in-flight — populates the inline "🗺️ 规划员 正在拆步骤…"
+  // badge when the gateway emits agent.start. Null when no agent is
+  // mid-flight; the local `typing` boolean still drives the generic
+  // 3-dot indicator for the "we just sent something" moment before
+  // the gateway responds.
+  const agentActivity = useAgentActivity(intentId);
 
   if (isLoading) {
     return <IntentHomeSkeleton />;
@@ -111,6 +118,7 @@ export function IntentHomePage() {
       intent={intent}
       msgs={chat.messages}
       typing={chat.typing}
+      agentActivity={agentActivity}
       onSend={chat.send}
       outline={outline}
       files={files}
@@ -122,6 +130,7 @@ export function IntentHomePage() {
       intent={intent}
       msgs={chat.messages}
       typing={chat.typing}
+      agentActivity={agentActivity}
       onSend={chat.send}
       outline={outline}
       files={files}
@@ -256,6 +265,7 @@ function MobileIntentHome({
   intent,
   msgs,
   typing,
+  agentActivity,
   onSend,
   outline,
   files,
@@ -265,6 +275,7 @@ function MobileIntentHome({
   intent: Intent;
   msgs: Message[];
   typing: boolean;
+  agentActivity: AgentActivity | null;
   onSend: (text: string) => void;
   outline: OutlineNode[];
   files: IntentFile[];
@@ -340,7 +351,7 @@ function MobileIntentHome({
           ) : (
             msgs.map((m) => <ChatMessage key={m.id} message={m} />)
           )}
-          {typing && <TypingIndicator />}
+          {(typing || agentActivity) && <TypingIndicator activity={agentActivity} />}
         </div>
       </main>
 
@@ -670,6 +681,7 @@ function DesktopIntentHome({
   intent,
   msgs,
   typing,
+  agentActivity,
   onSend,
   outline,
   files,
@@ -679,6 +691,7 @@ function DesktopIntentHome({
   intent: Intent;
   msgs: Message[];
   typing: boolean;
+  agentActivity: AgentActivity | null;
   onSend: (text: string) => void;
   outline: OutlineNode[];
   files: IntentFile[];
@@ -695,7 +708,7 @@ function DesktopIntentHome({
           <div className="flex h-full flex-col">
             <SlimHeader intent={intent} railOpen={railOpen} onToggleRail={toggleRail} />
             <div className="flex-1 overflow-y-auto">
-              <Conversation messages={msgs} typing={typing} />
+              <Conversation messages={msgs} typing={typing} agentActivity={agentActivity} />
             </div>
             <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} />
           </div>
@@ -1901,9 +1914,11 @@ function StepList({ steps }: { steps: OutlineStep[] }) {
 function Conversation({
   messages,
   typing = false,
+  agentActivity = null,
 }: {
   messages: Message[];
   typing?: boolean;
+  agentActivity?: AgentActivity | null;
 }) {
   return (
     <div className="flex-1 bg-base-100 pb-48 pt-6 sm:pt-10">
@@ -1913,25 +1928,40 @@ function Conversation({
         ) : (
           messages.map((m) => <ChatMessage key={m.id} message={m} />)
         )}
-        {typing && <TypingIndicator />}
+        {(typing || agentActivity) && <TypingIndicator activity={agentActivity} />}
       </div>
     </div>
   );
 }
 
-function TypingIndicator() {
+function TypingIndicator({ activity }: { activity?: AgentActivity | null }) {
+  // Subagent attribution when the gateway told us who is in-flight;
+  // otherwise the generic "✦ 助手 正在想…". When we have an agent,
+  // pick the verb from the agent catalog (lib/agents:phaseVerbFor)
+  // so the user sees "🗺️ 规划员 正在拆步骤…" instead of a generic
+  // typing dots row.
+  const builtin = activity ? findBuiltinAgent(activity.agentKey) : undefined;
+  const emoji = builtin?.emoji ?? '✦';
+  const name = builtin?.name ?? '助手';
+  const verb = activity ? phaseVerbFor(activity.agentKey) : '正在想…';
+
   return (
-    <article className="flex gap-3" aria-label="助手正在输入">
+    <article
+      className="flex gap-3"
+      aria-label={`${name}${verb}`}
+      data-testid="typing-indicator"
+      data-agent-key={activity?.agentKey ?? ''}
+    >
       <span
         aria-hidden
         className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-base-200 text-[16px] ring-1 ring-base-300/40"
       >
-        ✦
+        {emoji}
       </span>
       <div className="min-w-0 flex-1">
         <header className="mb-1.5 flex items-baseline gap-2 text-[13px]">
-          <span className="font-semibold text-base-content/85">助手</span>
-          <span className="text-[11px] text-base-content/40">正在想…</span>
+          <span className="font-semibold text-base-content/85">{name}</span>
+          <span className="text-[11px] text-base-content/40">{verb}</span>
         </header>
         <div className="inline-flex items-center gap-1 rounded-2xl bg-base-200 px-3 py-2">
           <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-base-content/40 [animation-delay:0ms]" />

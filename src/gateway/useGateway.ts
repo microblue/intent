@@ -172,6 +172,16 @@ export function __getLastEventForTests(): GatewayEventFrame | null {
 }
 
 /**
+ * Test-only: synthesize a gateway event into the same broadcast bus
+ * that real WS frames flow through. Used by e2e to simulate
+ * `agent.start` / `agent.done` lifecycle events without a live
+ * OpenClaw backend.
+ */
+export function __emitGatewayEventForTests(event: string, payload?: unknown): void {
+  broadcastEvent({ type: 'event', event, payload });
+}
+
+/**
  * useGatewayEvent — subscribe to a specific gateway event by name.
  *
  * The handler fires on every matching frame and is auto-cleaned up on

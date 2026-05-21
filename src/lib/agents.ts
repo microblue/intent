@@ -136,6 +136,31 @@ export function findBuiltinAgent(id: string | null | undefined): BuiltinAgent | 
 }
 
 /**
+ * Verb phrase to show beside an in-flight agent in the typing
+ * indicator — "🗺️ 规划员 正在拆步骤…" rather than a generic
+ * "正在想…". Kept here next to the agent catalog so adding a new
+ * specialist only touches one file.
+ *
+ * Fallback "正在想…" is intentional: when the gateway sends an
+ * agent.start for an unknown key, we still show *something* useful.
+ */
+const PHASE_VERBS: Record<string, string> = {
+  main: '正在统筹',
+  planner: '正在拆步骤',
+  researcher: '正在查资料',
+  writer: '正在动笔',
+  flights: '正在比机票',
+  lodging: '正在挑住宿',
+  mealplanner: '正在排菜单',
+  tutor: '正在备题',
+};
+
+export function phaseVerbFor(agentId: string | null | undefined): string {
+  if (!agentId) return '正在想…';
+  return PHASE_VERBS[agentId] ?? '正在想…';
+}
+
+/**
  * Recommend a team of 2-3 agents for a new intent based on the user's
  * prompt. Always includes `main` as orchestrator + up to 2 specialists
  * matched by keyword. Used by /new wizard.
