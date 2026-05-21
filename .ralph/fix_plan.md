@@ -200,8 +200,22 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
       no remove button, planner does.
   - Mock-mode green locally; real-mode green against
     `https://app.myclaw.one`.
-- [ ] **C4.** AgentPicker disabled state when gateway disconnected —
+- [x] **C4.** AgentPicker disabled state when gateway disconnected —
   see Notes C4.
+  - Picked option (a) "disable picker". `StickyComposer` now reads
+    `useGateway().{status, isMock}` and passes
+    `disabled = !isMock && status !== 'connected'` to AgentPicker.
+    Mock-mode stays enabled (the demo doesn't pretend to route);
+    real-mode disables while the WS is not connected.
+  - AgentPicker trigger gains `aria-disabled` + a friendly tooltip
+    "等连上 claw 才能切换助手" + `disabled:cursor-not-allowed` styling.
+  - New `e2e/phaseC4-agentpicker-disconnected.spec.ts`:
+    - mock-mode: trigger is enabled, no aria-disabled.
+    - real-mode (prod): `page.route('**/functions/v1/mint-claw-token')`
+      → 503 → gateway never reaches `connected` → trigger is
+      disabled with the right title + clicking doesn't open the menu.
+  - Real-mode green against prod; phase8 + phase7 agent-picker
+    regression suites both stayed green (19 passed) after deploy.
 
 ## Phase D — Production-readiness
 
