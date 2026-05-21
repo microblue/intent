@@ -227,14 +227,15 @@ function useChatThread(intentId: string) {
       return;
     }
 
-    // Real mode + disconnected: persist already happened above, so the
-    // message will go through once the WS reconnects (gateway client
-    // re-mints + reconnects automatically). Surface a friendly hint so
-    // the user isn't left waiting silently for a reply — ClawStatus is
-    // too small to anchor attention while typing in chat. Symmetric with
-    // C4 (AgentPicker disabled in this state).
+    // Real mode + disconnected: the message has been persisted to
+    // Supabase (visible in the user's history), but the gateway
+    // doesn't auto-resend on reconnect — the agent never sees it
+    // unless the user repeats themselves. Be honest about that so the
+    // user knows what to do next. ClawStatus is too small to anchor
+    // attention while typing. Symmetric with C4 (AgentPicker disabled
+    // in this state).
     if (!isMock) {
-      toast('claw 还没连上,先把这条记下了,等连上就发出去 ⏳', {
+      toast('claw 还没连上,等连上再说一遍就有回应了 ⏳', {
         id: 'chat-disconnected',
       });
       return;
