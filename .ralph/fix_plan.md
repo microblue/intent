@@ -286,8 +286,24 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
   - In-progress: aios-side has nothing to ship. Flip `[x]` after DZ
     runs the snippets and the next push produces a green
     `realmode-e2e-prod` job.
-- [ ] **D5.** Rate-limit smoke: fire 20 messages in quick succession,
+- [x] **D5.** Rate-limit smoke: fire 20 messages in quick succession,
   assert client surfaces backoff toast, no LLM-token blowup.
+  - New `src/lib/rateLimit.ts:createSendRateLimiter()` — sliding-window
+    limiter, 5 sends per 10s, ~30 LOC, zero deps. Window numbers chosen
+    to let real multi-turn dialog ("yes", "no", "go on") through while
+    catching `for (i=0;i<20;i++)`-shape spam after ~5 sends.
+  - `useChatThread.send` in `src/routes/IntentHome.tsx` holds the
+    limiter in a `useRef` and short-circuits **before** any
+    persistence / gateway call when blocked, so no token is burned.
+    Friendly toast (`发得太快啦, 稍等 N 秒再说 🐌`) uses a stable
+    `id: 'chat-rate-limit'` so a burst of 15 blocked sends produces
+    one toast, not fifteen.
+  - New `e2e/phaseD5-rate-limit.spec.ts` (mock-mode, desktop): fires
+    20 rapid sends at `/intent/birthday`, asserts ≤5 with the unique
+    tag land in the thread + the backoff toast surfaces.
+  - Bundle held at ~1MB (1116.35 → 1116.79 KB, +0.44 KB). Regression
+    sweep on prod (phase8 console-clean) stayed green (10/10).
+    coverage-fillin + phase10 chat-send tests stayed green (27 pass).
 
 ## Phase E — Self-audit findings
 
