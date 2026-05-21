@@ -310,16 +310,18 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 Append discovered items here. Format: surface · step · expected vs
 actual.
 
-- [ ] **E1.** `/new` · click 🎙️ 说一句 voice button · expected: a
+- [x] **E1.** `/new` · click 🎙️ 说一句 voice button · expected: a
   friendly "coming soon" nudge in the app's normal toast style ·
   actual: fires browser-native `alert('语音输入开发中')`
-  (`src/routes/NewIntent.tsx:594`). Native `alert()` feels like a
-  status-code error popup and is inconsistent with the rest of the
-  app's `sonner` toasts. Per CLAUDE.md lay-user rules ("no half-finished
-  implementations" + "friendly natural-language suggestions, not status
-  codes"), either remove the button entirely until voice ships, or
-  swap `alert()` for a `toast('稍后再来,语音还在做 🎙️')`. Prefer removal
-  to keep the surface honest.
+  (`src/routes/NewIntent.tsx:594`).
+  - Fixed by removing the voice button entirely (chose option A from
+    the finding — "no half-finished implementations" per CLAUDE.md).
+    Parent flex row switched from `justify-between` to `justify-end` so
+    the `继续 →` submit stays right-aligned alone.
+  - Stale `.filter({ hasNotText: '说一句' })` in
+    `e2e/coverage-fillin.spec.ts` dropped at the same time.
+  - Verified on prod: `phase8-realmode-audit.spec.ts /new` green;
+    coverage-fillin mock-mode green (25/3 skip).
 - [ ] **E2.** `/now` · land here with nothing pending · expected: a
   clear empty state (already present), no element that looks
   clickable-but-isn't · actual: the empty-state final line "去看看你正在做的事 →"

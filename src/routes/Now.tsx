@@ -61,9 +61,13 @@ export function NowPage() {
               没有助手在忙,也没有事等你点头。<br />
               这里会显示:正在干活的助手 · 等你做决定的事 · 刚刚做完的步骤。
             </p>
-            <p className="mx-auto mt-3 max-w-md text-xs text-base-content/45">
+            <Link
+              to="/"
+              data-testid="now-empty-cta"
+              className="btn btn-ghost btn-sm mt-4 rounded-full text-base-content/65"
+            >
               去看看你正在做的事 →
-            </p>
+            </Link>
           </div>
         )}
 
