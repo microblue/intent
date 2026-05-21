@@ -380,6 +380,23 @@ export class GatewayClient {
     this.pending.clear();
   }
 
+  /**
+   * Test-only: close the active WebSocket with a non-1000 code so the
+   * built-in reconnect path runs. Used by e2e to verify the
+   * disconnect → re-mint → re-connect flow without a real network
+   * drop. No-op when the client isn't currently connected.
+   */
+  __simulateWsCloseForTests(code = 1006, reason = 'simulated_disconnect'): void {
+    const ws = this.ws;
+    if (!ws) return;
+    if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING) return;
+    try {
+      ws.close(code, reason);
+    } catch {
+      // ignore
+    }
+  }
+
   private updateStatus(next: GatewayStatus, reason: string | null): void {
     if (this.status === next && this.statusReason === reason) return;
     this.status = next;

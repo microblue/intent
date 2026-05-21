@@ -6,7 +6,10 @@ import { Toaster } from 'sonner';
 import { router } from './router';
 import { queryClient } from './lib/queryClient';
 import { env } from './lib/env';
-import { __emitGatewayEventForTests } from './gateway/useGateway';
+import {
+  __emitGatewayEventForTests,
+  __simulateGatewayWsCloseForTests,
+} from './gateway/useGateway';
 import './index.css';
 
 // Stamp the build flags onto window for e2e — lets the test runner
@@ -22,6 +25,7 @@ declare global {
       useRealData: boolean;
       isProd: boolean;
       emitGatewayEvent: (event: string, payload?: unknown) => void;
+      simulateGatewayWsClose: () => void;
     };
   }
 }
@@ -29,6 +33,7 @@ window.__aios = {
   useRealData: env.useRealData,
   isProd: env.isProd,
   emitGatewayEvent: __emitGatewayEventForTests,
+  simulateGatewayWsClose: __simulateGatewayWsCloseForTests,
 };
 
 declare module '@tanstack/react-router' {

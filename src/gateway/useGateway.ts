@@ -182,6 +182,17 @@ export function __emitGatewayEventForTests(event: string, payload?: unknown): vo
 }
 
 /**
+ * Test-only: simulate the WS dropping while the client is connected.
+ * The built-in close handler will trigger the reconnect path, which
+ * re-runs `getCredentials` → re-mints a fresh token before opening
+ * the next socket. Used by the D2 token-refresh e2e to assert that
+ * a mid-stream disconnect picks up a fresh JWT.
+ */
+export function __simulateGatewayWsCloseForTests(): void {
+  singleton.client?.__simulateWsCloseForTests();
+}
+
+/**
  * useGatewayEvent — subscribe to a specific gateway event by name.
  *
  * The handler fires on every matching frame and is auto-cleaned up on
