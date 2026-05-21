@@ -305,6 +305,13 @@ test.describe('BottomDock — mobile nav', () => {
     await page.getByRole('button', { name: /^通知( \d+)?$/ }).click();
     await page.waitForURL(/\/now$/);
   });
+
+  test('我的 avatar shows ? when signed-out (mock-mode default)', async ({ page }) => {
+    // Before E5 the avatar was a hardcoded "D" regardless of session.
+    // Anonymous mock-mode user → no email → falls back to "?".
+    await page.goto('/');
+    await expect(page.getByTestId('bottom-dock-avatar')).toHaveText('?');
+  });
 });
 
 test.describe('Now panel — approvals card (mock mode)', () => {

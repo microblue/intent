@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { pendingApprovalCount } from '@/mocks';
+import { useSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 
 /**
@@ -16,6 +17,8 @@ export function BottomDock() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const pending = pendingApprovalCount();
   const navigate = useNavigate();
+  const { user, signedIn } = useSession();
+  const initial = signedIn ? (user?.email?.[0] ?? '?').toUpperCase() : '?';
 
   const isActive = (p: string) => path === p;
 
@@ -52,8 +55,11 @@ export function BottomDock() {
           isActive('/settings') ? 'text-primary' : 'text-base-content/60',
         )}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-xs font-semibold text-primary-content">
-          D
+        <span
+          className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-primary/80 to-accent/80 text-xs font-semibold text-primary-content"
+          data-testid="bottom-dock-avatar"
+        >
+          {initial}
         </span>
         <span>我的</span>
       </Link>

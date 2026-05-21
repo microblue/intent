@@ -349,6 +349,14 @@ actual.
     other src or e2e references to "导出" remain.
   - Verified on prod: `/settings` + `/settings/engines` console-clean
     + Settings display_name write path all green (3/3).
+- [ ] **E5.** Mobile `BottomDock` 我的 slot · sign in as any user
+  (e.g. `alice@example.com`) · expected: avatar bubble shows your
+  first letter (`A`) the way the desktop sidebar does · actual:
+  hardcoded "D" character (`src/components/BottomDock.tsx:56`). Looks
+  like a leftover dev placeholder. When signed-out, the same slot
+  still shows "D" — should fall back to `?` to match the desktop
+  sidebar's `_AccountFooter` pattern (Sidebar.tsx:599). Fix is a 3-line
+  import-`useSession` + computed `initial` swap.
 
 ---
 
