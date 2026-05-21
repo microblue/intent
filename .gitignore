@@ -18,9 +18,10 @@ test-results/
 src-tauri/target/
 .vercel
 
-# Ralph runtime state — config + specs + plan are tracked; logs are not.
+# Ralph runtime state — config + specs + plan are tracked; runtime is not.
 .ralph/logs/
 .ralph/live.log
 .ralph/progress.json
 .ralph/status.json
 .ralph/session/
+.ralph/.*
