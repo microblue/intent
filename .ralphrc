@@ -1,0 +1,44 @@
+# .ralphrc — myclaw-aios autonomous loop
+# See https://github.com/frankbria/ralph-claude-code for the schema.
+
+PROJECT_NAME="myclaw-aios"
+PROJECT_TYPE="vite-react-typescript"
+
+# Claude Code CLI command
+CLAUDE_CODE_CMD="claude"
+
+# Loop settings
+#   100 calls/hour is the absolute cap; the loop self-throttles when it
+#   hits the 5h rolling window. Each invocation can use 100k–200k tokens
+#   on this repo (TS project, deep e2e logs), so set MAX_TOKENS_PER_HOUR
+#   high enough that it doesn't false-positive a stall.
+MAX_CALLS_PER_HOUR=60
+CLAUDE_TIMEOUT_MINUTES=20
+CLAUDE_OUTPUT_FORMAT="json"
+MAX_TOKENS_PER_HOUR=2000000
+
+# Tool permissions — what Ralph is allowed to run unattended.
+# pnpm is the canonical package manager for this repo. supabase + vercel
+# CLIs are pre-authed on this box. SSH is allowed only via the lightsail
+# key path; ralph uses it to provision agent personas on cool-brook.
+ALLOWED_TOOLS="Write,Read,Edit,Glob,Grep,TodoWrite,WebFetch,Bash(git add *),Bash(git commit *),Bash(git diff *),Bash(git log *),Bash(git status),Bash(git status *),Bash(git push *),Bash(git pull *),Bash(git fetch *),Bash(git checkout *),Bash(git branch *),Bash(git stash *),Bash(git merge *),Bash(git tag *),Bash(git rm *),Bash(git mv *),Bash(git restore *),Bash(pnpm *),Bash(npx *),Bash(node *),Bash(mkdir *),Bash(ls *),Bash(cp *),Bash(mv *),Bash(cat *),Bash(grep *),Bash(find *),Bash(rg *),Bash(echo *),Bash(touch *),Bash(test *),Bash(vercel *),Bash(supabase *),Bash(curl *),Bash(psql *),Bash(jq *),Bash(sed *),Bash(awk *),Bash(diff *),Bash(wc *),Bash(head *),Bash(tail *),Bash(sort *),Bash(uniq *),Bash(tr *),Bash(file *),Bash(ssh *),Bash(scp *),Bash(sshpass *)"
+
+# Session continuity — Ralph remembers prior loops via Claude Code's
+# resumable session state. 24h expiry keeps stale plans from haunting.
+SESSION_CONTINUITY=true
+SESSION_EXPIRY_HOURS=24
+
+# Task source: just the local fix_plan.md. No beads / github sync.
+TASK_SOURCES="local"
+
+# Circuit breakers — stop the loop early instead of burning quota on
+# pathological states.
+#   - 3 loops with no fix_plan.md progress → stop (probably stuck)
+#   - 5 loops returning the same error → stop (likely a flaky env, not a code bug)
+#   - 70% output decline → stop (model truncating, swap to a longer ctx)
+CB_NO_PROGRESS_THRESHOLD=3
+CB_SAME_ERROR_THRESHOLD=5
+CB_OUTPUT_DECLINE_THRESHOLD=70
+
+# Auto-update the claude CLI at startup so we always run the latest model.
+CLAUDE_AUTO_UPDATE=true
