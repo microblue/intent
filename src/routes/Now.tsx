@@ -22,15 +22,19 @@ import { cn } from '@/lib/cn';
  */
 export function NowPage() {
   // Approvals are real data (Phase 14). Running / completed activity
-  // still come from mocks until agent traces are wired in via OpenClaw —
-  // those source rows don't have a Supabase home yet.
+  // come from mocks: the spec calls for `agent_calls` / `agent_traces`
+  // tables to drive the feed, and those don't have a Supabase home
+  // yet. In real-mode we hide the mock running/done buckets entirely
+  // so signed-in users don't see fabricated activity — the section
+  // collapses to approvals only (or the empty state). When the
+  // backing tables land in `~/myclaw`, flip these gates back on.
   const { approvals: pendingApprovals, isMock: approvalsMock } = useApprovals();
   const items = nowSorted();
   const awaiting = approvalsMock
     ? items.filter((i) => i.kind === 'awaiting_approval')
     : []; // real-mode awaiting comes from pendingApprovals directly
-  const running = items.filter((i) => i.kind === 'running');
-  const done = items.filter((i) => i.kind === 'completed');
+  const running = approvalsMock ? items.filter((i) => i.kind === 'running') : [];
+  const done = approvalsMock ? items.filter((i) => i.kind === 'completed') : [];
   const devMode = useUI((s) => s.devMode);
 
   return (
@@ -39,7 +43,11 @@ export function NowPage() {
         emoji="🛎"
         title="正在为你做的事"
         term="activity"
-        subtitle={`${awaiting.length} 件等你点头 · ${running.length} 件在跑 · ${done.length} 件刚做完`}
+        subtitle={
+          approvalsMock
+            ? `${awaiting.length} 件等你点头 · ${running.length} 件在跑 · ${done.length} 件刚做完`
+            : `${pendingApprovals.length} 件等你点头`
+        }
       />
 
       {awaiting.length === 0 &&
