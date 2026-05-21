@@ -54,8 +54,13 @@ test.describe('Data adapter — mock mode', () => {
   test('Launcher shows intents from the adapter', async ({ page, isMobile }) => {
     test.skip(isMobile === true, 'launcher is desktop-only chrome');
     await page.goto('/');
+    // Wait for the page to render before sending the keydown — without
+    // this the Launcher's useEffect that registers the global keydown
+    // listener may not have run yet (phase1's same test waits the same
+    // way; this one was racing in full-suite runs).
+    await expect(page.getByText('想做的事').first()).toBeVisible();
     await page.keyboard.press('Control+k');
-    await expect(page.locator('[cmdk-root]').first()).toBeVisible();
+    await expect(page.locator('[cmdk-root]').first()).toBeVisible({ timeout: 3_000 });
     // "你的项目" group is hardcoded; the items underneath come from useIntents.
     await expect(page.getByText('你的项目')).toBeVisible();
     await page.keyboard.press('Escape');
