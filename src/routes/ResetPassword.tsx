@@ -98,7 +98,7 @@ export function ResetPasswordPage() {
             <p className="mt-2 text-sm leading-relaxed text-base-content/65">
               重置链接可能过期了,或者已经用过。
             </p>
-            <Link to="/auth/signin" className="btn btn-primary btn-sm mt-4">
+            <Link to="/auth/signin" className="btn btn-primary mt-4">
               重新发一个
             </Link>
           </article>

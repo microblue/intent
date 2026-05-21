@@ -132,7 +132,7 @@ export function IntentListPage() {
                 <a
                   href="https://myclaw.one/aios/install"
                   data-testid="sentinel-claw-cta"
-                  className="btn btn-warning btn-sm gap-1.5 rounded-full px-4"
+                  className="btn btn-warning gap-1.5 rounded-full px-4"
                 >
                   <span aria-hidden>🚀</span>
                   去开一台 →
@@ -170,7 +170,7 @@ export function IntentListPage() {
                   search={{ seed: undefined }}
                   data-testid="onboarding-cta"
                   onClick={dismissOnboarding}
-                  className="btn btn-primary btn-sm gap-1.5 rounded-full px-4"
+                  className="btn btn-primary gap-1.5 rounded-full px-4"
                 >
                   <span aria-hidden>✨</span>
                   起一个新的 →

@@ -59,7 +59,7 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
   - Rule 7 (settings/advanced folded away): ✓ — dev mode at
     `/settings/engines` behind a Settings toggle.
   - Rule 8 (btn-md for primary CTAs): **✗ violation** — see A4.1.
-- [ ] **A4.1.** Promote primary-CTA button size from `btn-sm` → `btn-md`
+- [x] **A4.1.** Promote primary-CTA button size from `btn-sm` → `btn-md`
   per `aios-ui-spec.md §10` rule 8 ("primary buttons are `btn-md` not
   `btn-sm`"). Confirmed lay-user-onboarding-critical instances:
   - `src/routes/Settings.tsx:82` — signed-out "登录" CTA (the entry

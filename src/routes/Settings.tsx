@@ -79,7 +79,7 @@ export function SettingsPage() {
                 登录后才能保存数据、跨设备同步
               </div>
             </div>
-            <Link to="/auth/signin" className="btn btn-primary btn-sm" data-testid="settings-signin">
+            <Link to="/auth/signin" className="btn btn-primary" data-testid="settings-signin">
               登录
             </Link>
           </li>
@@ -358,7 +358,7 @@ function SubscriptionRow({ onEnterKey }: { onEnterKey: () => void }) {
         <button
           type="button"
           onClick={() => toast('订阅管理在 myclaw.one 后台 — 稍后接入到这里')}
-          className="btn btn-primary btn-sm"
+          className="btn btn-primary"
         >
           管理 →
         </button>
