@@ -465,17 +465,18 @@ actual.
     is in the viewport on initial load (mock-mode, /intent/sakura).
   - Verified on prod: full chat regression sweep (phase8 Intent +
     phaseB1 markdown edge cases) 8/8 green.
-- [ ] **E14.** ClawPicker + ClawStatus tooltip · hover on desktop when
+- [x] **E14.** ClawPicker + ClawStatus tooltip · hover on desktop when
   the gateway is failing · expected: friendly natural-language hint ·
-  actual: `title={reason ?? undefined}` at
-  `src/components/ClawPicker.tsx:47` + `src/components/ClawStatus.tsx:39`
-  exposes raw values from `GatewayClient.scheduleReconnect(reason)` —
-  things like "close_1006", "close_1011", "credentials_failed",
-  "Failed to fetch". Per CLAUDE.md "Errors are friendly natural-
-  language suggestions, not status codes." Fix shape: route through
-  `friendlyError(new Error(reason), '稍后再试')` so network/auth/rate
-  patterns get the canonical Chinese mapping E7 already established,
-  and unknown technical strings fall back to the friendly default.
+  actual: raw "close_1006" / "credentials_failed" / "Failed to fetch"
+  leaked into the `title` attribute.
+  - Fixed by wrapping `reason` with `friendlyError(new Error(reason),
+    '稍等一下再试')` at both `src/components/ClawPicker.tsx:47` and
+    `src/components/ClawStatus.tsx:39`. Network/auth/rate patterns
+    pick up the canonical Chinese; unknown technical strings fall
+    back to the friendly default. Reuses the helper E7/E8 already
+    established. No bundle delta.
+  - Verified on prod: phase8 Intent + TeamPanel real-mode + C4
+    AgentPicker-disconnected → 3 passed / 1 expected skip on prod.
 
 ---
 
