@@ -93,22 +93,10 @@ Pattern of past hand-offs:
 
 ## cool-brook (test claw) access
 
-```bash
-ssh -i ~/.ssh/lightsail/LightsailDefault.pem -o StrictHostKeyChecking=no \
-    ubuntu@54.218.209.8
-
-# OpenClaw config (read + edit cautiously):
-sudo cat /home/openclaw/.openclaw/openclaw.json
-sudo systemctl restart openclaw-gateway
-
-# Agent persona files (per-agent IDENTITY.md etc.):
-sudo ls /home/openclaw/.openclaw/agents/<agentId>/agent/
-
-# Caddyfile:
-sudo cat /etc/caddy/Caddyfile
-sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
-```
+Detailed runbook at `docs/runbooks/cool-brook.md` — open only when the
+current fix_plan item explicitly touches the gateway VM, agent personas,
+or Caddy. Key path: `ubuntu@54.218.209.8` via
+`~/.ssh/lightsail/LightsailDefault.pem`.
 
 ## Key Learnings (append-only — Ralph updates this section)
 

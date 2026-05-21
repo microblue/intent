@@ -69,19 +69,20 @@ Anything that surprised, confused, or broke → append to
 
 ## Source-of-truth files
 
-Re-read these each loop; **never paraphrase from memory.** They live
-under `.ralph/specs/`:
+Specs live under `.ralph/specs/` (symlinks to canonical docs):
 
-- `aios-plan.md` — top-level architecture, phase plan, data boundary
-  (myclaw-studio's canonical plan, mirrored here)
-- `aios-design.md` — myclaw side: URL map, data model, intent runtime,
-  install flow, testing strategy
-- `aios-ui-spec.md` — concept catalog (lay-user ↔ internal terms),
-  surfaces shipped, design language, mock-vs-real wiring
+- `aios-plan.md` — architecture, phase plan, data boundary
+- `aios-design.md` — URL map, data model, intent runtime, install flow
+- `aios-ui-spec.md` — concept catalog, surfaces, design language
 
-If the specs disagree, prefer the most recent one and add a "spec
-conflict" note to `fix_plan.md` for human review — don't resolve
-silently.
+**Load discipline:** open only the spec section the current fix_plan
+item references, using Read with `offset`/`limit`. Don't read whole
+specs unless a Phase-A audit item explicitly calls for the global view.
+Never paraphrase from memory for the section you're working on — but
+do skip sections that aren't this loop's concern.
+
+If specs disagree, prefer the most recent and add a "spec conflict"
+note to `fix_plan.md` for human review — don't resolve silently.
 
 ## Protected files (DO NOT MODIFY)
 
