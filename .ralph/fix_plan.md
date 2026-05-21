@@ -91,7 +91,17 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     (unclosed `**` bold) → reload → verifies the message comes back
     from Supabase. Stand-in for "user reloaded mid-stream and didn't
     lose what the gateway already pushed."
-- [ ] **B2.** `/now` activity feed (real-mode) — see Notes B2.
+- [x] **B2.** `/now` activity feed (real-mode) — see Notes B2.
+  - Picked option (b): collapse mock running/done buckets in
+    real-mode; approvals stay (they're real). `src/routes/Now.tsx`
+    gates `running` and `done` arrays behind `approvalsMock`, and
+    the PageHeader subtitle drops "件在跑 · 件刚做完" in real-mode.
+  - New e2e `e2e/phaseB2-now-realmode.spec.ts` (2 tests) locks in
+    the collapse against `https://app.myclaw.one`.
+  - Deferral handoff written:
+    `docs/handoff/now-running-done-tables.md` — describes the
+    `agent_calls` / `agent_traces` schema work that needs to land
+    in `~/myclaw` before the buckets come back.
 - [ ] **B3.** `/schedule` add-reminder real persistence — see Notes B3.
 - [ ] **B4.** `/memory` add-fact path + DB INSERT + e2e.
 - [ ] **B5.** Cross-browser smoke (WebKit + Firefox) for `/`,
