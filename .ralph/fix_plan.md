@@ -35,7 +35,12 @@ Each `[ ]` here closes when (a) the spec passes, (b) the screenshots
 look correct under Ralph's read, (c) every finding it surfaces has
 either been fixed or filed as a new Phase H/J item.
 
-- [ ] **F1.** `/` (IntentHome) — desktop + mobile
+- [x] **F1.** `/` (IntentHome) — desktop + mobile
+  - Spec: `e2e/walkthrough-home.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has aria-label or visible text.
+  - Screenshots: `test-results/walkthrough-home-{desktop,mobile}.png`.
+  - Ralph read both — no placeholder copy, no English leakage, no
+    decorative buttons. Click smoke opens Launcher.
 - [ ] **F2.** `/intent/<id>` — chat surface, both empty and with history
 - [ ] **F3.** `/new` (NewIntent)
 - [ ] **F4.** `/schedule`
