@@ -21,9 +21,15 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
   - §4.4 Auth bridge: `claws.central_token` ✓
   - §4.5 SKUs: `activation_codes.credit_usd` ✓
   - No gaps. No child items required.
-- [ ] **A2.** Verify intent → claw → session per `aios-design.md §6`
+- [x] **A2.** Verify intent → claw → session per `aios-design.md §6`
   for: fresh signup (sentinel only), one real claw, multiple real
   claws. Cover whichever case isn't tested today.
+  - Sentinel: `phase6-realmode-sentinel.spec.ts` ✓
+  - Single real claw: `phase6-realmode-smoke.spec.ts` ✓
+  - Multi real claws: new `phase6-realmode-multiclaw.spec.ts` —
+    asserts picker shows oldest claw, sentinel banner hidden,
+    new-intent FK targets oldest. Documents current single-claw UI
+    + locks in oldest-wins fallback for when multi-claw picker lands.
 - [ ] **A3.** Tick `aios-ui-spec.md §3` surfaces against `src/routes/`.
   Missing route → add item. Extra route → remove or document.
 - [ ] **A4.** Audit shipped UI against `aios-ui-spec.md §10`
