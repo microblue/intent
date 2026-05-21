@@ -737,7 +737,7 @@ function ClarifyingStage({
           <button
             type="button"
             onClick={() => onAnswer(q.id, '(跳过)')}
-            className="rounded-full px-3 py-1.5 text-xs text-base-content/55 hover:bg-base-300 hover:text-base-content/80"
+            className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs text-base-content/55 hover:bg-base-300 hover:text-base-content/80"
             title="跳过这条"
           >
             跳过
@@ -745,7 +745,7 @@ function ClarifyingStage({
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-content disabled:bg-base-300 disabled:text-base-content/40"
+            className="shrink-0 whitespace-nowrap rounded-full bg-primary px-3.5 py-1.5 text-xs font-medium text-primary-content disabled:bg-base-300 disabled:text-base-content/40"
           >
             下一问 →
           </button>
