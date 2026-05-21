@@ -227,11 +227,20 @@ function useChatThread(intentId: string) {
       return;
     }
 
+    // Real mode + disconnected: persist already happened above, so the
+    // message will go through once the WS reconnects (gateway client
+    // re-mints + reconnects automatically). Surface a friendly hint so
+    // the user isn't left waiting silently for a reply — ClawStatus is
+    // too small to anchor attention while typing in chat. Symmetric with
+    // C4 (AgentPicker disabled in this state).
+    if (!isMock) {
+      toast('claw 还没连上,先把这条记下了,等连上就发出去 ⏳', {
+        id: 'chat-disconnected',
+      });
+      return;
+    }
     // Mock-mode auto-reply keeps the demo interactive when there's no
-    // real claw to talk to. Skipped in real mode + disconnected — that
-    // state already surfaces via the ClawStatus indicator and faking a
-    // reply would be misleading.
-    if (!isMock) return;
+    // real claw to talk to.
     setTyping(true);
     const delay = 900 + Math.random() * 400;
     window.setTimeout(() => {

@@ -440,6 +440,18 @@ actual.
     signed-out so the mock-mode demo stays consistent).
   - Verified on prod: phase6 real-mode mobile chat smoke green;
     mock-mode dock regression 3/3 (avatar + two nav items).
+- [ ] **E12.** Intent chat · real-mode, gateway disconnected · type a
+  message + Send · expected: friendly hint that the assistant won't
+  reply yet (or the send is queued) · actual: `useChatThread.send` at
+  `src/routes/IntentHome.tsx:228–234` persists the user's message to
+  Supabase, then short-circuits with a silent `return` because the
+  branch comment says "that state already surfaces via the ClawStatus
+  indicator." It doesn't — ClawStatus is a 2 × 2 px dot in the
+  AccountFooter, well below the user's chat attention zone. A lay user
+  sees their message land, then waits forever for a reply that never
+  comes. C4 already disabled the AgentPicker in this state; the symmetric
+  fix here is a `toast('claw 还没连上,先把这条记下了,等连上就发出去 ⏳')`
+  before the silent return so the user knows what to expect.
 
 ---
 
