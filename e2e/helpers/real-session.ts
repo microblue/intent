@@ -111,6 +111,17 @@ async function mintViaMagiclink(email: string): Promise<MintedSession> {
 const sessionCache = new Map<string, MintedSession>();
 const lastMintAt = new Map<string, number>();
 
+/**
+ * Force the next injectRealSession(email) to re-mint instead of
+ * returning the cached session. Useful for specs that follow a long
+ * chain of other real-mode tests, where Supabase may have rotated
+ * the user's JWT mid-run.
+ */
+export function clearCachedSession(email?: string): void {
+  if (email) sessionCache.delete(email);
+  else sessionCache.clear();
+}
+
 async function freshMintWithBackoff(email: string): Promise<MintedSession> {
   const lastAt = lastMintAt.get(email) ?? 0;
   const gap = Date.now() - lastAt;

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { unlockVercelPreview } from './helpers/vercel-bypass';
-import { injectRealSession } from './helpers/real-session';
+import { clearCachedSession, injectRealSession } from './helpers/real-session';
 
 /**
  * Phase 8 — real-mode coverage audit.
@@ -219,6 +219,9 @@ test.describe('Phase 8 — Intent + TeamPanel real-mode', () => {
     page,
     context,
   }) => {
+    // This spec follows a long chain of other real-mode tests; force
+    // a fresh mint so the JWT we inject can't be a rotated-out one.
+    clearCachedSession(process.env.REAL_TEST_EMAIL);
     const minted = await injectRealSession(context, process.env.REAL_TEST_EMAIL!);
     const intent = await createIntent(minted.user_id, 'team-audit', '🧪');
     try {
