@@ -389,17 +389,18 @@ actual.
     `toast(err instanceof Error …)` patterns in src/.
   - Bundle delta ≈ negligible. Mock-mode regression 27/4 skip;
     real-mode phase8 sweep on prod 17/17 green.
-- [ ] **E8.** Error blocks rendered into JSX · trigger any data-hook
-  load failure (network blip on `/`, `/intent/<id>`, `/archive`, etc.)
-  · expected: friendly natural-language nudge per CLAUDE.md · actual:
-  four sites still render `error.message` verbatim into the UI:
-    - `src/routes/IntentList.tsx:245` ("读取数据的时候出错了" block)
-    - `src/routes/IntentHome.tsx:88` ("加载出错了" block)
-    - `src/routes/Archive.tsx:56`
-    - `src/routes/NewIntent.tsx:446` (toast with template literal)
-  Same `Failed to fetch` / `PostgrestError: ...` leak risk that E7
-  closed for the catch-and-toast pattern. Same fix: route each through
-  `friendlyError(error, '稍等一下,再刷新一次试试')`.
+- [x] **E8.** Error blocks rendered into JSX · trigger any data-hook
+  load failure · expected: friendly natural-language nudge · actual:
+  five sites rendered `error.message` verbatim (4 JSX blocks + 1
+  template-literal toast).
+  - Routed all five through `friendlyError(err, '友好兜底')`:
+    `IntentList.tsx:245`, `IntentHome.tsx:88`, `Archive.tsx:56`,
+    `NewIntent.tsx:446` (specialist team seed toast), and
+    `NewIntent.tsx:458` (createIntent catch toast — discovered during
+    the sweep, same `err instanceof Error ? err.message : ...` pattern).
+  - Final state: no remaining `error.message` / `err.message` in
+    `src/routes/` or `src/components/` JSX/toast paths.
+  - Verified on prod: phase8 full real-mode sweep 17/17 green.
 
 ---
 
