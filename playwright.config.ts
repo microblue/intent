@@ -58,6 +58,9 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      // Most of the suite. B5 cross-browser smoke runs on firefox +
+      // webkit only — exclude it here so we don't double-cover.
+      testIgnore: ['**/phaseB5-*.spec.ts'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
     {
@@ -65,6 +68,7 @@ export default defineConfig({
       // iPhone 14 metrics applied to Chromium — keeps the install footprint
       // to one browser while still catching mobile-layout regressions.
       // Swap to `devices['iPhone 14']` (webkit) in CI if needed.
+      testIgnore: ['**/phaseB5-*.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 390, height: 844 },
@@ -72,6 +76,21 @@ export default defineConfig({
         isMobile: true,
         hasTouch: true,
       },
+    },
+    {
+      // B5 cross-browser smoke — narrow set of tests on firefox.
+      // Restricted via testMatch so we don't run the whole suite on
+      // an engine we don't otherwise support; only verifies the load-
+      // bearing surfaces work on Gecko.
+      name: 'firefox',
+      testMatch: ['**/phaseB5-*.spec.ts'],
+      use: { ...devices['Desktop Firefox'], viewport: { width: 1440, height: 900 } },
+    },
+    {
+      // Same idea for webkit — Safari-engine smoke on the same set.
+      name: 'webkit',
+      testMatch: ['**/phaseB5-*.spec.ts'],
+      use: { ...devices['Desktop Safari'], viewport: { width: 1440, height: 900 } },
     },
   ],
   // Build + preview locally unless we're hitting a deployed URL.

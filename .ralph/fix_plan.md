@@ -128,8 +128,20 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     asserts composer render, chip toggling, INSERT visibility, and
     input-clear. Real-mode test cleans up via service-role DELETE
     by `text` match. 2 passed against `https://app.myclaw.one`.
-- [ ] **B5.** Cross-browser smoke (WebKit + Firefox) for `/`,
+- [x] **B5.** Cross-browser smoke (WebKit + Firefox) for `/`,
   `/intent/<id>` chat-send, `/settings` signout. 6 new tests.
+  - `playwright.config.ts` now defines `firefox` + `webkit` projects
+    with `testMatch: ['**/phaseB5-*.spec.ts']`; chromium + mobile
+    projects `testIgnore` the same so we don't double-cover.
+  - New spec `e2e/phaseB5-cross-browser.spec.ts` (3 tests × 2
+    browsers = 6 runs): `/` renders + IntentList CTA; `/intent/birthday`
+    chat-send adds the user bubble + clears composer; `/settings`
+    signout via `stubSupabaseSession` clears `sb-` localStorage +
+    redirects to `/auth/signin`.
+  - Mock-mode only by design (production is real-mode → spec
+    auto-skips against `https://app.myclaw.one`); the existing
+    chromium realmode specs cover the same paths on prod.
+  - 6/6 passed locally against `vite preview` on Firefox + WebKit.
 - [ ] **B6.** Mobile viewport markdown render spec.
 
 ## Phase C — Multi-agent orchestration polish
