@@ -484,14 +484,14 @@ actual.
     defaults to `btn-md`, mobile thumbs get the larger hit target.
   - Mock-mode `Now panel — approvals card` stayed green; phase8 `/now`
     + phaseB2 + phaseL4 real-mode → 4 passed / 0 failed on prod.
-- [ ] **E16.** `/schedule` add-hint CTA · land here with no reminders
-  · expected: a btn-md primary CTA per CLAUDE.md rule 8 · actual:
-  `schedule-add-cta` (`src/routes/Schedule.tsx:76`) uses
-  `px-4 py-2 text-xs` — roughly btn-sm sized. This is the canonical
-  "start a new intent to add a reminder" entry point on a load-bearing
-  empty-state surface. Convert to `btn btn-primary gap-1.5 rounded-full`
-  so DaisyUI's default btn-md applies — matches the A4.1 pattern
-  established for the IntentList sentinel banner CTA.
+- [x] **E16.** `/schedule` add-hint CTA · expected: btn-md primary CTA
+  per CLAUDE.md rule 8 · actual: `schedule-add-cta` used
+  `px-4 py-2 text-xs` (btn-sm-sized).
+  - Fixed by converting to `btn btn-primary gap-1.5 rounded-full` so
+    DaisyUI's default btn-md applies. Matches the sentinel banner CTA
+    pattern from A4.1.
+  - Verified on prod: phase8 /schedule console-clean + phaseL2 Schedule
+    (add-hint card + 4 bucket headings) → 3 passed / 0 failed.
 
 ---
 
