@@ -33,6 +33,7 @@ import {
 } from '@/data/useMessages';
 import { useGatewayChat } from '@/data/useGatewayChat';
 import { AgentPicker } from '@/components/AgentPicker';
+import { Markdown } from '@/components/Markdown';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
@@ -2075,10 +2076,11 @@ function AssistantMessage({ message }: { message: Message }) {
           </div>
         )}
 
-        {/* Body — unboxed prose; reads as response, not as SMS */}
-        <div className="whitespace-pre-wrap text-[15px] leading-relaxed text-base-content/90">
-          {text}
-        </div>
+        {/* Body — markdown-rendered prose. Handles GFM (tables, lists,
+            task lists, autolinks) + streams cleanly: partial markdown
+            (open ** or unfinished header) renders literal until closed
+            so the user sees the agent typing without flicker. */}
+        <Markdown text={text} />
 
         {/* Trace / capability strip — one consolidated row, soft */}
         {(usedCaps.length > 0 || traces.length > 0) && (
