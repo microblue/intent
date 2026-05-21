@@ -39,8 +39,40 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
     asks `~/myclaw` to append the three rows to §3.1.
   - In-progress: mark `[x]` after spec is updated and hand-off file
     deleted; aios-side has no code change to make.
-- [ ] **A4.** Audit shipped UI against `aios-ui-spec.md §10`
+- [x] **A4.** Audit shipped UI against `aios-ui-spec.md §10`
   (lay-user-first rules). One fix_plan item per violation.
+  - Rule 1 (no internal terms in primary copy): ✓ — only hit is
+    `Engines.tsx:144` "Intent → Agents + Profile" in dev mode, which
+    spec explicitly allows ("dev mode only").
+  - Rule 3 (no CLI/monospace aesthetic): ✓ — `font-mono` only used in
+    Markdown code rendering, `/help` concept catalog (allowed),
+    activation-code input pattern, and `agent.key` trace annotation
+    (allowed).
+  - Rule 4 (friendly errors, no status codes): ✓ — no `40x`/`50x` /
+    `HTTP \d` / "Error:" leaks in user-facing JSX strings.
+  - Rule 5 (empty states with onboarding copy): ✓ — `/now`,
+    IntentList, Memory, Schedule, Archive all have "here's what
+    would go here" empty-state cards.
+  - Rule 6 (Cmd+K accelerator parity): ✓ — every launcher action
+    (new intent, open intent, message search, file search) is
+    reachable via sidebar / IntentList grid.
+  - Rule 7 (settings/advanced folded away): ✓ — dev mode at
+    `/settings/engines` behind a Settings toggle.
+  - Rule 8 (btn-md for primary CTAs): **✗ violation** — see A4.1.
+- [ ] **A4.1.** Promote primary-CTA button size from `btn-sm` → `btn-md`
+  per `aios-ui-spec.md §10` rule 8 ("primary buttons are `btn-md` not
+  `btn-sm`"). Confirmed lay-user-onboarding-critical instances:
+  - `src/routes/Settings.tsx:82` — signed-out "登录" CTA (the entry
+    point that drives signup → onboarding).
+  - `src/routes/IntentList.tsx:135` — sentinel banner "去开一台 →" CTA
+    (the load-bearing install nudge for new accounts).
+  - `src/routes/IntentList.tsx:173` — onboarding welcome card
+    "起一个新的 →" CTA.
+  - `src/routes/Settings.tsx:361` and `src/routes/ResetPassword.tsx:101`
+    — review for same treatment.
+  Leave `btn-ghost btn-sm` secondary actions (toolbar / dropdown
+  triggers / dismiss buttons) untouched; rule 8 calls out *primary*
+  buttons. Update related e2e assertions if any check button size.
 
 ## Phase B — e2e coverage gaps
 
