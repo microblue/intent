@@ -85,7 +85,7 @@ export function IntentHomePage() {
         <div className="text-5xl">😵</div>
         <h1 className="mt-4 text-lg font-semibold">加载出错了</h1>
         <p className="mt-1 text-sm text-base-content/60">
-          {error.message ?? '稍等一下再试。'}
+          {friendlyError(error, '稍等一下再试。')}
         </p>
         <Link to="/" className="btn btn-ghost btn-sm mt-4">
           回到首页

@@ -5,6 +5,7 @@ import { useClaws } from '@/data/useClaws';
 import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
 import { useUI } from '@/state/ui';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * Starter templates — shown above the intent grid as inspiration. When the
@@ -242,7 +243,7 @@ export function IntentListPage() {
         <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
           <div className="font-medium">读取数据的时候出错了</div>
           <p className="mt-1 text-error/80">
-            {error.message ?? '稍等一下,再刷新一次试试。'}
+            {friendlyError(error, '稍等一下,再刷新一次试试。')}
           </p>
         </div>
       )}

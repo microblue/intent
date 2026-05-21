@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { env } from '@/lib/env';
 import { useSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 /*
  * /new — phase ① "说想做什么" + phase ② "拆开看看".
@@ -443,7 +444,7 @@ export function NewIntentPage() {
             .upsert(rows, { onConflict: 'intent_id,agent_key', ignoreDuplicates: true });
           if (error) {
             console.warn('[new] specialist team seed failed:', error.message);
-            toast(`助手团队推荐没保存上(${error.message})。可在意图详情里手动加。`);
+            toast(friendlyError(error, '助手团队推荐没保存上,可在意图详情里手动加。'));
           }
         }
       }
@@ -453,8 +454,7 @@ export function NewIntentPage() {
       // useCreateIntent + drop back to the preview so the user can adjust
       // or sign in. Production-mode errors (RLS, network) get the same
       // pattern.
-      const message =
-        err instanceof Error ? err.message : '保存的时候卡了一下,再试试?';
+      const message = friendlyError(err, '保存的时候卡了一下,再试试?');
       toast(message);
       // The "navigate to the keyword-route mock" was the Phase-1 demo
       // fallback. Preserve it only when we explicitly know this is mock

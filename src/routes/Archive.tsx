@@ -53,7 +53,7 @@ export function ArchivePage() {
       ) : error ? (
         <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
           <div className="font-medium">读取封存列表时出错了</div>
-          <p className="mt-1 text-error/80">{error.message}</p>
+          <p className="mt-1 text-error/80">{friendlyError(error, '稍等一下,再刷新一次试试。')}</p>
         </div>
       ) : intents.length === 0 ? (
         <div
