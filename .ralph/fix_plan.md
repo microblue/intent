@@ -115,7 +115,19 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
   - Deferral handoff: `docs/handoff/schedule-reminder-agent.md`
     describes the reminder agent + non-intent gateway routing work
     that needs to land in `~/myclaw` before the form comes back.
-- [ ] **B4.** `/memory` add-fact path + DB INSERT + e2e.
+- [x] **B4.** `/memory` add-fact path + DB INSERT + e2e.
+  - New `useAddMemoryFact()` mutation in `src/data/useMemoryFacts.ts`
+    INSERTs into `public.memory_facts` and invalidates the list
+    query. Real-mode persists; mock-mode reuses the existing
+    "演示模式" rejection message.
+  - `src/routes/Memory.tsx` now renders an `AddFactComposer` above
+    the category groups: free-text input + 4-button category chips
+    (`关于你` / `你的偏好` / `重要的人` / `项目相关`) + submit button.
+    Input clears on success; toast confirms either path.
+  - New e2e `e2e/phaseB4-memory-add.spec.ts` (mock-mode + real-mode)
+    asserts composer render, chip toggling, INSERT visibility, and
+    input-clear. Real-mode test cleans up via service-role DELETE
+    by `text` match. 2 passed against `https://app.myclaw.one`.
 - [ ] **B5.** Cross-browser smoke (WebKit + Firefox) for `/`,
   `/intent/<id>` chat-send, `/settings` signout. 6 new tests.
 - [ ] **B6.** Mobile viewport markdown render spec.
