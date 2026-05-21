@@ -256,6 +256,19 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 - [ ] **D3.** Wire `@sentry/react` prod-only via `env.isProd`. Dev-only
   test-throw button in `/settings/engines`. Hand-off doc if Sentry
   account needs human creation.
+  - `@sentry/react` installed; `src/lib/sentry.ts` exposes `initSentry()`
+    (no-op unless `env.isProd && env.sentryDsn`) and `throwTestError()`.
+    Wired from `src/main.tsx` before `createRoot`. Errors-only init
+    (`tracesSampleRate=0`, both replay rates = 0); `beforeSend` drops
+    `AuthSessionMissingError` so sign-out is silent.
+  - Dev-only test-throw button at `/settings/engines` (gated on
+    `env.isDev`, `data-testid="sentry-test-throw"`).
+  - Bundle stayed at ~1MB (`import * as Sentry` tree-shakes since only
+    `Sentry.init` is referenced).
+  - Hand-off written: `docs/handoff/sentry-setup.md` — covers org/project
+    creation, `vercel env add VITE_SENTRY_DSN production`, and the redeploy.
+  - In-progress: aios-side has nothing to ship. Flip `[x]` after DZ
+    runs through the hand-off and a real prod error lands in Sentry.
 - [ ] **D4.** Audit `gh secret list --repo microblue/myclaw-aios`
   against `.github/workflows/ci.yml`. Missing → write
   `docs/handoff/github-secrets.md`.
