@@ -333,6 +333,16 @@ actual.
   - Verified on prod: `phase8-realmode-audit.spec.ts /now` green;
     `phaseB2-now-realmode.spec.ts` 2/2 green (the real-mode collapse
     behavior is unchanged).
+- [ ] **E3.** Intent chat · click 📎 附件 button · expected: a real file
+  picker (or no button if not implemented) · actual: toasts "附件上传正在做中"
+  (`src/routes/IntentHome.tsx:2213–2221`). Same class of issue as E1 —
+  half-finished UI promising functionality it doesn't deliver. The
+  button sits in every intent chat composer (highly visible), and a
+  lay user trying to attach a photo of a receipt gets a polite-toast
+  dead-end. Prefer removal over toast-ify per CLAUDE.md "no
+  half-finished implementations". Layout: composer footer is a flex
+  row with AgentPicker + ⌘↵ kbd hint + send button — the kbd already
+  uses `ml-auto` so removing the 📎 button doesn't break alignment.
 
 ---
 

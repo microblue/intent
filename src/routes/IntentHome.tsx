@@ -2210,15 +2210,6 @@ function StickyComposer({
               }}
             />
             <div className="flex items-center gap-2 px-3 pb-3">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm gap-1.5"
-                onClick={() => toast('附件上传正在做中')}
-                aria-label="附件"
-              >
-                <span aria-hidden>📎</span>
-                <span className="hidden sm:inline">附件</span>
-              </button>
               {activeAgentId && onAgentChange && (
                 <AgentPicker
                   activeAgentId={activeAgentId}
