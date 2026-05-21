@@ -41,6 +41,7 @@ import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
+import { createSendRateLimiter } from '@/lib/rateLimit';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
 import { useIsDesktop } from '@/lib/useMediaQuery';
 
@@ -165,6 +166,7 @@ function useChatThread(intentId: string) {
   const queryClient = useQueryClient();
   const [typing, setTyping] = useState(false);
   const typingResetRef = useRef<number | null>(null);
+  const rateLimiterRef = useRef(createSendRateLimiter());
 
   // When the gateway delivers an assistant reply, useGatewayChat pushes
   // it into the message cache via appendLocalAssistantMessage. The
@@ -184,6 +186,19 @@ function useChatThread(intentId: string) {
   }, [messages, typing]);
 
   const send = async (text: string) => {
+    // Client-side rate limit — 5 sends per 10s sliding window. Catches
+    // runaway loops / stuck keys before they spam the gateway and burn
+    // LLM tokens. The gateway has its own server-side limits; this is
+    // the friendly-nudge layer that fires first.
+    if (!rateLimiterRef.current.tryAcquire()) {
+      const waitMs = rateLimiterRef.current.nextSlotMs();
+      const waitSec = Math.max(1, Math.ceil(waitMs / 1000));
+      toast(`发得太快啦,稍等 ${waitSec} 秒再说 🐌`, {
+        id: 'chat-rate-limit',
+      });
+      return;
+    }
+
     try {
       await persistUserMessage(text);
     } catch (err) {
