@@ -254,9 +254,8 @@ test.describe('Phase 8 — Intent + TeamPanel real-mode', () => {
     await page.waitForTimeout(3_000);
     const url = page.url();
     if (!/\/$/.test(url) && !/\/auth\//.test(url)) {
-      await expect(
-        page.getByText(/找不到|没有这件事|找不到这件事|不存在/),
-      ).toBeVisible({ timeout: 5_000 });
+      // Actual copy: "没找到这个项目" + intent-notfound testid.
+      await expect(page.getByTestId('intent-notfound')).toBeVisible({ timeout: 5_000 });
     }
   });
 });
