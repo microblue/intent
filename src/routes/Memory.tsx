@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { findIntent, type MemoryFact } from '@/mocks';
-import { useMemoryFacts } from '@/data/useMemoryFacts';
+import { useAddMemoryFact, useMemoryFacts } from '@/data/useMemoryFacts';
 import { useUI } from '@/state/ui';
+import { cn } from '@/lib/cn';
 
 const groupOrder: { key: MemoryFact['category']; label: string; emoji: string; hint: string }[] = [
   { key: 'about-you', label: '关于你', emoji: '🧍', hint: '基础情况 + 习惯' },
@@ -33,9 +35,13 @@ export function MemoryPage() {
 
       <div className="mb-6 rounded-2xl bg-info/10 p-4 text-sm leading-relaxed text-info-content/85 ring-1 ring-info/30">
         <div className="mb-1 font-medium text-info">关于记忆</div>
-        我只在你跟我聊天的时候,顺手把重要的事写下来。这些是<strong>跨项目</strong>都能用的 ——
-        比如你在「樱花旅行」告诉我你喜欢早班机,以后帮你订其他行程时我也会记得。
+        平时聊天时,助手会顺手把重要的事写下来 —— 这些是<strong>跨项目</strong>都能用的
+        (比如你在「樱花旅行」告诉助手你喜欢早班机,以后订其他行程也会记得)。
+        想自己直接加一条?用下面的小栏。
       </div>
+
+      <AddFactComposer />
+
 
       {isEmpty && (
         <div className="mb-6 rounded-2xl border-2 border-dashed border-base-300/60 bg-base-100/40 p-8 text-center">
@@ -142,6 +148,72 @@ export function MemoryPage() {
         </section>
       )}
     </div>
+  );
+}
+
+function AddFactComposer() {
+  const { add, isPending, isMock } = useAddMemoryFact();
+  const [text, setText] = useState('');
+  const [category, setCategory] = useState<MemoryFact['category']>('about-you');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim() || isPending) return;
+    try {
+      await add({ text, category });
+      toast('记住了');
+      setText('');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : '没记上,稍后再试');
+    }
+  };
+
+  return (
+    <form
+      data-testid="memory-add-form"
+      onSubmit={submit}
+      className="mb-7 rounded-2xl bg-base-200 p-4 shadow-sm ring-1 ring-base-300/40 focus-within:ring-primary/40"
+    >
+      <div className="mb-2 flex items-center gap-2">
+        <span aria-hidden className="text-lg">✨</span>
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="想让我记下来的事 — 比如「我是素食」「周二周四在家办公」"
+          data-testid="memory-add-input"
+          className="flex-1 bg-transparent text-sm placeholder:text-base-content/45 focus:outline-none"
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[11px] uppercase tracking-wide text-base-content/45">放到哪一类</span>
+        {groupOrder.map((g) => (
+          <button
+            key={g.key}
+            type="button"
+            data-testid={`memory-add-cat-${g.key}`}
+            onClick={() => setCategory(g.key)}
+            className={cn(
+              'rounded-full px-2.5 py-1 text-xs ring-1 transition',
+              category === g.key
+                ? 'bg-primary text-primary-content ring-primary'
+                : 'bg-base-100 text-base-content/70 ring-base-300/60 hover:bg-base-100/80',
+            )}
+          >
+            <span aria-hidden className="mr-1">{g.emoji}</span>
+            {g.label}
+          </button>
+        ))}
+        <button
+          type="submit"
+          data-testid="memory-add-submit"
+          disabled={!text.trim() || isPending}
+          className="ml-auto rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-content disabled:bg-base-300 disabled:text-base-content/40"
+        >
+          {isPending ? '记下来…' : isMock ? '记下来(演示)' : '记下来'}
+        </button>
+      </div>
+    </form>
   );
 }
 

@@ -80,6 +80,70 @@ export function useMemoryFacts(): MemoryFactsResult {
   };
 }
 
+export interface AddMemoryFactInput {
+  text: string;
+  category: MemoryFact['category'];
+  /** Optional pointer to the intent the fact came out of. */
+  originIntentId?: string | null;
+}
+
+export interface AddMemoryFactResult {
+  add: (input: AddMemoryFactInput) => Promise<MemoryFact>;
+  isPending: boolean;
+  error: Error | null;
+  isMock: boolean;
+}
+
+/**
+ * Add a memory fact directly — used by the Memory page composer for
+ * manual entries lay users want the assistant to remember (vegan,
+ * works from home Tue/Thu, etc.). Agents that auto-write memory go
+ * through a different (claw-side) path; this hook is the SPA-side
+ * write surface only.
+ */
+export function useAddMemoryFact(): AddMemoryFactResult {
+  const { signedIn, user } = useSession();
+  const queryClient = useQueryClient();
+  const useReal = env.useRealData && signedIn;
+
+  const mutation = useMutation({
+    mutationFn: async (input: AddMemoryFactInput): Promise<MemoryFact> => {
+      const text = input.text.trim();
+      if (!text) throw new Error('写一条让我记下来');
+      if (!useReal) {
+        if (!signedIn) {
+          throw new Error('演示模式,记下的事不会被保存。登录后再来试一次?');
+        }
+        throw new Error('演示模式,记下的事不会被保存。等真实数据接通后再来。');
+      }
+      if (!user?.id) throw new Error('请先登录');
+
+      const { data, error } = await supabase
+        .from('memory_facts')
+        .insert({
+          user_id: user.id,
+          text,
+          category: input.category,
+          origin_intent_id: input.originIntentId ?? null,
+        })
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message);
+      return dbRowToMemoryFact(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['memory_facts'] });
+    },
+  });
+
+  return {
+    add: (input) => mutation.mutateAsync(input),
+    isPending: mutation.isPending,
+    error: mutation.error as Error | null,
+    isMock: !useReal,
+  };
+}
+
 export interface RemoveMemoryFactResult {
   remove: (id: string) => Promise<void>;
   isPending: boolean;
