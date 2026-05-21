@@ -1,5 +1,6 @@
 import { useGateway } from '@/gateway/useGateway';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * ClawStatus — tiny indicator showing whether the SPA has a live WS
@@ -36,7 +37,7 @@ export function ClawStatus({ compact = false }: { compact?: boolean }) {
     <div
       data-testid="claw-status"
       data-status={status}
-      title={reason ?? undefined}
+      title={reason ? friendlyError(new Error(reason), '稍等一下再试') : undefined}
       className={cn(
         'flex items-center gap-1.5 text-xs text-base-content/55',
         compact && 'flex-col gap-0.5',

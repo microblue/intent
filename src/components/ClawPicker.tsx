@@ -1,6 +1,7 @@
 import { useGateway } from '@/gateway/useGateway';
 import { useClaws } from '@/data/useClaws';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * ClawPicker — visible claw selector + live connection status.
@@ -44,7 +45,7 @@ export function ClawPicker() {
     <div
       data-testid="claw-picker"
       data-status={status}
-      title={reason ?? undefined}
+      title={reason ? friendlyError(new Error(reason), '稍等一下再试') : undefined}
       className={cn(
         'flex items-center gap-2 rounded-full bg-base-200/60 px-3 py-1 text-xs',
         'ring-1 ring-base-300/40',
