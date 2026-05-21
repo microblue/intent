@@ -84,13 +84,25 @@ test.describe('D2 — WS reconnect picks up a fresh mint JWT', () => {
       (window as unknown as { __aios: { simulateGatewayWsClose: () => void } }).__aios.simulateGatewayWsClose();
     });
 
-    // Briefly we'll see a non-connected state (reconnecting), then
-    // back to connected after the fresh mint + WS open.
-    await expect(status).not.toHaveAttribute('data-status', 'connected', { timeout: 8_000 });
-    await expect(status).toHaveAttribute('data-status', 'connected', { timeout: 30_000 });
+    // The reconnect cycle (close → reconnecting → connecting →
+    // connected) can pass through quickly enough that the transient
+    // "not connected" state isn't observed in one DOM tick. Skip the
+    // transition check — the load-bearing assertions are durable:
+    //
+    //   1. Mint endpoint hit at least one additional time
+    //      (the reconnect re-ran getCredentials).
+    //   2. Status ends back at "connected".
+    //
+    // Poll mintCalls in Node land with a short timeout, then assert.
+    const deadline = Date.now() + 30_000;
+    while (mintCalls === mintsBefore && Date.now() < deadline) {
+      await page.waitForTimeout(250);
+    }
+    expect(
+      mintCalls,
+      `mint endpoint should have been hit again after forced WS close (before=${mintsBefore}, after=${mintCalls})`,
+    ).toBeGreaterThan(mintsBefore);
 
-    // The reconnect should have produced at least one additional
-    // mint call beyond the snapshot.
-    expect(mintCalls).toBeGreaterThan(mintsBefore);
+    await expect(status).toHaveAttribute('data-status', 'connected', { timeout: 20_000 });
   });
 });

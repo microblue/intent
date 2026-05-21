@@ -385,8 +385,13 @@ export class GatewayClient {
    * built-in reconnect path runs. Used by e2e to verify the
    * disconnect → re-mint → re-connect flow without a real network
    * drop. No-op when the client isn't currently connected.
+   *
+   * The default code 4000 is in the application-defined range
+   * (3000–4999) per the WHATWG WebSocket spec — calling `ws.close(1006)`
+   * from JS throws InvalidAccessError because 1006 is reserved for the
+   * UA to emit, never for the script to send.
    */
-  __simulateWsCloseForTests(code = 1006, reason = 'simulated_disconnect'): void {
+  __simulateWsCloseForTests(code = 4000, reason = 'simulated_disconnect'): void {
     const ws = this.ws;
     if (!ws) return;
     if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CONNECTING) return;
