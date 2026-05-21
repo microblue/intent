@@ -12,9 +12,15 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 
 ## Phase A — Spec ↔ reality reconciliation
 
-- [ ] **A1.** Audit `specs/aios-design.md §4` against current Supabase
+- [x] **A1.** Audit `specs/aios-design.md §4` against current Supabase
   schema (`supabase gen types` as truth). For each gap: skip / hand off
   to `~/myclaw` / implement aios-side. Append child items.
+  - §4.1 RBAC + quota: `users.role` ✓ (no `is_admin`); `channel_partners` ✓; `partner_quotas` ✓; `activation_codes.partner_id` ✓
+  - §4.2 Intent: `intents` ✓ (no `outline`; extras `cover`/`emoji`/`preview` are aios display-only and don't conflict with spec); `intent_agents` ✓ (PK + one-orchestrator unique); `intent_artifacts` ✓
+  - §4.3 Install: `claws.install_run_id` ✓; `claw_install_phases` ✓
+  - §4.4 Auth bridge: `claws.central_token` ✓
+  - §4.5 SKUs: `activation_codes.credit_usd` ✓
+  - No gaps. No child items required.
 - [ ] **A2.** Verify intent → claw → session per `aios-design.md §6`
   for: fresh signup (sentinel only), one real claw, multiple real
   claws. Cover whichever case isn't tested today.
