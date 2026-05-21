@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
 import { findIntent, type ScheduleEvent } from '@/mocks';
 import { useScheduleEvents } from '@/data/useScheduleEvents';
@@ -29,8 +27,7 @@ function timeOf(iso: string) {
 }
 
 export function SchedulePage() {
-  const { events: list, isLoading, error, isMock } = useScheduleEvents();
-  const [draft, setDraft] = useState('');
+  const { events: list, isLoading, error } = useScheduleEvents();
 
   const buckets: Record<string, ScheduleEvent[]> = { 今天: [], 明天: [], 这周: [], 以后: [] };
   for (const e of list) buckets[bucketOf(e.fireAt)].push(e);
@@ -47,48 +44,42 @@ export function SchedulePage() {
             : error
               ? '提醒列表读不出来,稍等再试。'
               : list.length === 0
-                ? '还没有提醒。直接在下面写一句,比如「每周一 9 点开会」。'
+                ? '还没有提醒。跟任意一个项目里的助手说一句就行。'
                 : `一共 ${list.length} 件事在等时间到。点开任意一条进项目里继续聊。`
         }
       />
 
-      {/* Natural-language quick-add */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!draft.trim()) return;
-          // Quick-add still toast-only — parsing natural-language to a
-          // fire_at + recurrence needs the intent-summariser agent. The
-          // real INSERT path is wired through useAddScheduleEvent for
-          // when the chat agent eventually calls it on the user's behalf.
-          toast(
-            isMock
-              ? '已记下(演示模式不会保存)'
-              : '已记下(自然语言解析等 agent 接入)',
-            { description: draft },
-          );
-          setDraft('');
-        }}
-        className="mb-8 flex items-center gap-2 rounded-2xl bg-base-200 px-4 py-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/40"
+      {/* How to add a reminder. The composer used to be here as a
+          natural-language quick-add input, but parsing 自然语言时间
+          ("每周一 9 点开会") into a fire_at + recurrence reliably
+          belongs in a reminder agent, not in the SPA. aios-design.md
+          and the lay-user-first rule "errors are friendly, not status
+          codes" both point at making the path obvious instead of
+          surfacing a toast that pretends to save. Until the reminder
+          agent ships, the canonical path is: open any project →
+          tell its assistant "到时候提醒我..." → the agent INSERTs
+          the schedule_events row on the user's behalf. */}
+      <article
+        data-testid="schedule-add-hint"
+        className="mb-8 flex items-start gap-3 rounded-2xl bg-base-200/70 p-4 ring-1 ring-base-300/40"
       >
-        <span aria-hidden className="text-lg">
-          ✨
-        </span>
-        <input
-          type="text"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={'加一个提醒 — 直接说,比如「每周一早上提醒我去运动」'}
-          className="flex-1 bg-transparent text-sm placeholder:text-base-content/45 focus:outline-none"
-        />
-        <button
-          type="submit"
-          disabled={!draft.trim()}
-          className="rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-content disabled:bg-base-300 disabled:text-base-content/40"
-        >
-          加
-        </button>
-      </form>
+        <span aria-hidden className="text-2xl">✨</span>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium">想加新提醒?跟某件事里的助手说一句</div>
+          <p className="mt-1 text-[0.875rem] leading-relaxed text-base-content/65">
+            比如在「东京樱花季旅行」里说「6/10 前买好机票提醒我」,助手会记下时间,到点就响。
+          </p>
+          <Link
+            to="/new"
+            search={{ seed: undefined }}
+            data-testid="schedule-add-cta"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-content"
+          >
+            <span aria-hidden>➕</span>
+            起一件新事
+          </Link>
+        </div>
+      </article>
 
       {(['今天', '明天', '这周', '以后'] as const).map((b) =>
         buckets[b].length === 0 ? null : (
@@ -116,7 +107,7 @@ export function SchedulePage() {
             <span className="text-base-content/70">「月底整理账单」</span>
           </p>
           <p className="mx-auto mt-3 max-w-md text-xs text-base-content/45">
-            在上面那行直接说就行,或者在某件意图里跟助手说「到时候提醒我」。
+            在某件事里跟助手说「到时候提醒我」就行,助手会记下时间。
           </p>
         </div>
       )}

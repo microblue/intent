@@ -23,14 +23,16 @@ test.describe('L2 — Schedule', () => {
   test.beforeEach(skip);
   test.skip(({ isMobile }) => isMobile === true, 'desktop sweep');
 
-  test('quick-add typebox + 加 surfaces the "agent will parse" toast', async ({ page, context }) => {
+  test('add-hint card replaces the legacy NL composer in real-mode', async ({ page, context }) => {
     await injectRealSession(context, process.env.REAL_TEST_EMAIL!);
     await unlockVercelPreview(page);
     await page.goto('/schedule');
-    await page.getByPlaceholder(/加一个提醒/).fill('每天晚 9 点喝水');
-    await page.getByRole('button', { name: '加' }).click();
-    // Real-mode toast wording — wait for the agent-parses message.
-    await expect(page.getByText(/agent 接入|已记下/)).toBeVisible({ timeout: 5_000 });
+    // B3 swapped the toast-only NL composer for a hint card that
+    // points users at the chat path (the reminder agent is the one
+    // that parses time expressions, not the SPA).
+    await expect(page.getByTestId('schedule-add-hint')).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId('schedule-add-cta')).toBeVisible();
+    await expect(page.getByPlaceholder(/加一个提醒/)).toHaveCount(0);
   });
 
   test('page renders with 4 bucket headings even when empty', async ({ page, context }) => {

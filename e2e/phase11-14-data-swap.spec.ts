@@ -29,14 +29,15 @@ test('/permissions: clicking a mode triggers the persistence toast', async ({
   await expect(page.getByText(/已改成「不行」/)).toBeVisible({ timeout: 5_000 });
 });
 
-test('/schedule: quick-add toast surfaces but stays in demo mode', async ({
+test('/schedule: add-hint card points at the chat-with-assistant path', async ({
   page,
 }) => {
+  // B3 removed the natural-language quick-add composer: parsing time
+  // expressions belongs in the reminder agent, not the SPA. /schedule
+  // is now read-only and points users at the chat path. Confirm the
+  // hint card + CTA render, and the old composer is gone.
   await page.goto('/schedule');
-  await page.getByPlaceholder(/加一个提醒/).fill('每周一 9 点开会');
-  await page.getByRole('button', { name: '加' }).click();
-  // Mock mode: confirms the input was accepted with the demo disclaimer.
-  await expect(page.getByText(/演示模式不会保存|agent 接入/)).toBeVisible({
-    timeout: 5_000,
-  });
+  await expect(page.getByTestId('schedule-add-hint')).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByTestId('schedule-add-cta')).toHaveAttribute('href', /\/new/);
+  await expect(page.getByPlaceholder(/加一个提醒/)).toHaveCount(0);
 });
