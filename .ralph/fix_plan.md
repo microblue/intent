@@ -361,15 +361,17 @@ actual.
     for the signed-out demo viewer (3/3 mobile dock tests green).
   - Verified on prod: `phase6-realmode-mobile-chat.spec.ts` 1/1 green
     (real signed-in mobile session round-trips correctly).
-- [ ] **E6.** Intent modals · click outside the modal to close ·
+- [x] **E6.** Intent modals · click outside the modal to close ·
   expected: nothing user-visible inside the backdrop (or a Chinese
-  label) · actual: two DaisyUI modal-backdrop forms render a literal
-  `<button>close</button>` (`src/routes/IntentHome.tsx:561` +
-  `src/routes/IntentHome.tsx:1106`) — English "close" text inside a
-  Chinese UI, announced to screen readers, sometimes briefly visible
-  before backdrop styling applies. Fix: replace text with
-  `<span className="sr-only">关闭</span>` + `aria-label="关闭"` on the
-  button so the accessible name is correct and no English leaks in.
+  label) · actual: two DaisyUI modal-backdrop forms rendered a literal
+  `<button>close</button>` — English "close" text inside a Chinese UI,
+  announced to screen readers.
+  - Fixed both call sites (`src/routes/IntentHome.tsx:561` + `:1106`):
+    text replaced with `<span className="sr-only">关闭</span>` and the
+    button got `aria-label="关闭"`. Form-submit backdrop-close behavior
+    is unchanged.
+  - Verified on prod: phase8 Intent + TeamPanel real-mode regression
+    sweep 4/4 green (rename + archive + open + not-found paths).
 - [ ] **E7.** Error toasts · trigger a transient network blip (mint /
   WS / Supabase fetch) · expected: friendly natural-language nudge per
   CLAUDE.md ("Errors are friendly natural-language suggestions, not
