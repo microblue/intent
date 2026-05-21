@@ -31,14 +31,16 @@ SESSION_EXPIRY_HOURS=24
 # Task source: just the local fix_plan.md. No beads / github sync.
 TASK_SOURCES="local"
 
-# Circuit breakers — stop the loop early instead of burning quota on
-# pathological states.
-#   - 3 loops with no fix_plan.md progress → stop (probably stuck)
-#   - 5 loops returning the same error → stop (likely a flaky env, not a code bug)
-#   - 70% output decline → stop (model truncating, swap to a longer ctx)
-CB_NO_PROGRESS_THRESHOLD=3
+# Circuit breakers — tuned to allow deep audit work without false-positive
+# stagnation trips. The previous run tripped after 3 quiet loops during a
+# legitimate audit pass — we want Ralph to keep going through walkthrough
+# cycles even when no code commit lands.
+#   - 10 loops with no fix_plan progress → stop (was 3; audit cycles need slack)
+#   - 5 loops returning the same error → stop (unchanged; real loop)
+#   - 90% output decline → stop (was 70; audit responses are naturally shorter)
+CB_NO_PROGRESS_THRESHOLD=10
 CB_SAME_ERROR_THRESHOLD=5
-CB_OUTPUT_DECLINE_THRESHOLD=70
+CB_OUTPUT_DECLINE_THRESHOLD=90
 
 # Auto-update the claude CLI at startup so we always run the latest model.
 CLAUDE_AUTO_UPDATE=true
