@@ -401,20 +401,19 @@ actual.
   - Final state: no remaining `error.message` / `err.message` in
     `src/routes/` or `src/components/` JSX/toast paths.
   - Verified on prod: phase8 full real-mode sweep 17/17 green.
-- [ ] **E9.** Memory + Schedule pages · land while a real-mode load is
-  still in flight · expected: a loading state (skeleton or progress
-  hint) so the user knows data is on the way · actual: the body falls
-  through to the empty-state copy ("还没记下任何事" / "没有要提醒的事")
-  before the response arrives — the page lies about what's there.
-  - `src/routes/Memory.tsx:22` computes `isEmpty = !isLoading && !error
-    && total === 0` correctly, but the body still renders `groupOrder`
-    sections that each say "这一类还没有东西" during load; the
-    subtitle renders `我记得你的 0 件事` while loading.
-  - `src/routes/Schedule.tsx:99` shows the "没有要提醒的事" empty card
-    whenever `list.length === 0`, including during load.
-  - Archive at `src/routes/Archive.tsx:44–52` already does it right
-    (skeleton block during `isLoading`). Mirror that shape onto Memory
-    + Schedule: skeleton-during-load → empty-state-after-load.
+- [x] **E9.** Memory + Schedule pages · land while a real-mode load is
+  still in flight · expected: a loading state · actual: the empty-state
+  copy ("还没记下任何事" / "没有要提醒的事") fell through during load.
+  - Mirrored Archive's `isLoading ? <skeleton/> : ...` shape onto both:
+    `data-testid="memory-skeleton"` + `data-testid="schedule-skeleton"`,
+    3-row pulse animations matching the Archive style.
+  - Memory subtitle now reads "让我看看你记下的事 ——" while loading
+    instead of "我记得你的 0 件事"; new error branch uses
+    `friendlyError()`. Empty-state + body-content branches now also
+    gate on `!isLoading && !error`.
+  - Verified on prod: phase8 `/memory` + `/schedule` console-clean
+    sweep green; phaseB4 memory composer mock + real-mode INSERT
+    both green (4/4 total).
 
 ---
 
