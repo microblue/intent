@@ -73,7 +73,7 @@ export function SchedulePage() {
             to="/new"
             search={{ seed: undefined }}
             data-testid="schedule-add-cta"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-content"
+            className="btn btn-primary mt-3 gap-1.5 rounded-full"
           >
             <span aria-hidden>➕</span>
             起一件新事
