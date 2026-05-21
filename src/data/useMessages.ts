@@ -40,6 +40,7 @@ function dbRowToMessage(row: DbMessage): Message {
     role: (row.role as Message['role']) ?? 'user',
     content: parts,
     createdAt: row.created_at,
+    agentId: row.agent_id ?? undefined,
   };
 }
 
@@ -247,6 +248,7 @@ export function upsertLocalAssistantMessage(
   text: string,
   useReal: boolean,
   userId: string | null,
+  agentId?: string,
 ) {
   const key = messagesQueryKey(intentId, useReal, userId);
   queryClient.setQueryData<Message[]>(key, (old = []) => {
@@ -258,6 +260,7 @@ export function upsertLocalAssistantMessage(
       next[existingIdx] = {
         ...next[existingIdx],
         content: [{ type: 'text', text }],
+        agentId: agentId ?? next[existingIdx].agentId,
       };
       return next;
     }
@@ -269,6 +272,7 @@ export function upsertLocalAssistantMessage(
         role: 'assistant',
         content: [{ type: 'text', text }],
         createdAt: new Date().toISOString(),
+        agentId,
       },
     ];
   });

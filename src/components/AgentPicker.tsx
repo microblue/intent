@@ -1,37 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { BUILTIN_AGENTS } from '@/lib/agents';
 import { cn } from '@/lib/cn';
 
 /**
  * AgentPicker — small inline button + popover that lets the user
  * choose which OpenClaw agent handles the next chat turn. The 12
- * personas are provisioned on the user's claw and routed to via
- * useGatewayChat's agentId parameter.
+ * personas live in src/lib/agents.ts (single source of truth) and
+ * are provisioned on the user's claw side-by-side with these IDs.
  *
- * The default agent is `main` (general-purpose Claw). Switching is
- * per-thread: state lives in useChatThread. Selection persists for
- * the rest of the thread until the user picks something else.
+ * Default = 'main' (general-purpose Claw). Selection is per-thread,
+ * persists until the user picks something else.
  *
  * The popover is portal-rendered to <body> so it escapes the
  * composer's sticky positioning + z-index stacking context
  * (otherwise the chat conversation area was capturing clicks).
  */
-
-const SPECIALIZED_AGENTS = [
-  { id: 'main',          name: 'Claw',         emoji: '🦞', desc: '通用助手,什么都能聊' },
-  { id: 'researcher',    name: '研究员',       emoji: '🔬', desc: '查资料 / 读网页 / 整理信息' },
-  { id: 'planner',       name: '规划员',       emoji: '🗺️', desc: '把事情拆成步骤 + 时间表' },
-  { id: 'writer',        name: '写手',         emoji: '✍️', desc: '写文档 / 改文字' },
-  { id: 'flights',       name: '机票助手',     emoji: '✈️', desc: '比价 + 盯价格' },
-  { id: 'lodging',       name: '住宿助手',     emoji: '🏨', desc: '酒店 / 民宿候选 + 订房' },
-  { id: 'mealplanner',   name: '吃饭助手',     emoji: '🍳', desc: '菜单 / 采购清单' },
-  { id: 'tutor',         name: '陪练',         emoji: '📚', desc: '出题 / 批改 / 复习清单' },
-  { id: 'comparator',    name: '比价员',       emoji: '⚖️', desc: '多商品对比表' },
-  { id: 'reminder',      name: '提醒员',       emoji: '⏰', desc: '定时和事件触发' },
-  { id: 'mailreader',    name: '邮件助手',     emoji: '📧', desc: '从邮件抽订单 / 行程' },
-  { id: 'shopper',       name: '购物员',       emoji: '🛒', desc: '下单 + 付款流程' },
-  { id: 'familycontact', name: '家人联络员',   emoji: '💞', desc: '帮你给家人发消息' },
-];
 
 export function AgentPicker({
   activeAgentId,
@@ -86,7 +70,7 @@ export function AgentPicker({
     return () => window.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
-  const active = SPECIALIZED_AGENTS.find((a) => a.id === activeAgentId) ?? SPECIALIZED_AGENTS[0];
+  const active = BUILTIN_AGENTS.find((a) => a.id === activeAgentId) ?? BUILTIN_AGENTS[0];
 
   return (
     <>
@@ -117,7 +101,7 @@ export function AgentPicker({
             style={{ position: 'fixed', left: pos.left, bottom: pos.bottom, zIndex: 9999 }}
             className="w-72 max-h-80 overflow-y-auto rounded-2xl bg-base-100 p-1.5 shadow-xl ring-1 ring-base-300/60"
           >
-            {SPECIALIZED_AGENTS.map((a) => (
+            {BUILTIN_AGENTS.map((a) => (
               <button
                 key={a.id}
                 type="button"

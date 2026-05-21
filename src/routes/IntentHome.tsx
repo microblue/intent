@@ -34,6 +34,7 @@ import {
 import { useGatewayChat } from '@/data/useGatewayChat';
 import { AgentPicker } from '@/components/AgentPicker';
 import { Markdown } from '@/components/Markdown';
+import { findBuiltinAgent } from '@/lib/agents';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
@@ -2035,27 +2036,35 @@ function AssistantMessage({ message }: { message: Message }) {
   const traces = message.agentTraceIds?.length ? tracesForMessage(message.id) : [];
   const usedFacts = (message.usedFactIds ?? []).map(findMemoryFact).filter(Boolean);
   const usedCaps = (message.usedCapabilityIds ?? []).map(findCapability).filter(Boolean);
-  const leadAgent = traces[0] ? findAgent(traces[0].agentKey) : undefined;
+  // Primary attribution: built-in OpenClaw agent that actually produced
+  // this turn (from message.agentId). Fall back to mock trace agent
+  // when present (legacy mock data only), then to generic "助手".
+  const builtin = findBuiltinAgent(message.agentId);
+  const traceAgent = traces[0] ? findAgent(traces[0].agentKey) : undefined;
+  const displayEmoji = builtin?.emoji ?? traceAgent?.emoji ?? '✦';
+  const displayName = builtin?.name ?? traceAgent?.displayName ?? '助手';
 
   return (
     <article
       id={`msg-${message.id}`}
       data-testid="chat-message"
       data-role="assistant"
+      data-agent-id={message.agentId ?? 'unknown'}
       className="flex gap-3 scroll-mt-24 transition"
     >
       <span
         aria-hidden
         className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-base-200 text-[16px] ring-1 ring-base-300/40"
+        title={builtin?.desc ?? undefined}
       >
-        {leadAgent?.emoji ?? '✦'}
+        {displayEmoji}
       </span>
 
       <div className="min-w-0 flex-1">
         {/* Header — one line, attribution + time */}
         <header className="mb-1.5 flex items-baseline gap-2 text-[13px]">
           <span className="font-semibold text-base-content/85">
-            {leadAgent?.displayName ?? '助手'}
+            {displayName}
           </span>
           <time className="text-[11px] text-base-content/40">
             {timeAgo(message.createdAt)}

@@ -368,6 +368,7 @@ export type Database = {
           created_at: string
           deletion_scheduled_at: string | null
           gateway_token: string | null
+          gateway_token_enc: string | null
           id: string
           install_run_id: string | null
           ip: string | null
@@ -396,6 +397,7 @@ export type Database = {
           created_at?: string
           deletion_scheduled_at?: string | null
           gateway_token?: string | null
+          gateway_token_enc?: string | null
           id: string
           install_run_id?: string | null
           ip?: string | null
@@ -424,6 +426,7 @@ export type Database = {
           created_at?: string
           deletion_scheduled_at?: string | null
           gateway_token?: string | null
+          gateway_token_enc?: string | null
           id?: string
           install_run_id?: string | null
           ip?: string | null
@@ -761,6 +764,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          agent_id: string | null
           content: Json
           created_at: string
           id: string
@@ -770,6 +774,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agent_id?: string | null
           content: Json
           created_at?: string
           id?: string
@@ -779,6 +784,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agent_id?: string | null
           content?: Json
           created_at?: string
           id?: string
@@ -1293,7 +1299,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrypt_gateway_token: { Args: { claw_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

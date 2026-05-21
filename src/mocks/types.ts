@@ -33,6 +33,8 @@ export type Message = {
   role: 'user' | 'assistant';
   content: MessageContentPart[];
   createdAt: string;
+  /** OpenClaw agent id that produced this assistant turn (writer / researcher / main / …). */
+  agentId?: string;
   /** IDs of agent traces produced while replying. Empty for user messages. */
   agentTraceIds?: string[];
   /** Memory facts this reply drew on — surfaced as "我记得..." annotation. */

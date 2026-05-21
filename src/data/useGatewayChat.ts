@@ -132,6 +132,7 @@ export function useGatewayChat(
       text,
       true,
       userIdRef.current,
+      agentId,
     );
 
     // On `final`, also persist the assistant message to Supabase so
@@ -151,6 +152,7 @@ export function useGatewayChat(
         intent_id: intentId,
         user_id: userIdRef.current,
         role: 'assistant',
+        agent_id: agentId,
         content: [{ type: 'text', text }] as unknown as DbMessageInsert['content'],
       };
       void supabase
