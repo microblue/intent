@@ -414,6 +414,17 @@ actual.
   - Verified on prod: phase8 `/memory` + `/schedule` console-clean
     sweep green; phaseB4 memory composer mock + real-mode INSERT
     both green (4/4 total).
+- [ ] **E10.** Cmd+K Launcher · sign in to prod, open the launcher,
+  scroll · expected: "最近的对话" + "文件" reflect your own data, or
+  collapse when no real data exists · actual: `src/components/Launcher.tsx:5`
+  imports `messages` + `files` unconditionally from `@/mocks` and the
+  two sections always render fake data from somebody else's mock
+  intents — a signed-in lay user opens Cmd+K and sees conversations
+  they never had referring to intents they don't own.
+  Spec-aligned fix shape (matching B2's `/now` collapse pattern):
+  hide both groups in real-mode signed-in until a cross-intent
+  recent-messages / files hook lands. "你的项目" already comes from
+  `useIntents` so it stays as the single discoverable surface.
 
 ---
 

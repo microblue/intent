@@ -10,7 +10,16 @@ export function Launcher() {
   const setOpen = useUI((s) => s.setLauncherOpen);
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  const { intents: launcherIntents } = useIntents();
+  const { intents: launcherIntents, isMock } = useIntents();
+  // Recent-messages + files are still mock-fed: a cross-intent
+  // messages hook + a real Supabase files hook don't exist yet. In
+  // real-mode we collapse those two groups so the launcher doesn't
+  // surface fake data from somebody else's mock intents (signed-in
+  // users would tap "帮我准备老婆的生日礼物" and land on an intent
+  // they never had). Mirrors the B2 pattern that hid the mock
+  // running/done buckets in /now. Flip the gate when the data
+  // hooks land.
+  const showMockShortcuts = isMock;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -137,47 +146,51 @@ export function Launcher() {
               ))}
             </Command.Group>
 
-            <Command.Group heading="最近的对话">
-              {messages
-                .filter((m) => m.role === 'user')
-                .slice(0, 5)
-                .map((m) => {
-                  const text = m.content.find((p) => p.type === 'text');
-                  if (!text || text.type !== 'text') return null;
-                  return (
-                    <Command.Item
-                      key={m.id}
-                      value={`msg ${text.text}`}
-                      onSelect={() => go(`/intent/${m.intentId}`)}
-                    >
-                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-base-200 text-base-content/60">
-                        💬
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm">{text.text}</div>
-                      </div>
-                    </Command.Item>
-                  );
-                })}
-            </Command.Group>
+            {showMockShortcuts && (
+              <Command.Group heading="最近的对话">
+                {messages
+                  .filter((m) => m.role === 'user')
+                  .slice(0, 5)
+                  .map((m) => {
+                    const text = m.content.find((p) => p.type === 'text');
+                    if (!text || text.type !== 'text') return null;
+                    return (
+                      <Command.Item
+                        key={m.id}
+                        value={`msg ${text.text}`}
+                        onSelect={() => go(`/intent/${m.intentId}`)}
+                      >
+                        <span className="grid h-9 w-9 place-items-center rounded-lg bg-base-200 text-base-content/60">
+                          💬
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm">{text.text}</div>
+                        </div>
+                      </Command.Item>
+                    );
+                  })}
+              </Command.Group>
+            )}
 
-            <Command.Group heading="文件">
-              {files.slice(0, 5).map((f) => (
-                <Command.Item
-                  key={f.id}
-                  value={`file ${f.name} ${f.preview}`}
-                  onSelect={() => go(`/intent/${f.intentId}`)}
-                >
-                  <span className="grid h-9 w-9 place-items-center rounded-lg bg-base-200 text-base-content/70">
-                    {f.kind === 'doc' ? '📄' : f.kind === 'image' ? '🖼️' : '🔗'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{f.name}</div>
-                    <div className="truncate text-xs text-base-content/60">{f.preview}</div>
-                  </div>
-                </Command.Item>
-              ))}
-            </Command.Group>
+            {showMockShortcuts && (
+              <Command.Group heading="文件">
+                {files.slice(0, 5).map((f) => (
+                  <Command.Item
+                    key={f.id}
+                    value={`file ${f.name} ${f.preview}`}
+                    onSelect={() => go(`/intent/${f.intentId}`)}
+                  >
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-base-200 text-base-content/70">
+                      {f.kind === 'doc' ? '📄' : f.kind === 'image' ? '🖼️' : '🔗'}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{f.name}</div>
+                      <div className="truncate text-xs text-base-content/60">{f.preview}</div>
+                    </div>
+                  </Command.Item>
+                ))}
+              </Command.Group>
+            )}
           </Command.List>
 
           <div className="flex items-center justify-between border-t border-base-300/60 px-4 py-2.5 text-xs text-base-content/55">
