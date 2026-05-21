@@ -6,6 +6,7 @@ import { signOut, useSession } from '@/lib/auth';
 import { useUserPreferences } from '@/data/useUserPreferences';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * Supported UI languages. Names are written in the *target* language so the
@@ -108,7 +109,7 @@ export function SettingsPage() {
                       await upsertPrefs({ display_name: next || null });
                       toast('已保存');
                     } catch (err) {
-                      toast(err instanceof Error ? err.message : '保存失败');
+                      toast(friendlyError(err, '保存失败'));
                     } finally {
                       setSavingName(false);
                     }
@@ -165,7 +166,7 @@ export function SettingsPage() {
                   try {
                     await upsertPrefs({ preferred_lang: next });
                   } catch (err) {
-                    toast(err instanceof Error ? err.message : '保存失败');
+                    toast(friendlyError(err, '保存失败'));
                   }
                 }
               }}

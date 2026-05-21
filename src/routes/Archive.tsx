@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { useArchivedIntents } from '@/data/useIntents';
 import { useUpdateIntent } from '@/data/useUpdateIntent';
 import type { Intent } from '@/mocks/types';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * Archive view — where 封存'd intents go to be remembered, not deleted.
@@ -22,7 +23,7 @@ export function ArchivePage() {
       await updateIntent({ id: intent.id, archived: false });
       toast('已取出来', { description: `「${intent.title}」回到了想做的事` });
     } catch (err) {
-      toast(err instanceof Error ? err.message : '取出来失败,稍后再试');
+      toast(friendlyError(err, '取出来失败,稍后再试'));
     }
   };
 

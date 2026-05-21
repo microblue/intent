@@ -13,6 +13,7 @@ import {
 import { useApprovals, useResolveApproval } from '@/data/useApprovals';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * 正在做的事 — the cross-Intent activity feed, now a proper route page
@@ -154,7 +155,7 @@ function RealApprovalCard({
       await resolve(approval.id, outcome);
       toast(`已选:${label}`);
     } catch (err) {
-      toast(err instanceof Error ? err.message : '处理失败,稍后再试');
+      toast(friendlyError(err, '处理失败,稍后再试'));
     }
   };
 

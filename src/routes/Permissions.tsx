@@ -6,6 +6,7 @@ import {
   useSetPermissionMode,
 } from '@/data/usePermissionGrants';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 const groupOrder: { key: Capability['group']; label: string; emoji: string; hint: string }[] = [
   { key: 'read', label: '看你的资料', emoji: '👀', hint: '只看,不动' },
@@ -29,7 +30,7 @@ export function PermissionsPage() {
       const cap = capabilities.find((c) => c.id === capId);
       toast(`已改成「${modeLabels[mode].label}」`, { description: cap?.label });
     } catch (err) {
-      toast(err instanceof Error ? err.message : '改不动,稍后再试');
+      toast(friendlyError(err, '改不动,稍后再试'));
     }
   };
 

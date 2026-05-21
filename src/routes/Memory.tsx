@@ -5,6 +5,7 @@ import { findIntent, type MemoryFact } from '@/mocks';
 import { useAddMemoryFact, useMemoryFacts } from '@/data/useMemoryFacts';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 const groupOrder: { key: MemoryFact['category']; label: string; emoji: string; hint: string }[] = [
   { key: 'about-you', label: '关于你', emoji: '🧍', hint: '基础情况 + 习惯' },
@@ -164,7 +165,7 @@ function AddFactComposer() {
       toast('记住了');
       setText('');
     } catch (err) {
-      toast(err instanceof Error ? err.message : '没记上,稍后再试');
+      toast(friendlyError(err, '没记上,稍后再试'));
     }
   };
 

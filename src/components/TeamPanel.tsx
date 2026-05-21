@@ -7,6 +7,7 @@ import {
 } from '@/data/useIntentAgents';
 import { BUILTIN_AGENTS, findBuiltinAgent } from '@/lib/agents';
 import { cn } from '@/lib/cn';
+import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * TeamPanel — "助手团队" rail item inside IntentHome's right rail.
@@ -29,7 +30,7 @@ export function TeamPanel({ intentId }: { intentId: string }) {
     try {
       await remove(agentKey);
     } catch (err) {
-      toast(err instanceof Error ? err.message : '移除失败');
+      toast(friendlyError(err, '移除失败'));
     }
   };
 
@@ -134,7 +135,7 @@ function AddMemberSheet({
       await add(agentKey);
       onClose();
     } catch (err) {
-      toast(err instanceof Error ? err.message : '加不上,稍后再试');
+      toast(friendlyError(err, '加不上,稍后再试'));
     }
   };
 

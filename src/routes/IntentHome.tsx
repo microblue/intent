@@ -42,6 +42,7 @@ import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
 import { createSendRateLimiter } from '@/lib/rateLimit';
+import { friendlyError } from '@/lib/friendlyError';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
 import { useIsDesktop } from '@/lib/useMediaQuery';
 
@@ -202,7 +203,7 @@ function useChatThread(intentId: string) {
     try {
       await persistUserMessage(text);
     } catch (err) {
-      toast(err instanceof Error ? err.message : '发送失败,稍后再试');
+      toast(friendlyError(err, '发送失败,稍后再试'));
       return;
     }
 
@@ -221,7 +222,7 @@ function useChatThread(intentId: string) {
         await sendViaGateway(text);
       } catch (err) {
         setTyping(false);
-        toast(err instanceof Error ? err.message : 'claw 没回应,稍后再试');
+        toast(friendlyError(err, 'claw 没回应,稍后再试'));
       }
       return;
     }
@@ -800,13 +801,13 @@ function SlimHeader({
               await updateIntent({ id: intent.id, archived: false });
               toast('取出来了');
             } catch (err) {
-              toast(err instanceof Error ? err.message : '撤销失败');
+              toast(friendlyError(err, '撤销失败'));
             }
           },
         },
       });
     } catch (err) {
-      toast(err instanceof Error ? err.message : '封存失败,稍后再试');
+      toast(friendlyError(err, '封存失败,稍后再试'));
     }
   };
 
@@ -835,7 +836,7 @@ function SlimHeader({
       await updateIntent({ id: intent.id, title: next });
       toast('改好了');
     } catch (err) {
-      toast(err instanceof Error ? err.message : '保存失败,稍后再试');
+      toast(friendlyError(err, '保存失败,稍后再试'));
       setDraft(intent.title);
     }
   };
@@ -2293,7 +2294,7 @@ function MobileTitleEdit({ intent }: { intent: Intent }) {
       await updateIntent({ id: intent.id, title: next });
       toast('改好了');
     } catch (err) {
-      toast(err instanceof Error ? err.message : '保存失败,稍后再试');
+      toast(friendlyError(err, '保存失败,稍后再试'));
       setDraft(intent.title);
     }
   };
