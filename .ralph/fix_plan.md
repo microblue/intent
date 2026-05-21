@@ -349,14 +349,18 @@ actual.
     other src or e2e references to "导出" remain.
   - Verified on prod: `/settings` + `/settings/engines` console-clean
     + Settings display_name write path all green (3/3).
-- [ ] **E5.** Mobile `BottomDock` 我的 slot · sign in as any user
-  (e.g. `alice@example.com`) · expected: avatar bubble shows your
-  first letter (`A`) the way the desktop sidebar does · actual:
-  hardcoded "D" character (`src/components/BottomDock.tsx:56`). Looks
-  like a leftover dev placeholder. When signed-out, the same slot
-  still shows "D" — should fall back to `?` to match the desktop
-  sidebar's `_AccountFooter` pattern (Sidebar.tsx:599). Fix is a 3-line
-  import-`useSession` + computed `initial` swap.
+- [x] **E5.** Mobile `BottomDock` 我的 slot · sign in as any user
+  · expected: avatar bubble shows your first letter the way the
+  desktop sidebar does · actual: hardcoded "D" regardless of session
+  (`src/components/BottomDock.tsx:56`).
+  - Fixed by importing `useSession` and computing
+    `initial = signedIn ? (user?.email?.[0] ?? '?').toUpperCase() : '?'`
+    — mirrors the desktop `_AccountFooter` pattern.
+  - New `data-testid="bottom-dock-avatar"` for e2e selection. Added a
+    mock-mode regression in `coverage-fillin.spec.ts` asserting `?`
+    for the signed-out demo viewer (3/3 mobile dock tests green).
+  - Verified on prod: `phase6-realmode-mobile-chat.spec.ts` 1/1 green
+    (real signed-in mobile session round-trips correctly).
 
 ---
 
