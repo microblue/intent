@@ -414,17 +414,24 @@ actual.
   - Verified on prod: phase8 `/memory` + `/schedule` console-clean
     sweep green; phaseB4 memory composer mock + real-mode INSERT
     both green (4/4 total).
-- [ ] **E10.** Cmd+K Launcher · sign in to prod, open the launcher,
+- [x] **E10.** Cmd+K Launcher · sign in to prod, open the launcher,
   scroll · expected: "最近的对话" + "文件" reflect your own data, or
-  collapse when no real data exists · actual: `src/components/Launcher.tsx:5`
-  imports `messages` + `files` unconditionally from `@/mocks` and the
-  two sections always render fake data from somebody else's mock
-  intents — a signed-in lay user opens Cmd+K and sees conversations
-  they never had referring to intents they don't own.
-  Spec-aligned fix shape (matching B2's `/now` collapse pattern):
-  hide both groups in real-mode signed-in until a cross-intent
-  recent-messages / files hook lands. "你的项目" already comes from
-  `useIntents` so it stays as the single discoverable surface.
+  collapse · actual: both groups rendered fake data from `@/mocks`
+  unconditionally.
+  - Fixed by gating both `Command.Group`s on `isMock` from
+    `useIntents()` (mirrors B2's `/now` collapse pattern). "你的项目"
+    stays visible in both modes because that group is already
+    real-data-aware. Deferral hand-off
+    `docs/handoff/launcher-cross-intent-recent.md` describes the two
+    read-only hooks (`useRecentUserMessages`, `useRecentUserFiles`)
+    that bring the groups back honestly.
+  - New `e2e/phaseE10-launcher-realmode.spec.ts` (1 test) locks in
+    the collapse — opens Cmd+K via the visible 搜索 button on a
+    signed-in real-mode page, asserts "最近的对话" + "文件" headings
+    have count 0, "你的项目" still renders.
+  - Verified on prod: 1/1 green against `https://app.myclaw.one`.
+    Mock-mode Launcher coverage stayed green (typing surfaces intents,
+    Escape closes, both 2/2).
 
 ---
 
