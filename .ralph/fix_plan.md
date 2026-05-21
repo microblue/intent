@@ -155,8 +155,22 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
 
 ## Phase C — Multi-agent orchestration polish
 
-- [ ] **C1.** Subagent attribution in chat: specialist's reply shows
+- [x] **C1.** Subagent attribution in chat: specialist's reply shows
   specialist's emoji/name, not main's. e2e: planner delegation.
+  - Read path was already correct (`AssistantMessage` calls
+    `findBuiltinAgent(message.agentId)` for emoji/name). Bug was on
+    the write path: `useGatewayChat` hard-coded the session-owner
+    `agentId` on every upsert + Supabase INSERT, so a delegated
+    subagent's reply inherited "main" instead of e.g. "planner".
+  - Fix: chat handler now reads `payload.message.agentKey` (or
+    top-level `payload.agentKey`) per turn and falls back to the
+    session-owner `agentId` only when neither is present. Forward-
+    compat with OpenClaw emitting per-turn attribution; preserves
+    current behavior until it does.
+  - New e2e `e2e/phaseC1-subagent-attribution.spec.ts` seeds two
+    assistant turns (main + planner) via service-role INSERT and
+    asserts the second has `data-agent-id="planner"` + header text
+    "规划员" + emoji "🗺". Green on `https://app.myclaw.one`.
 - [ ] **C2.** Inline "🗺️ 规划员 正在拆步骤..." badge during in-flight
   delegation, driven by `agent` lifecycle events.
 - [ ] **C3.** e2e for orchestrator-removal guard in TeamPanel.
