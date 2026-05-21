@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { pendingApprovalCount } from '@/mocks';
+import { useApprovals } from '@/data/useApprovals';
 import { useSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 
@@ -15,10 +15,16 @@ import { cn } from '@/lib/cn';
  */
 export function BottomDock() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const pending = pendingApprovalCount();
   const navigate = useNavigate();
   const { user, signedIn } = useSession();
   const initial = signedIn ? (user?.email?.[0] ?? '?').toUpperCase() : '?';
+  // Approval count comes from the same real-data-aware hook that /now
+  // uses, so a signed-in user with zero pending approvals sees no
+  // badge instead of the mock-derived "3" the old `pendingApprovalCount()`
+  // produced. Mock mode keeps showing the mock count because that's
+  // what useApprovals falls back to when signed-out.
+  const { approvals } = useApprovals();
+  const pending = approvals.length;
 
   const isActive = (p: string) => path === p;
 

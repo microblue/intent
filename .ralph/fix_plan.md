@@ -432,6 +432,13 @@ actual.
   - Verified on prod: 1/1 green against `https://app.myclaw.one`.
     Mock-mode Launcher coverage stayed green (typing surfaces intents,
     Escape closes, both 2/2).
+- [ ] **E11.** Mobile `BottomDock` 通知 badge · sign in to prod with
+  zero pending approvals · expected: no badge (count = 0) · actual:
+  `src/components/BottomDock.tsx:18` reads `pendingApprovalCount()`
+  from `@/mocks` which always counts the bundled mock approval rows —
+  the badge shows a fake number for every real-mode user. Fix: swap
+  to `useApprovals().approvals.length` (the same hook `/now` already
+  uses, and which is signed-in + real-data-aware).
 
 ---
 
