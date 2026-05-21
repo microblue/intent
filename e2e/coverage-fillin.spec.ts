@@ -137,7 +137,6 @@ test.describe('/new wizard — full path', () => {
         .filter({ hasNotText: '跳过' })
         .filter({ hasNotText: '重来' })
         .filter({ hasNotText: '先这样' })
-        .filter({ hasNotText: '说一句' })
         .nth(0);
       // Easier path: just hit "先这样直接开始" to skip.
       break;

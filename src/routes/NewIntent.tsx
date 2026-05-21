@@ -588,15 +588,7 @@ function PromptStage({
             }
           }}
         />
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => alert('语音输入开发中')}
-            className="flex items-center gap-1.5 rounded-full bg-base-100 px-3 py-1.5 text-xs text-base-content/65 hover:bg-base-300"
-            aria-label="说一句"
-          >
-            🎙️ 说一句
-          </button>
+        <div className="flex items-center justify-end">
           <button
             type="submit"
             disabled={!prompt.trim()}
