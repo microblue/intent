@@ -103,8 +103,16 @@ export function useGatewayChat(
           sessionKey?: string;
           state?: string;
           runId?: string;
+          // Optional per-turn attribution. The session is named for
+          // the user-selected agent (typically 'main'), but a chat
+          // frame may carry the key of a subagent that actually
+          // produced the reply (e.g. 'planner' after main delegated).
+          // OpenClaw emits this at the top level or nested under
+          // `message`; accept both for forward-compatibility.
+          agentKey?: string;
           message?: {
             role?: string;
+            agentKey?: string;
             content?: { type: string; text?: string }[];
           };
         }
@@ -118,6 +126,12 @@ export function useGatewayChat(
       .map((part) => part.text)
       .join('') ?? '';
     if (!text) return;
+    // Prefer per-turn attribution from the gateway payload so the
+    // specialist (e.g. 🗺️ 规划员) shows on its own reply instead of
+    // inheriting the session's session-owner agent (typically main).
+    // Fall back to the user-selected agentId when the gateway doesn't
+    // carry one — current behavior until OpenClaw starts emitting it.
+    const turnAgentId = payload.message?.agentKey ?? payload.agentKey ?? agentId;
     // Stable per-run id keeps every delta updating the same DOM node;
     // when the agent runs again it'll have a new runId and produce a
     // fresh message. Fall back to a session-scoped id if the gateway
@@ -132,7 +146,7 @@ export function useGatewayChat(
       text,
       true,
       userIdRef.current,
-      agentId,
+      turnAgentId,
     );
 
     // On `final`, also persist the assistant message to Supabase so
@@ -152,7 +166,7 @@ export function useGatewayChat(
         intent_id: intentId,
         user_id: userIdRef.current,
         role: 'assistant',
-        agent_id: agentId,
+        agent_id: turnAgentId,
         content: [{ type: 'text', text }] as unknown as DbMessageInsert['content'],
       };
       void supabase
