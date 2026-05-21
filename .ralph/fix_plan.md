@@ -50,7 +50,18 @@ either been fixed or filed as a new Phase H/J item.
   - Ralph read all four — empty-state copy is friendly, chrome buttons
     all labelled, message bubbles render correctly, composer send button
     is disabled-correctly when empty. No findings.
-- [ ] **F3.** `/new` (NewIntent)
+- [x] **F3.** `/new` (NewIntent)
+  - Spec: `e2e/walkthrough-new.spec.ts`. Real-mode chromium + mobile,
+    drives prompt-stage → clarifying-stage by clicking the "帮我规划
+    一次旅行" starter chip then "继续".
+  - Asserts every interactive element has an accessible name across
+    both stages.
+  - Screenshots: `test-results/walkthrough-new-{desktop,mobile}-{prompt,clarifying}.png`.
+  - Ralph read all four — surfaced one finding: on mobile clarifying,
+    "下一问 →" was wrapping to "下一/问 →" in the cramped row with
+    跳过 + free-text input. Fixed in same commit by adding
+    `whitespace-nowrap` + `shrink-0` to both buttons. Re-snap confirms
+    single-line label.
 - [ ] **F4.** `/schedule`
 - [ ] **F5.** `/memory`
 - [ ] **F6.** `/permissions`
