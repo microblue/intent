@@ -234,8 +234,25 @@ e2e are 0-failure on prod, and a fresh self-audit finds nothing.
   - In-progress: aios-side has nothing to ship. Flip `[x]` after DZ
     runs the SQL on the myclaw-v2 Supabase project and confirms
     `plaintext_remaining = 0` + real-mode smoke green.
-- [ ] **D2.** Token-refresh e2e: WS close mid-stream → reconnect picks
+- [x] **D2.** Token-refresh e2e: WS close mid-stream → reconnect picks
   up fresh JWT.
+  - `__simulateGatewayWsCloseForTests` test escape hatch on
+    `window.__aios` (src/main.tsx → src/gateway/useGateway.ts →
+    `GatewayClient.__simulateWsCloseForTests`) lets the spec close the
+    live WS without touching the network. Default close code is **4000**
+    (application-defined, 3000–4999 range) — `ws.close(1006)` throws
+    InvalidAccessError per the WHATWG WebSocket spec, so the original
+    1006 try/catch silently no-op'd and the reconnect path never ran.
+  - New `e2e/phaseD2-token-refresh.spec.ts`: wait for initial connect,
+    snapshot `mint-claw-token` call count via `context.route`
+    pass-through, fire `simulateGatewayWsClose()`, poll for an
+    additional mint call, then assert ClawStatus is back at `connected`.
+    Skips the transient non-connected state observation because the
+    reconnect cycle (close → reconnecting → connecting → connected)
+    passes through faster than one DOM tick on prod — the durable
+    assertions are the extra mint + the final connected status.
+  - Green against `https://app.myclaw.one` (5.6s); the phase8 +
+    C4 regression sweep stayed green (19 passed) after deploy.
 - [ ] **D3.** Wire `@sentry/react` prod-only via `env.isProd`. Dev-only
   test-throw button in `/settings/engines`. Hand-off doc if Sentry
   account needs human creation.
