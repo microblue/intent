@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
+import { ActivationKeyModal } from '@/components/ActivationKeyModal';
 import { signOut, useSession } from '@/lib/auth';
 import { useUserPreferences } from '@/data/useUserPreferences';
 import { useUI } from '@/state/ui';
@@ -34,8 +35,7 @@ type LangCode = (typeof LANGUAGES)[number]['code'];
 export function SettingsPage() {
   const devMode = useUI((s) => s.devMode);
   const toggleDevMode = useUI((s) => s.toggleDevMode);
-  const activationModal = useRef<HTMLDialogElement | null>(null);
-  const [keyInput, setKeyInput] = useState('');
+  const [activationOpen, setActivationOpen] = useState(false);
   const { user, signedIn, loading } = useSession();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
@@ -147,7 +147,7 @@ export function SettingsPage() {
             </li>
           </>
         )}
-        <SubscriptionRow onEnterKey={() => activationModal.current?.showModal()} />
+        <SubscriptionRow onEnterKey={() => setActivationOpen(true)} />
       </Section>
 
       <Section title="外观">
@@ -227,52 +227,10 @@ export function SettingsPage() {
         />
       </Section>
 
-      {/* Activation key modal */}
-      <dialog ref={activationModal} className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box">
-          <h3 className="text-base font-semibold">输入激活码</h3>
-          <p className="mt-1 text-sm text-base-content/65">
-            把购买或好友赠送的激活码粘贴在下面,Pro 会自动延期。
-          </p>
-          <input
-            type="text"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="MYCL-XXXX-XXXX-XXXX"
-            autoFocus
-            className="input input-bordered mt-4 w-full font-mono tracking-widest"
-          />
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => {
-                setKeyInput('');
-                activationModal.current?.close();
-              }}
-            >
-              取消
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={!keyInput.trim()}
-              onClick={() => {
-                toast('激活码已提交,稍后处理');
-                setKeyInput('');
-                activationModal.current?.close();
-              }}
-            >
-              激活
-            </button>
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button type="button" onClick={() => activationModal.current?.close()}>
-            close
-          </button>
-        </form>
-      </dialog>
+      <ActivationKeyModal
+        open={activationOpen}
+        onClose={() => setActivationOpen(false)}
+      />
 
       {/* Dev mode */}
       <section className="mt-10 rounded-2xl bg-base-200/50 p-5 ring-1 ring-base-300/40">

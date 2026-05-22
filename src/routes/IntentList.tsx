@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useIntents } from '@/data/useIntents';
 import { useUserPreferences } from '@/data/useUserPreferences';
 import { useClaws } from '@/data/useClaws';
 import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
+import { ActivationKeyModal } from '@/components/ActivationKeyModal';
 import { useUI } from '@/state/ui';
 import { friendlyError } from '@/lib/friendlyError';
 
@@ -67,6 +69,7 @@ export function IntentListPage() {
   const { isSentinelOnly } = useClaws();
   const onboardingDismissed = useUI((s) => s.onboardingDismissed);
   const dismissOnboarding = useUI((s) => s.dismissOnboarding);
+  const [activationOpen, setActivationOpen] = useState(false);
   const isEmpty = !isLoading && !error && list.length === 0;
   // Sentinel-claw banner: signed-in real-mode user has only the auto-
   // provisioned placeholder claw and no actual one to connect to. This
@@ -138,14 +141,27 @@ export function IntentListPage() {
                   <span aria-hidden>🚀</span>
                   去开一台 →
                 </a>
-                <span className="text-xs text-base-content/45">
-                  开通之前,下面的东西都是演示
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setActivationOpen(true)}
+                  data-testid="sentinel-activation-cta"
+                  className="btn btn-ghost btn-sm rounded-full text-xs text-base-content/70 hover:bg-base-100/60"
+                >
+                  已经有激活码?点这儿激活
+                </button>
               </div>
+              <p className="mt-3 text-xs text-base-content/45">
+                开通之前,下面的东西都是演示
+              </p>
             </div>
           </div>
         </section>
       )}
+
+      <ActivationKeyModal
+        open={activationOpen}
+        onClose={() => setActivationOpen(false)}
+      />
 
       {showOnboarding && (
         <section
