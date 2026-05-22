@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { skipIfRealMode } from './helpers/build-mode';
+import { unlockVercelPreview } from './helpers/vercel-bypass';
+import { injectRealSession } from './helpers/real-session';
+import { createTestUser, deleteTestUser } from './helpers/test-user';
 
 /**
  * H4 — empty-state copy audit.
@@ -16,11 +19,10 @@ import { skipIfRealMode } from './helpers/build-mode';
  * not by this audit.
  */
 
-test.beforeEach(async ({ page }) => {
-  await skipIfRealMode(page);
-});
-
 test.describe('H4 — empty-state copy + CTA audit', () => {
+  test.beforeEach(async ({ page }) => {
+    await skipIfRealMode(page);
+  });
   test.skip(({ isMobile }) => isMobile === true, 'desktop pass');
 
   test('/ (IntentList) — cold-start affordances + tip card render', async ({ page }) => {
@@ -73,5 +75,55 @@ test.describe('H4 — empty-state copy + CTA audit', () => {
     await expect(page.getByRole('heading', { name: /看你的资料/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /帮你做事/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /联系外部服务/ })).toBeVisible();
+  });
+});
+
+/**
+ * Real-mode-only test: a throwaway user has no /now activity, so we
+ * can exercise the empty-state branch end-to-end. Verifies the H4
+ * CTA promotion (btn-primary + → /new) lives in the prod bundle.
+ */
+test.describe('H4 — real-mode /now empty CTA', () => {
+  test.beforeEach(() => {
+    if (
+      !process.env.PLAYWRIGHT_BASE_URL ||
+      !process.env.SUPABASE_URL ||
+      !(process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY)
+    ) {
+      test.skip(
+        true,
+        'real-mode /now empty CTA test needs PLAYWRIGHT_BASE_URL + SUPABASE_URL + service-role key',
+      );
+    }
+  });
+  test.skip(({ isMobile }) => isMobile === true, 'desktop pass');
+
+  test('throwaway user lands on /now → empty panel shows primary CTA → /new', async ({
+    page,
+    context,
+  }) => {
+    test.setTimeout(60_000);
+    const user = await createTestUser();
+    try {
+      await injectRealSession(context, user.email);
+      await unlockVercelPreview(page);
+      await page.goto('/now');
+
+      const cta = page.getByTestId('now-empty-cta');
+      await expect(cta).toBeVisible({ timeout: 10_000 });
+      await expect(cta).toContainText('起一件新事');
+      await expect(cta).toHaveAttribute('href', /^\/new/);
+
+      // Visual cue: primary tone, medium size. We don't bind to exact
+      // class strings because Tailwind utility lists drift; instead
+      // assert "btn-primary" is present.
+      const cls = (await cta.getAttribute('class')) ?? '';
+      expect(cls).toContain('btn-primary');
+
+      // Onboarding copy is friendly, not a status code.
+      await expect(page.getByText('现在很安静')).toBeVisible();
+    } finally {
+      await deleteTestUser(user.id);
+    }
   });
 });

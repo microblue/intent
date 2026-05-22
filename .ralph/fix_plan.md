@@ -388,10 +388,38 @@ Phase H items as they run.
     than the name alone (catches an icon-only regression).
   - Ralph read both screenshots — every visible agent trigger /
     row shows emoji + name everywhere. No findings.
-- [ ] **H4.** Empty state copy audit. Every empty list/feed/grid
-  must have onboarding copy + a primary CTA, not a blank panel.
-  Surfaces to check: `/`, `/schedule`, `/memory`, `/now`, `/archive`,
-  `/permissions`.
+- [x] **H4.** Empty state copy audit.
+  Walked all six surfaces; only `/now` needed a real fix.
+  - `/` (IntentList) — 6 starter-template links sit above an empty
+    panel with 👋 + "还没有任何事在做" + primary "起一个新意图"
+    CTA → `/new` + a "小贴士" keyboard-shortcut card.
+  - `/schedule` — `AddReminderComposer` is always mounted above the
+    list; the textbox itself is the always-visible primary CTA.
+    Empty branch has 🔔 + "没有要提醒的事" + three example phrasings
+    + hint pointing back at the composer.
+  - `/memory` — `AddFactComposer` is always mounted above the list;
+    the textarea is the always-visible primary CTA. Empty branch has
+    🧠 + "还没记下任何事" + three example facts + "起一个新意图"
+    hint. Per-category sub-empty rows have "聊着聊着会有的" copy.
+  - `/now` — FIXED: empty CTA was a quiet `btn-ghost btn-sm`
+    "去看看你正在做的事" → `/` which just bounced the user back to
+    the page they came from. Promoted to `btn-primary btn-md
+    rounded-full` with ✨ icon + "起一件新事" → `/new`. "现在很安静"
+    implies "start something" — action beats back-navigation.
+  - `/archive` — 📭 + "这里还是空的" + "没有封存过的项目" + back
+    link to `/`. Quiet by design (archive doesn't demand action).
+  - `/permissions` — never empty (11 static capabilities in 3
+    groups); onboarding banner "关于权限" explains the page.
+  - Tests:
+    - `e2e/walkthrough-empty-states.spec.ts` — mock-mode pass covers
+      /, /schedule, /memory, /archive, /permissions (assertions on
+      composer / CTA / onboarding copy presence). Separate real-mode
+      describe creates a throwaway user (sentinel-only → no /now
+      activity → empty-state branch reachable) and asserts the new
+      CTA has class `btn-primary`, text "起一件新事", and `href`
+      starts with `/new`. All green.
+    - `e2e/walkthrough-now.spec.ts` docstring updated to reflect
+      the new CTA target.
 - [ ] **H5.** Loading state audit. Every async render must show a
   skeleton or spinner ≥150ms in, never a blank flash.
 - [ ] **H6.** Error state audit. Network failure on every page → does
