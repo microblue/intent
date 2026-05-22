@@ -122,3 +122,12 @@ or Caddy. Key path: `ubuntu@54.218.209.8` via
   round-trip completes, causing `cannot add postgres_changes callbacks
   ... after subscribe()`. Fix: use a per-effect-run UUID in the channel
   name (see `src/data/useApprovals.ts`).
+- Stale spec tests from the punt era can survive past their rebuild
+  (e.g. phase11-14-data-swap + phaseL2 still asserted B3 hint-card
+  even though G2 shipped the real composer). When a Phase-G rebuild
+  closes, grep the entire e2e/ tree for the dropped testid/placeholder
+  it was matching against — not just the file the rebuild lives in.
+- Sidebar.tsx:294 statically renders "演示模式 · 数据不保存" in
+  mock-mode. Toast assertions in mock-mode that use bare "演示模式"
+  will hit a strict-mode locator collision; scope to a toast-only
+  substring like "记下的事不会被保存" instead.
