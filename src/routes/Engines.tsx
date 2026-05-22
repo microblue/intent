@@ -156,6 +156,7 @@ export function EnginesPage() {
                     <Link
                       to="/intent/$intentId"
                       params={{ intentId: it.id }}
+                      search={{ kickoff: undefined }}
                       className="flex items-center gap-2 hover:underline"
                     >
                       <span

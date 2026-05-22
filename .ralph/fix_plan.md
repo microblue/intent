@@ -76,7 +76,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L3. /new → /intent chat handoff (closes journey 03)
 
-- [ ] **L3.** /new flow discards prompt + clarifying answers on
+- [x] **L3.** /new flow discards prompt + clarifying answers on
   navigate. Build the handoff:
   - intentRoute `validateSearch` accepts `kickoff?: string`.
   - NewIntent's `goSpawn` composes a markdown kickoff message

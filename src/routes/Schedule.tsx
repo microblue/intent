@@ -280,6 +280,7 @@ function EventRow({ event, bucket }: { event: ScheduleEvent; bucket: string }) {
       <Link
         to="/intent/$intentId"
         params={{ intentId: event.intentId }}
+        search={{ kickoff: undefined }}
         className="group flex items-center gap-3 rounded-2xl bg-base-200/60 p-3.5 ring-1 ring-base-300/40 transition hover:bg-base-200 hover:ring-primary/30"
       >
         <span

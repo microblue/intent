@@ -13,6 +13,7 @@ export function IntentCard({ intent }: { intent: Intent }) {
     <Link
       to="/intent/$intentId"
       params={{ intentId: intent.id }}
+      search={{ kickoff: undefined }}
       className="group relative flex flex-col overflow-hidden rounded-2xl bg-base-200 shadow-sm ring-1 ring-base-300/40 transition hover:-translate-y-0.5 hover:shadow-xl hover:ring-primary/30"
     >
       <div

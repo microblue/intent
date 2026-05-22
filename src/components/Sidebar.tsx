@@ -214,6 +214,7 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean } = {}) {
             <Link
               to="/intent/$intentId"
               params={{ intentId: it.id }}
+              search={{ kickoff: undefined }}
               className={cn(
                 'group relative flex items-center gap-3 overflow-hidden rounded-xl px-2 py-2 transition',
                 isIntentActive(it.id)
@@ -575,6 +576,7 @@ function CollapsedSidebar({
                 key={it.id}
                 to="/intent/$intentId"
                 params={{ intentId: it.id }}
+                search={{ kickoff: undefined }}
                 className={cn(
                   'grid h-10 w-10 shrink-0 place-items-center rounded-xl text-base shadow-sm transition hover:-translate-y-0.5',
                   // ring-inset keeps the active marker entirely inside the

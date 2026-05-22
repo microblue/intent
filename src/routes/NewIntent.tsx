@@ -374,6 +374,43 @@ function proposeIntent(text: string): Proposal {
   };
 }
 
+/**
+ * composeKickoff — fold the prompt + clarifying Q/A into a single
+ * markdown-ish user message. Used by the /new → /intent handoff so
+ * the new intent's chat opens with the user's full intent delivered,
+ * not "blank thread + lost answers."
+ *
+ * Shape:
+ *   {prompt}
+ *
+ *   我已经想好了:
+ *   - {question text}: {answer}
+ *   - ...
+ *
+ * Questions skipped by the user (answer === '(跳过)') are omitted. If
+ * no answers were given we still emit the prompt alone so chat at
+ * least has something to chew on.
+ */
+export function composeKickoff(
+  prompt: string,
+  questions: ClarifyQuestion[],
+  answers: Record<string, string>,
+): string {
+  const lines: string[] = [];
+  const trimmedPrompt = prompt.trim();
+  if (trimmedPrompt) lines.push(trimmedPrompt);
+  const filled = questions
+    .map((q) => ({ q, a: (answers[q.id] ?? '').trim() }))
+    .filter(({ a }) => a && a !== '(跳过)');
+  if (filled.length > 0) {
+    lines.push('', '我已经想好了:');
+    for (const { q, a } of filled) {
+      lines.push(`- ${q.text} ${a}`);
+    }
+  }
+  return lines.join('\n');
+}
+
 const STARTER_CHIPS = [
   { icon: '✈️', text: '帮我规划一次旅行' },
   { icon: '💝', text: '给老婆办个生日' },
@@ -449,7 +486,18 @@ export function NewIntentPage() {
           }
         }
       }
-      navigate({ to: '/intent/$intentId', params: { intentId: created.id } });
+      // Compose a kickoff message from the prompt + clarifying answers
+      // so the new intent's chat opens with the user's intent already
+      // delivered to the assistant — instead of losing the entire
+      // clarifying interview on navigation. IntentHome reads
+      // `search.kickoff` once and chat.sends it as the first user
+      // message, then clears the search param so refresh doesn't resend.
+      const kickoff = composeKickoff(prompt, proposal.questions, answers);
+      navigate({
+        to: '/intent/$intentId',
+        params: { intentId: created.id },
+        search: { kickoff },
+      });
     } catch (err) {
       // Mock mode rejection lands here too — show the friendly copy from
       // useCreateIntent + drop back to the preview so the user can adjust
@@ -465,6 +513,7 @@ export function NewIntentPage() {
         navigate({
           to: '/intent/$intentId',
           params: { intentId: proposal.landIntentId },
+          search: { kickoff: undefined },
         });
       } else {
         setStage('preview');

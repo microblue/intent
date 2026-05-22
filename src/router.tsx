@@ -37,6 +37,9 @@ const intentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/intent/$intentId',
   component: IntentHomePage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    kickoff: typeof search.kickoff === 'string' ? search.kickoff : undefined,
+  }),
 });
 
 const newIntentRoute = createRoute({

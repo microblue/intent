@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { toast } from 'sonner';
 import {
@@ -63,11 +63,34 @@ import type { MessageContentPart } from '@/mocks/types';
  */
 export function IntentHomePage() {
   const { intentId } = useParams({ strict: false }) as { intentId: string };
+  const search = useSearch({ strict: false }) as { kickoff?: string };
+  const navigate = useNavigate();
   const { intent, isLoading, notFound, error } = useIntent(intentId);
   const isDesktop = useIsDesktop();
   // useChatThread keeps message state local; until the messages table
   // lands in the canonical schema we don't have a real source to swap to.
   const chat = useChatThread(intentId);
+
+  // /new → /intent handoff: if we arrived with a `kickoff` search param
+  // (composed from prompt + clarifying answers), send it as the first
+  // user message, then strip the param so refresh doesn't re-send.
+  // Once-only guard via a ref keyed by intentId so swapping intent
+  // doesn't suppress a future kickoff.
+  const kickoffSentRef = useRef<string | null>(null);
+  const kickoff = search.kickoff;
+  useEffect(() => {
+    if (!kickoff || isLoading || notFound || !intent) return;
+    const guardKey = `${intent.id}:${kickoff}`;
+    if (kickoffSentRef.current === guardKey) return;
+    kickoffSentRef.current = guardKey;
+    void chat.send(kickoff);
+    navigate({
+      to: '/intent/$intentId',
+      params: { intentId: intent.id },
+      search: { kickoff: undefined },
+      replace: true,
+    });
+  }, [kickoff, isLoading, notFound, intent, chat, navigate]);
   // Subagent in-flight — populates the inline "🗺️ 规划员 正在拆步骤…"
   // badge when the gateway emits agent.start. Null when no agent is
   // mid-flight; the local `typing` boolean still drives the generic

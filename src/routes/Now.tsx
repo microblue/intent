@@ -262,6 +262,7 @@ function RealApprovalCard({
             <Link
               to="/intent/$intentId"
               params={{ intentId: intent.id }}
+              search={{ kickoff: undefined }}
               className="truncate text-xs font-medium text-base-content/65 hover:underline"
             >
               {intent.title}
@@ -316,6 +317,7 @@ function ApprovalCard({ activity, devMode }: { activity: NowActivity; devMode: b
         <Link
           to="/intent/$intentId"
           params={{ intentId: intent.id }}
+          search={{ kickoff: undefined }}
           className="truncate text-xs font-medium text-base-content/65 hover:underline"
         >
           {intent.title}
@@ -365,6 +367,7 @@ function RunningRow({
     <Link
       to="/intent/$intentId"
       params={{ intentId: intent.id }}
+      search={{ kickoff: undefined }}
       className="flex items-start gap-3 rounded-2xl bg-base-100 px-3 py-3 ring-1 ring-base-300/40 hover:bg-base-200/50"
     >
       <span
@@ -403,6 +406,7 @@ function DoneRow({
     <Link
       to="/intent/$intentId"
       params={{ intentId: intent.id }}
+      search={{ kickoff: undefined }}
       className="flex items-start gap-3 rounded-2xl bg-base-100/50 px-3 py-3 ring-1 ring-base-300/40 hover:bg-base-200/50"
     >
       <span
