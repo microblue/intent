@@ -152,3 +152,11 @@ or Caddy. Key path: `ubuntu@54.218.209.8` via
   read schedule / memory / permissions / help / archive /
   new-prompt / signin on mobile to cover surfaces cycle 1 hadn't
   scrutinized). Zero new findings. clean_cycles_in_a_row=2.
+- Loop #5 (2026-05-22) cycle 3: mock 155 + realmode chromium 18 +
+  realmode mobile 14 = 187 pass / 0 fail. Cycle 3 read the
+  remaining mobile surfaces (engines / sentinel / new-clarifying /
+  reset-password). Across all three cycles Ralph has read 16
+  unique screenshots covering every F-route + sentinel/multi-claw/
+  agent-picker. Zero new findings. clean_cycles_in_a_row=3.
+  EXIT_SIGNAL=true: (a) zero [ ] items, (b) 0-fail e2e, (c) three
+  clean cycles in a row.
