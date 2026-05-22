@@ -521,9 +521,13 @@ completion here.
 - [x] **I1.** A3 — append 3 routes to `aios-ui-spec.md §3.1`. Applied
   in `~/myclaw` commit `63d890a` (2026-05-22); hand-off satisfied and
   doc deleted.
-- [ ] **I2.** D1 — INSERT Vault secret `aios_gateway_token_key` via
-  Supabase Dashboard SQL Editor (pooler role can't). Hand-off:
-  `docs/handoff/vault-key-provision.md`.
+- [x] **I2.** D1 — Vault secret `aios_gateway_token_key` provisioned
+  2026-05-22 via `vault.create_secret()` (`length(decrypted_secret)=64`).
+  Self-update backfill encrypted all 3 existing claws
+  (`plaintext_remaining=0`, `encrypted_now=3`). End-to-end verified:
+  app.myclaw.one ClawStatus reaches `connected` on cool-brook, so
+  mint-claw-token's `decrypt_gateway_token()` path is live.
+  Hand-off doc deleted.
 - [ ] **I3.** D3 — create Sentry account + add `VITE_SENTRY_DSN` to
   Vercel env. Hand-off: `docs/handoff/sentry-setup.md`.
 - [x] **I4.** D4 — `gh secret set` × 4 for the CI realmode-e2e job.
