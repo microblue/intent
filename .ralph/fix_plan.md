@@ -420,8 +420,39 @@ Phase H items as they run.
       starts with `/new`. All green.
     - `e2e/walkthrough-now.spec.ts` docstring updated to reflect
       the new CTA target.
-- [ ] **H5.** Loading state audit. Every async render must show a
-  skeleton or spinner ≥150ms in, never a blank flash.
+- [x] **H5.** Loading state audit.
+  Walked every async-data surface; only `/now` flashed blank.
+  - `/`            — 6-card animate-pulse grid (gated on
+                     useIntents().isLoading). ✓
+  - `/schedule`    — `schedule-skeleton` (3 animate-pulse rows). ✓
+  - `/memory`      — `memory-skeleton` (3 animate-pulse rows). ✓
+  - `/archive`     — 3-card animate-pulse grid. ✓
+  - `/intent/<id>` — `intent-skeleton`. ✓
+  - `/settings`    — "加载账号信息…" sub-row + spinner on saves. ✓
+  - signin / reset — submit-button spinners. ✓
+  - `/now`         — FIXED: page rendered without consulting any
+                     isLoading flag. On initial fetch users with real
+                     activity briefly saw "现在很安静" before
+                     approvals + messages + intents queries resolved
+                     — a lay user reads that as "nothing in flight",
+                     which is alarming AND wrong. Added
+                     `isInitialLoading` derived from `!approvalsMock
+                     && (approvalsLoading || real.isLoading ||
+                     intentsLoading)`. During loading: render
+                     `now-skeleton` (3 animate-pulse rows), suppress
+                     the empty panel. Empty panel only fires when
+                     fetch settled AND every bucket is empty.
+  - Static surfaces (`/permissions`, `/help`, `/settings/engines`,
+    `/new`) fetch no async data — no skeleton needed.
+  - Tests: `e2e/walkthrough-loading-states.spec.ts` fetches the
+    served JS bundle and asserts every required skeleton marker
+    (`schedule-skeleton`, `memory-skeleton`, `intent-skeleton`,
+    `now-skeleton`, `animate-pulse`) is present in the prod bundle.
+    Catches a future refactor that quietly drops a skeleton. Plus
+    settled-state checks on `/schedule` and `/memory` that the
+    composer is visible (never a blank panel). Bundle-markers test
+    runs in both mock + real mode; real-mode pass against prod
+    confirms the new `now-skeleton` shipped.
 - [ ] **H6.** Error state audit. Network failure on every page → does
   the user see a friendly retry, or a blank/broken view?
 - [ ] **H7.** Mobile audit. Every surface in Phase F must also render

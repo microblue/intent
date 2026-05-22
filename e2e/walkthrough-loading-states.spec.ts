@@ -28,11 +28,9 @@ import { skipIfRealMode } from './helpers/build-mode';
  * /new) don't fetch async data and don't need a skeleton.
  */
 
-test.beforeEach(async ({ page }) => {
-  await skipIfRealMode(page);
-});
-
-test.describe('H5 — loading-state skeletons', () => {
+test.describe('H5 — bundle skeleton markers', () => {
+  // Bundle-content check runs in both modes — it inspects the served
+  // JS, not Supabase reads, so it doesn't need anonymous-RLS access.
   test.skip(({ isMobile }) => isMobile === true, 'desktop pass');
 
   test('every data-loading surface owns a skeleton testid', async ({ page }) => {
@@ -72,6 +70,13 @@ test.describe('H5 — loading-state skeletons', () => {
       ).toBe(true);
     }
   });
+});
+
+test.describe('H5 — mock-mode settled-state checks', () => {
+  test.beforeEach(async ({ page }) => {
+    await skipIfRealMode(page);
+  });
+  test.skip(({ isMobile }) => isMobile === true, 'desktop pass');
 
   test('/schedule shows a skeleton row group on initial load', async ({ page }) => {
     // Mock mode resolves synchronously, but the skeleton JSX is still
