@@ -145,7 +145,16 @@ either been fixed or filed as a new Phase H/J item.
   - Ralph read all five — brand, friendly headings + subtitles, labelled
     form fields, primary CTA, mode-nav links, "先看看演示" all render
     correctly. No findings.
-- [ ] **F13.** `/auth/reset-password`
+- [x] **F13.** `/auth/reset-password`
+  - Spec: `e2e/walkthrough-reset-password.spec.ts`. Unauthenticated visit
+    (no recovery token) renders the friendly "链接好像失效了" stale-link
+    card with `重新发一个` CTA back to `/auth/signin`.
+  - Click smoke verified the CTA navigation.
+  - Screenshots: `test-results/walkthrough-reset-password-{desktop,mobile}.png`.
+  - Asserts every interactive element has an accessible name (using
+    the parent-`<label>` aware helper from F12). No findings. The
+    active-recovery-session form is exercised by Supabase's own auth
+    flow tests; F13 verifies the unauthenticated landing only.
 
 ## Phase G — Reopened (was punted in run 1)
 
