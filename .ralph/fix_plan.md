@@ -280,14 +280,53 @@ each surface as a non-technical user and verify the user-visible
 controls are all functional. Open Phase F items will produce more
 Phase H items as they run.
 
-- [ ] **H1.** Sentinel-claw install flow end-to-end UX. Today the
-  sentinel banner exists but the path from "I see the banner" to "I
-  have a real claw" may be broken. Walk it as a new user:
-  - Click the install CTA → does it lead anywhere useful?
-  - If "ssh + curl install-claw.sh", is there one-click copy?
-  - Does the activation-code field actually redeem to a real claw?
-  - Once a claw is connected, does the banner go away?
-  Fix every step that isn't smooth.
+- [x] **H1.** Sentinel-claw install flow end-to-end UX.
+  - Walked as a brand-new throwaway user (sentinel-only state):
+    - Primary CTA "去开一台" → already links to
+      https://myclaw.one/aios/install (returns 200, is the canonical
+      redeem flow per aios-design.md §A.1).
+    - SSH + curl one-click copy step lives on the myclaw.one install
+      page, not in the SPA — out of scope here.
+    - Activation-code path was the broken half: the Settings → 订阅
+      → 激活码 modal toasted "激活码已提交,稍后处理" and never
+      redeemed. Rebuilt as a real hand-off: submit now encodes the
+      key and `window.location.assign`s to
+      `https://myclaw.one/aios/install?key=<encoded>` so the
+      canonical redemption controller (in `~/myclaw/apps/api/src/
+      controllers/claws/helpers/redeemActivationCode.ts`) actually
+      runs against the user's input.
+    - Banner-dismissal already correct: `showSentinelBanner`
+      depends on `isSentinelOnly`, which flips false the moment any
+      non-sentinel claw appears — covered by the existing
+      phase6-realmode-multiclaw spec.
+  - Implementation:
+    - `src/components/ActivationKeyModal.tsx` — new reusable modal;
+      Enter-to-submit, aria-label on the input, friendly copy
+      ("带你去开通页面完成激活"), every button has data-testid +
+      visible label. Optional `redirectFn` prop for tests.
+    - `src/routes/Settings.tsx` — replaced the inline dialog +
+      toast-only handler with the shared modal. Removed `useRef` +
+      `keyInput` local state.
+    - `src/routes/IntentList.tsx` — added secondary
+      "已经有激活码?点这儿激活" button under the primary CTA so
+      users who arrived with a code from a partner / friend have a
+      discoverable entry point right next to the prompt. Mounts the
+      shared modal.
+  - Tests:
+    - `e2e/sentinel-install-flow.spec.ts` — creates throwaway
+      sentinel-only user, asserts banner renders, intercepts
+      cross-origin navigation via `page.route('https://myclaw.one/**')`,
+      clicks secondary CTA, fills `MYCL-TEST-0000-0001`, submits,
+      asserts the intercepted URL has origin=`https://myclaw.one`,
+      pathname=`/aios/install`, `?key=` decodes back to the input.
+      Clean up the throwaway user.
+    - `e2e/walkthrough-sentinel.spec.ts` — desktop + mobile
+      screenshot the sentinel-only home; enumerates every interactive
+      element, asserts each has an accessible name. Ralph read both
+      screenshots — banner legible, both CTAs clearly labelled and
+      visible, no placeholder copy, no English leakage. No findings.
+    - Existing `phase6-realmode-sentinel` + `phase6-realmode-multiclaw`
+      + `walkthrough-settings` specs re-run clean.
 - [ ] **H2.** Multi-claw picker UI. Today the sidebar shows one claw.
   If a user has more than one, can they switch? If not, build the
   picker (`ClawPicker` already exists for sentinel handling — extend

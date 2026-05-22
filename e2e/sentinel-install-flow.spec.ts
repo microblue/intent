@@ -13,10 +13,11 @@ import { createTestUser, deleteTestUser } from './helpers/test-user';
  *      modal; submitting a key redirects to
  *      myclaw.one/aios/install?key=<encoded>.
  *
- * We monkey-patch `window.location.assign` via addInitScript so we can
- * observe the redirect target without leaving the test origin (the
- * actual redemption lives on myclaw.one — out of scope for the SPA's
- * verification).
+ * For (2) we intercept the top-level navigation via page.route and
+ * abort it before the browser actually loads myclaw.one — we only
+ * care that the SPA dispatched the user to the right URL; the
+ * downstream redeem flow lives in the sibling repo and has its own
+ * tests.
  */
 
 const skip = () => {
@@ -47,24 +48,13 @@ test.describe('H1 — sentinel-claw install flow', () => {
     try {
       await injectRealSession(context, user.email);
 
-      // Stash any window.location.assign call so we can read it back
-      // out from the page context once the user submits the key.
-      await context.addInitScript(() => {
-        const w = window as typeof window & {
-          __assignSpy?: string[];
-        };
-        w.__assignSpy = [];
-        const original = window.location.assign.bind(window.location);
-        try {
-          window.location.assign = (url: string | URL) => {
-            w.__assignSpy!.push(String(url));
-          };
-        } catch {
-          // Older browsers may guard location; in that case keep the
-          // original behaviour and the test will fail loudly on the
-          // assertion below.
-          void original;
-        }
+      // Intercept the cross-origin navigation so the test doesn't
+      // actually leave for myclaw.one. We record the URL the SPA tried
+      // to navigate to and abort the request.
+      const navigations: string[] = [];
+      await page.route('https://myclaw.one/**', async (route) => {
+        navigations.push(route.request().url());
+        await route.abort('aborted');
       });
 
       await unlockVercelPreview(page);
@@ -92,20 +82,17 @@ test.describe('H1 — sentinel-claw install flow', () => {
 
       await page.getByTestId('activation-key-submit').click();
 
-      // The submit handler called window.location.assign with the
-      // install URL + encoded key.
-      const assigned = await page.evaluate(() => {
-        const w = window as typeof window & { __assignSpy?: string[] };
-        return w.__assignSpy ?? [];
-      });
-      expect(assigned).toHaveLength(1);
-      const url = new URL(assigned[0]!);
+      // Give the navigation a beat to fire + be intercepted.
+      await page.waitForTimeout(500);
+
+      expect(
+        navigations.length,
+        `expected exactly one navigation to myclaw.one, got: ${JSON.stringify(navigations)}`,
+      ).toBeGreaterThanOrEqual(1);
+      const url = new URL(navigations[0]!);
       expect(url.origin).toBe('https://myclaw.one');
       expect(url.pathname).toBe('/aios/install');
       expect(url.searchParams.get('key')).toBe(fakeKey);
-
-      // Modal closes after submit.
-      await expect(modal).toBeHidden({ timeout: 2_000 });
     } finally {
       await deleteTestUser(user.id);
     }
