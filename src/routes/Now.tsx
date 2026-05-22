@@ -11,6 +11,8 @@ import {
   type NowActivity,
 } from '@/mocks';
 import { useApprovals, useResolveApproval } from '@/data/useApprovals';
+import { useNowActivity } from '@/data/useNowActivity';
+import { useIntents } from '@/data/useIntents';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
 import { friendlyError } from '@/lib/friendlyError';
@@ -22,20 +24,49 @@ import { friendlyError } from '@/lib/friendlyError';
  * "I'm on a page, I can go back" no matter which dock item they tapped.
  */
 export function NowPage() {
-  // Approvals are real data (Phase 14). Running / completed activity
-  // come from mocks: the spec calls for `agent_calls` / `agent_traces`
-  // tables to drive the feed, and those don't have a Supabase home
-  // yet. In real-mode we hide the mock running/done buckets entirely
-  // so signed-in users don't see fabricated activity — the section
-  // collapses to approvals only (or the empty state). When the
-  // backing tables land in `~/myclaw`, flip these gates back on.
+  // Approvals: real Supabase table in real-mode; bundled mocks otherwise.
   const { approvals: pendingApprovals, isMock: approvalsMock } = useApprovals();
   const items = nowSorted();
   const awaiting = approvalsMock
     ? items.filter((i) => i.kind === 'awaiting_approval')
     : []; // real-mode awaiting comes from pendingApprovals directly
-  const running = approvalsMock ? items.filter((i) => i.kind === 'running') : [];
-  const done = approvalsMock ? items.filter((i) => i.kind === 'completed') : [];
+
+  // Running / completed activity:
+  //   Mock mode: bundled NowActivity items grouped by `kind`.
+  //   Real mode: derived from the messages table by useNowActivity —
+  //     "running" = intents whose most recent message in the last 5m is
+  //     from the user (no assistant reply yet); "completed" = intents
+  //     with an assistant reply in the last 24h.
+  // Both modes funnel through the same NowActivity shape so the row
+  // components don't care which source they're rendering.
+  const real = useNowActivity();
+  const { intents } = useIntents();
+  const realRunning = real.running
+    .filter((r) => intents.some((i) => i.id === r.intentId))
+    .map<NowActivity>((r) => ({
+      id: `running-${r.intentId}`,
+      kind: 'running',
+      intentId: r.intentId,
+      summary: r.preview,
+      since: r.since,
+    }));
+  const realDone = real.completed
+    .filter((c) => intents.some((i) => i.id === c.intentId))
+    .map<NowActivity>((c) => ({
+      id: `done-${c.intentId}-${c.since}`,
+      kind: 'completed',
+      intentId: c.intentId,
+      summary: c.preview,
+      since: c.since,
+      agentKey: c.agentId ?? undefined,
+    }));
+
+  const running = approvalsMock
+    ? items.filter((i) => i.kind === 'running')
+    : realRunning;
+  const done = approvalsMock
+    ? items.filter((i) => i.kind === 'completed')
+    : realDone;
   const devMode = useUI((s) => s.devMode);
 
   return (
@@ -47,7 +78,7 @@ export function NowPage() {
         subtitle={
           approvalsMock
             ? `${awaiting.length} 件等你点头 · ${running.length} 件在跑 · ${done.length} 件刚做完`
-            : `${pendingApprovals.length} 件等你点头`
+            : `${pendingApprovals.length} 件等你点头 · ${running.length} 件在跑 · ${done.length} 件刚做完`
         }
       />
 
@@ -92,7 +123,16 @@ export function NowPage() {
       {running.length > 0 && (
         <Section title="正在做" secondary="Step · running" tone="info">
           {running.map((a) => (
-            <RunningRow key={a.id} activity={a} devMode={devMode} />
+            <RunningRow
+              key={a.id}
+              activity={a}
+              intent={
+                approvalsMock
+                  ? undefined
+                  : intents.find((i) => i.id === a.intentId)
+              }
+              devMode={devMode}
+            />
           ))}
         </Section>
       )}
@@ -100,7 +140,16 @@ export function NowPage() {
       {done.length > 0 && (
         <Section title="刚刚做完" secondary="Step · done" tone="muted">
           {done.map((a) => (
-            <DoneRow key={a.id} activity={a} devMode={devMode} />
+            <DoneRow
+              key={a.id}
+              activity={a}
+              intent={
+                approvalsMock
+                  ? undefined
+                  : intents.find((i) => i.id === a.intentId)
+              }
+              devMode={devMode}
+            />
           ))}
         </Section>
       )}
@@ -262,8 +311,16 @@ function ApprovalCard({ activity, devMode }: { activity: NowActivity; devMode: b
   );
 }
 
-function RunningRow({ activity, devMode }: { activity: NowActivity; devMode: boolean }) {
-  const intent = findIntent(activity.intentId);
+function RunningRow({
+  activity,
+  intent: intentOverride,
+  devMode,
+}: {
+  activity: NowActivity;
+  intent?: import('@/mocks/types').Intent;
+  devMode: boolean;
+}) {
+  const intent = intentOverride ?? findIntent(activity.intentId);
   if (!intent) return null;
   return (
     <Link
@@ -292,8 +349,16 @@ function RunningRow({ activity, devMode }: { activity: NowActivity; devMode: boo
   );
 }
 
-function DoneRow({ activity, devMode }: { activity: NowActivity; devMode: boolean }) {
-  const intent = findIntent(activity.intentId);
+function DoneRow({
+  activity,
+  intent: intentOverride,
+  devMode,
+}: {
+  activity: NowActivity;
+  intent?: import('@/mocks/types').Intent;
+  devMode: boolean;
+}) {
+  const intent = intentOverride ?? findIntent(activity.intentId);
   if (!intent) return null;
   return (
     <Link
