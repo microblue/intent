@@ -193,5 +193,19 @@ test.describe('F12 — walkthrough /auth/signin', () => {
       report.missingLabel,
       `signin mobile unlabeled:\n${JSON.stringify(report.missingLabel, null, 2)}`,
     ).toEqual([]);
+
+    // H7 regression guard: the password input must have a visible
+    // placeholder so lay users can see there's a field to type in.
+    // Before H7, signin mode set placeholder='' which made the empty
+    // input look like a layout gap on every viewport.
+    const passwordPlaceholder = await page
+      .locator('input[type="password"]')
+      .first()
+      .getAttribute('placeholder');
+    expect(
+      passwordPlaceholder,
+      'signin password input must have a visible placeholder',
+    ).toBeTruthy();
+    expect(passwordPlaceholder!.length).toBeGreaterThan(0);
   });
 });

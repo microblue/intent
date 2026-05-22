@@ -487,8 +487,31 @@ Phase H items as they run.
   `error-panel-retry` testid + the "再试一次" Chinese copy all ship
   in the prod JS bundle. Real-mode pass against prod green; all F-
   walkthroughs for the touched surfaces re-run clean.
-- [ ] **H7.** Mobile audit. Every surface in Phase F must also render
-  correctly at 375×667.
+- [x] **H7.** Mobile audit.
+  Re-ran every F-walkthrough mobile pass against prod
+  (iPhone-14-class viewport, 390×844 — covers the 375×667 SE/8
+  contract). All 13 mobile passes (F1–F13) green; Ralph read each
+  screenshot. Two real lay-user findings surfaced and were fixed:
+    - **Info-banner contrast (Memory, Help, Permissions)**: each
+      surface had a `bg-{info,warning}/10` rounded banner using
+      `text-{info,warning}-content` for the body. Those content
+      tones are the high-contrast pair to a *saturated*
+      `bg-{info,warning}` — against a 10 %-opacity tint they wash
+      out, and on mobile (where the banner takes a larger share of
+      the visible area) the body paragraph is nearly unreadable.
+      Swapped body to `text-base-content/80` (keyed to the
+      surrounding base bg, legible in both light and dark themes).
+      Header (`text-info` / `text-warning` saturated) untouched.
+    - **/auth/signin password input invisible**: `placeholder=''`
+      in signin mode meant the empty bordered input looked like a
+      layout gap below the "密码" label on both mobile and desktop
+      — lay users couldn't see there was a field to type in. Added
+      `placeholder="••••••••"` for signin; signup keeps its
+      informative `"至少 6 位"`.
+  Regression: `e2e/walkthrough-signin.spec.ts` mobile pass now
+  asserts the password input has a non-empty placeholder — catches
+  a future change that strips it. All 13 F-mobile passes re-run
+  clean on the post-fix prod build.
 
 ## Phase I — Remaining hand-off-blocked items
 
