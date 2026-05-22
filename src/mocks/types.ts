@@ -24,7 +24,8 @@ export type Intent = {
 
 export type MessageContentPart =
   | { type: 'text'; text: string }
-  | { type: 'image'; url: string; alt?: string }
+  | { type: 'image'; url: string; alt?: string; name?: string; size?: number; mime?: string }
+  | { type: 'file'; url: string; name: string; size?: number; mime?: string }
   | { type: 'file_ref'; fileId: string; name: string };
 
 export type Message = {

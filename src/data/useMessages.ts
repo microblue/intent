@@ -127,7 +127,7 @@ export function useMessages(intentId: string): MessagesResult {
 }
 
 export interface SendMessageResult {
-  send: (text: string) => Promise<Message>;
+  send: (text: string, attachments?: MessageContentPart[]) => Promise<Message>;
   isPending: boolean;
   error: Error | null;
   isMock: boolean;
@@ -140,9 +140,15 @@ export function useSendMessage(intentId: string): SendMessageResult {
   const queryKey = messagesQueryKey(intentId, useReal, user?.id ?? null);
 
   const mutation = useMutation({
-    mutationFn: async (text: string): Promise<Message> => {
-      const trimmed = text.trim();
-      if (!trimmed) throw new Error('说点什么吧');
+    mutationFn: async (input: { text: string; attachments?: MessageContentPart[] }): Promise<Message> => {
+      const trimmed = input.text.trim();
+      const attachments = input.attachments ?? [];
+      if (!trimmed && attachments.length === 0) throw new Error('说点什么或加个附件吧');
+
+      // Compose the content array: text first (if any), then attachments.
+      const content: MessageContentPart[] = [];
+      if (trimmed) content.push({ type: 'text', text: trimmed });
+      for (const a of attachments) content.push(a);
 
       // Mock mode: synthesize a Message and shove it into the cache so
       // useMessages picks it up. No persistence — refresh wipes it.
@@ -151,7 +157,7 @@ export function useSendMessage(intentId: string): SendMessageResult {
           id: `m-user-${Date.now()}`,
           intentId,
           role: 'user',
-          content: [{ type: 'text', text: trimmed }],
+          content,
           createdAt: new Date().toISOString(),
         };
         queryClient.setQueryData<Message[]>(queryKey, (old = []) => [...old, msg]);
@@ -167,7 +173,7 @@ export function useSendMessage(intentId: string): SendMessageResult {
           role: 'user',
           // Content stays jsonb-shaped from day one — multi-modal parts
           // are forward-compatible (the column accepts whatever shape).
-          content: [{ type: 'text', text: trimmed }] as unknown as DbMessage['content'],
+          content: content as unknown as DbMessage['content'],
         })
         .select('*')
         .single();
@@ -204,7 +210,7 @@ export function useSendMessage(intentId: string): SendMessageResult {
   });
 
   return {
-    send: (text) => mutation.mutateAsync(text),
+    send: (text, attachments) => mutation.mutateAsync({ text, attachments }),
     isPending: mutation.isPending,
     error: mutation.error as Error | null,
     isMock: !useReal,

@@ -46,6 +46,8 @@ import { friendlyError } from '@/lib/friendlyError';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
 import { useIsDesktop } from '@/lib/useMediaQuery';
 import { VoiceButton } from '@/components/VoiceButton';
+import { AttachmentButton } from '@/components/AttachmentButton';
+import type { MessageContentPart } from '@/mocks/types';
 
 /**
  * Intent home — branches by viewport because phone and desktop want
@@ -187,7 +189,7 @@ function useChatThread(intentId: string) {
     }
   }, [messages, typing]);
 
-  const send = async (text: string) => {
+  const send = async (text: string, attachments?: MessageContentPart[]) => {
     // Client-side rate limit — 5 sends per 10s sliding window. Catches
     // runaway loops / stuck keys before they spam the gateway and burn
     // LLM tokens. The gateway has its own server-side limits; this is
@@ -202,7 +204,7 @@ function useChatThread(intentId: string) {
     }
 
     try {
-      await persistUserMessage(text);
+      await persistUserMessage(text, attachments);
     } catch (err) {
       toast(friendlyError(err, '发送失败,稍后再试'));
       return;
@@ -383,7 +385,7 @@ function MobileIntentHome({
         </div>
       </main>
 
-      <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} />
+      <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} intentId={intent.id} />
 
       <InfoSheet
         open={infoOpen}
@@ -738,7 +740,7 @@ function DesktopIntentHome({
             <div className="flex-1 overflow-y-auto">
               <Conversation messages={msgs} typing={typing} agentActivity={agentActivity} />
             </div>
-            <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} />
+            <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} intentId={intent.id} />
           </div>
         </Panel>
         {railOpen && (
@@ -2028,6 +2030,93 @@ function EmptyChat() {
   );
 }
 
+function PendingAttachmentChip({
+  part,
+  onRemove,
+}: {
+  part: MessageContentPart;
+  onRemove: () => void;
+}) {
+  if (part.type === 'image') {
+    return (
+      <span className="group relative inline-flex items-center overflow-hidden rounded-lg ring-1 ring-base-300/60">
+        <img
+          src={part.url}
+          alt={part.alt ?? part.name ?? ''}
+          className="h-14 w-14 object-cover"
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="去掉这张图"
+          className="absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-bl-md bg-black/60 text-[10px] text-white opacity-0 transition group-hover:opacity-100"
+        >
+          ✕
+        </button>
+      </span>
+    );
+  }
+  if (part.type === 'file') {
+    const sizeKb = part.size ? Math.round(part.size / 1024) : null;
+    return (
+      <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-base-200 px-2 py-1 text-xs ring-1 ring-base-300/60">
+        <span aria-hidden>📎</span>
+        <span className="truncate">{part.name}</span>
+        {sizeKb !== null && (
+          <span className="text-base-content/55">{sizeKb} KB</span>
+        )}
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="去掉这个文件"
+          className="text-base-content/45 hover:text-error"
+        >
+          ✕
+        </button>
+      </span>
+    );
+  }
+  return null;
+}
+
+function AttachmentPart({ part }: { part: MessageContentPart }) {
+  if (part.type === 'image') {
+    return (
+      <a
+        href={part.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block max-w-xs overflow-hidden rounded-xl ring-1 ring-base-300/60 hover:ring-primary/40"
+      >
+        <img
+          src={part.url}
+          alt={part.alt ?? part.name ?? ''}
+          className="block max-h-72 w-full object-cover"
+          loading="lazy"
+        />
+      </a>
+    );
+  }
+  if (part.type === 'file') {
+    const sizeKb = part.size ? Math.round(part.size / 1024) : null;
+    return (
+      <a
+        href={part.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex max-w-full items-center gap-2 rounded-xl bg-base-200 px-3 py-2 text-sm ring-1 ring-base-300/60 hover:bg-base-300"
+      >
+        <span aria-hidden className="text-base">📎</span>
+        <span className="truncate font-medium">{part.name}</span>
+        {sizeKb !== null && (
+          <span className="text-xs text-base-content/55">{sizeKb} KB</span>
+        )}
+      </a>
+    );
+  }
+  return null;
+}
+
 function ChatMessage({ message }: { message: Message }) {
   const isUser = message.role === 'user';
   if (isUser) return <UserMessage message={message} />;
@@ -2039,6 +2128,9 @@ function UserMessage({ message }: { message: Message }) {
     .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
     .map((p) => p.text)
     .join('\n');
+  const attachments = message.content.filter(
+    (p): p is MessageContentPart => p.type === 'image' || p.type === 'file',
+  );
 
   return (
     <div
@@ -2047,9 +2139,18 @@ function UserMessage({ message }: { message: Message }) {
       data-role="user"
       className="flex flex-col items-end gap-1 scroll-mt-24 transition"
     >
-      <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-content shadow-sm">
-        <div className="whitespace-pre-wrap">{text}</div>
-      </div>
+      {attachments.length > 0 && (
+        <div className="flex max-w-[85%] flex-col items-end gap-1.5">
+          {attachments.map((p, i) => (
+            <AttachmentPart key={i} part={p} />
+          ))}
+        </div>
+      )}
+      {text && (
+        <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-content shadow-sm">
+          <div className="whitespace-pre-wrap">{text}</div>
+        </div>
+      )}
       <time className="px-1 text-[11px] text-base-content/40">
         {timeAgo(message.createdAt)}
       </time>
@@ -2178,12 +2279,15 @@ function StickyComposer({
   onSend,
   activeAgentId,
   onAgentChange,
+  intentId,
 }: {
-  onSend?: (text: string) => void;
+  onSend?: (text: string, attachments?: MessageContentPart[]) => void;
   activeAgentId?: string;
   onAgentChange?: (agentId: string) => void;
+  intentId?: string;
 }) {
   const [draft, setDraft] = useState('');
+  const [pendingAttachments, setPendingAttachments] = useState<MessageContentPart[]>([]);
   const { status: gatewayStatus, isMock: gatewayMock } = useGateway();
   // Real-mode + WS not connected → disable the picker. In mock-mode
   // the gateway never connects (by design) so we keep the picker
@@ -2194,9 +2298,9 @@ function StickyComposer({
 
   const submit = () => {
     const text = draft.trim();
-    if (!text) return;
+    if (!text && pendingAttachments.length === 0) return;
     if (onSend) {
-      onSend(text);
+      onSend(text, pendingAttachments.length > 0 ? pendingAttachments : undefined);
     } else {
       // No onSend handler wired (anonymous demo viewer with no chat
       // thread context). Just toast the input echo so the user
@@ -2204,7 +2308,11 @@ function StickyComposer({
       toast('演示模式 · 登录后会真发给你的 claw', { description: text });
     }
     setDraft('');
+    setPendingAttachments([]);
   };
+
+  const removeAttachment = (idx: number) =>
+    setPendingAttachments((a) => a.filter((_, i) => i !== idx));
 
   return (
     <div className="sticky bottom-0 z-10">
@@ -2236,12 +2344,35 @@ function StickyComposer({
                 }
               }}
             />
+            {pendingAttachments.length > 0 && (
+              <div
+                data-testid="composer-attachments"
+                className="flex flex-wrap gap-2 px-3 pb-1 pt-2"
+              >
+                {pendingAttachments.map((part, idx) => (
+                  <PendingAttachmentChip
+                    key={idx}
+                    part={part}
+                    onRemove={() => removeAttachment(idx)}
+                  />
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-2 px-3 pb-3">
               {activeAgentId && onAgentChange && (
                 <AgentPicker
                   activeAgentId={activeAgentId}
                   onChange={onAgentChange}
                   disabled={pickerDisabled}
+                />
+              )}
+              {intentId && (
+                <AttachmentButton
+                  intentId={intentId}
+                  size="sm"
+                  onAttached={(part) =>
+                    setPendingAttachments((a) => [...a, part])
+                  }
                 />
               )}
               <VoiceButton
@@ -2253,10 +2384,10 @@ function StickyComposer({
               <kbd className="kbd kbd-sm ml-auto hidden text-[0.7rem] opacity-60 sm:inline-flex">⌘ ↵</kbd>
               <button
                 type="submit"
-                disabled={!draft.trim()}
+                disabled={!draft.trim() && pendingAttachments.length === 0}
                 className={cn(
                   'btn btn-primary btn-md gap-1.5 rounded-full px-5 shadow-lg',
-                  !draft.trim() && 'opacity-70',
+                  !draft.trim() && pendingAttachments.length === 0 && 'opacity-70',
                 )}
                 aria-label="发送"
               >
