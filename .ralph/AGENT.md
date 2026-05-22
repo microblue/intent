@@ -116,3 +116,9 @@ or Caddy. Key path: `ubuntu@54.218.209.8` via
   have" libraries duplicate code we already have.
 - `intent_agents` table uses `agent_key` (not `agent_id`) and
   `is_orchestrator` (not `role`). DB trigger auto-seeds `main`.
+- Supabase Realtime channels are cached by topic in the client. React 19
+  strict-mode mount → cleanup → mount can return the same channel
+  instance to the second mount before `removeChannel`'s network
+  round-trip completes, causing `cannot add postgres_changes callbacks
+  ... after subscribe()`. Fix: use a per-effect-run UUID in the channel
+  name (see `src/data/useApprovals.ts`).
