@@ -75,15 +75,17 @@ export function useApprovals(): ApprovalsResult {
   // events (when an approval moves to resolved) should remove the row
   // from the pending list.
   //
-  // Channel name is scoped to user.id (matches the per-intent pattern in
-  // useMessages). A globally-shared channel name caused Supabase Realtime
-  // to throw `cannot add postgres_changes callbacks ... after subscribe()`
-  // on remount when the cached channel was still in the realtime client's
-  // internal map.
+  // Channel name uses a per-effect-run UUID so that React 19's strict-mode
+  // mount → cleanup → mount cycle never collides on the same channel
+  // topic. Supabase Realtime caches channels by topic internally; if the
+  // second mount finds a still-cached channel (because removeChannel's
+  // network round-trip hasn't completed yet), calling `.on()` on it
+  // throws `cannot add postgres_changes callbacks ... after subscribe()`.
+  // The UUID guarantees every mount creates a fresh channel.
   useEffect(() => {
     if (!useReal || !user?.id) return;
     const channel = supabase
-      .channel(`approvals:pending:${user.id}`)
+      .channel(`approvals:pending:${user.id}:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'approvals' },
