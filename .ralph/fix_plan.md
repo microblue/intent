@@ -453,8 +453,40 @@ Phase H items as they run.
     composer is visible (never a blank panel). Bundle-markers test
     runs in both mock + real mode; real-mode pass against prod
     confirms the new `now-skeleton` shipped.
-- [ ] **H6.** Error state audit. Network failure on every page → does
-  the user see a friendly retry, or a blank/broken view?
+- [x] **H6.** Error state audit.
+  Audit found two gaps:
+    - Every existing error branch (IntentList, Memory, Schedule,
+      Archive) showed friendly copy but no explicit retry button —
+      lay users were stuck unless they knew to refresh manually.
+    - `/now` had no error branch at all: failed queries silently
+      rendered the empty state ("现在很安静"), telling users they
+      had no activity when in fact the fetch had failed.
+  Built shared component + wired every surface through it:
+    - `src/components/ErrorPanel.tsx` — `title` + `friendlyError(
+      error, fallback)`-piped message + "再试一次" button
+      (`btn-error btn-sm rounded-full`). Default retry =
+      `window.location.reload()` (action a lay user already
+      understands); pass `onRetry` to use a TanStack-Query
+      `refetch()` when available. Test hooks: `data-testid` on the
+      panel + `error-panel-retry` on the button.
+    - IntentList → `ErrorPanel` with `onRetry={refetch}`.
+    - Memory → `ErrorPanel` (reload fallback).
+    - Schedule → new `ErrorPanel` block under the composer (was a
+      silent subtitle warning only).
+    - Archive → `ErrorPanel` with `onRetry={refetch}`.
+    - Now → consolidates `approvalsError ?? real.error` into
+      `feedError`; renders `ErrorPanel` when set + not loading.
+      Empty panel only fires when settled, no error, AND every
+      bucket is empty.
+  Static surfaces (`/permissions`, `/help`, `/settings/engines`,
+  `/new`) fetch no async data — no error panel needed.
+  Tests: `e2e/walkthrough-error-states.spec.ts` is a bundle-content
+  audit asserting every per-surface error testid
+  (`intentlist-error`, `schedule-error`, `memory-error`,
+  `archive-error`, `now-error`, `intent-error`) + the
+  `error-panel-retry` testid + the "再试一次" Chinese copy all ship
+  in the prod JS bundle. Real-mode pass against prod green; all F-
+  walkthroughs for the touched surfaces re-run clean.
 - [ ] **H7.** Mobile audit. Every surface in Phase F must also render
   correctly at 375×667.
 
