@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
+import { ErrorPanel } from '@/components/ErrorPanel';
 import { useUI } from '@/state/ui';
 import {
   approvals as mockApprovals,
@@ -29,6 +30,7 @@ export function NowPage() {
     approvals: pendingApprovals,
     isMock: approvalsMock,
     isLoading: approvalsLoading,
+    error: approvalsError,
   } = useApprovals();
   const items = nowSorted();
   const awaiting = approvalsMock
@@ -50,6 +52,11 @@ export function NowPage() {
   // activity before the query has even resolved.
   const isInitialLoading =
     !approvalsMock && (approvalsLoading || real.isLoading || intentsLoading);
+  // First settled error wins — both feeds are equally load-bearing and
+  // the user only needs one panel + one retry to recover from either.
+  const feedError = !approvalsMock
+    ? approvalsError ?? real.error ?? null
+    : null;
   const realRunning = real.running
     .filter((r) => intents.some((i) => i.id === r.intentId))
     .map<NowActivity>((r) => ({
@@ -102,7 +109,16 @@ export function NowPage() {
         </div>
       )}
 
+      {!isInitialLoading && feedError && (
+        <ErrorPanel
+          title="活动列表读不出来"
+          error={feedError}
+          testId="now-error"
+        />
+      )}
+
       {!isInitialLoading &&
+        !feedError &&
         awaiting.length === 0 &&
         pendingApprovals.length === 0 &&
         running.length === 0 &&

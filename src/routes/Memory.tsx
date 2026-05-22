@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
+import { ErrorPanel } from '@/components/ErrorPanel';
 import { findIntent, type MemoryFact } from '@/mocks';
 import { useAddMemoryFact, useMemoryFacts } from '@/data/useMemoryFacts';
 import { useUI } from '@/state/ui';
@@ -59,10 +60,11 @@ export function MemoryPage() {
       )}
 
       {error && !isLoading && (
-        <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
-          <div className="font-medium">读取记忆的时候出错了</div>
-          <p className="mt-1 text-error/80">{friendlyError(error, '稍等一下,再刷新一次试试。')}</p>
-        </div>
+        <ErrorPanel
+          title="读取记忆的时候出错了"
+          error={error}
+          testId="memory-error"
+        />
       )}
 
       {isEmpty && (

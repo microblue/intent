@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
+import { ErrorPanel } from '@/components/ErrorPanel';
 import { findIntent, type ScheduleEvent } from '@/mocks';
 import { useScheduleEvents, useAddScheduleEvent } from '@/data/useScheduleEvents';
 import { useIntents } from '@/data/useIntents';
@@ -55,6 +56,14 @@ export function SchedulePage() {
       />
 
       <AddReminderComposer />
+
+      {error && !isLoading && (
+        <ErrorPanel
+          title="提醒列表读不出来"
+          error={error}
+          testId="schedule-error"
+        />
+      )}
 
       {isLoading && (
         <div data-testid="schedule-skeleton" className="space-y-2">

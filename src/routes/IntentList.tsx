@@ -6,8 +6,8 @@ import { useClaws } from '@/data/useClaws';
 import { useSession } from '@/lib/auth';
 import { IntentCard, NewIntentCard } from '@/components/IntentCard';
 import { ActivationKeyModal } from '@/components/ActivationKeyModal';
+import { ErrorPanel } from '@/components/ErrorPanel';
 import { useUI } from '@/state/ui';
-import { friendlyError } from '@/lib/friendlyError';
 
 /**
  * Starter templates — shown above the intent grid as inspiration. When the
@@ -63,7 +63,7 @@ const STARTER_TEMPLATES = [
 ];
 
 export function IntentListPage() {
-  const { intents: list, isLoading, error, isMock } = useIntents();
+  const { intents: list, isLoading, error, isMock, refetch } = useIntents();
   const { user, signedIn } = useSession();
   const { prefs } = useUserPreferences();
   const { isSentinelOnly } = useClaws();
@@ -256,12 +256,12 @@ export function IntentListPage() {
       )}
 
       {error && !isLoading && (
-        <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
-          <div className="font-medium">读取数据的时候出错了</div>
-          <p className="mt-1 text-error/80">
-            {friendlyError(error, '稍等一下,再刷新一次试试。')}
-          </p>
-        </div>
+        <ErrorPanel
+          title="读取数据的时候出错了"
+          error={error}
+          onRetry={refetch}
+          testId="intentlist-error"
+        />
       )}
 
       {!isLoading && !error && list.length > 0 && (

@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/PageHeader';
+import { ErrorPanel } from '@/components/ErrorPanel';
 import { useArchivedIntents } from '@/data/useIntents';
 import { useUpdateIntent } from '@/data/useUpdateIntent';
 import type { Intent } from '@/mocks/types';
@@ -15,7 +16,7 @@ import { friendlyError } from '@/lib/friendlyError';
  * everything else is power-user territory and stays out of scope.
  */
 export function ArchivePage() {
-  const { intents, isLoading, error, isMock } = useArchivedIntents();
+  const { intents, isLoading, error, isMock, refetch } = useArchivedIntents();
   const { update: updateIntent } = useUpdateIntent();
 
   const handleRestore = async (intent: Intent) => {
@@ -51,10 +52,12 @@ export function ArchivePage() {
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-error/30 bg-error/5 p-6 text-sm text-error">
-          <div className="font-medium">读取封存列表时出错了</div>
-          <p className="mt-1 text-error/80">{friendlyError(error, '稍等一下,再刷新一次试试。')}</p>
-        </div>
+        <ErrorPanel
+          title="读取封存列表时出错了"
+          error={error}
+          onRetry={refetch}
+          testId="archive-error"
+        />
       ) : intents.length === 0 ? (
         <div
           data-testid="archive-empty"
