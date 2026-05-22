@@ -114,7 +114,13 @@ either been fixed or filed as a new Phase H/J item.
     agent / step / capability / memory / schedule / approval / file /
     outline / activity / engine) with 中文 + ENGLISH labels. Footer
     link to settings present. No findings.
-- [ ] **F10.** `/archive`
+- [x] **F10.** `/archive`
+  - Spec: `e2e/walkthrough-archive.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-archive-{desktop,mobile}.png`.
+  - Ralph read both — header 封存的, empty-state mailbox emoji with
+    友好 copy ("这里还是空的 / 没有封存过的项目。") and 回到想做的事
+    CTA. All controls labelled. No findings.
 - [ ] **F11.** `/settings/engines` (dev mode)
 - [ ] **F12.** `/auth/signin`
 - [ ] **F13.** `/auth/reset-password`
