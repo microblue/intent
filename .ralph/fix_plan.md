@@ -201,13 +201,23 @@ protocol in PROMPT.md — **do not delete** the UI surface again.
     `schedule_events` exists. Green on prod.
   - F4 walkthrough click-smoke updated to verify the composer's live
     parse preview instead of the old hint CTA.
-- [ ] **G3.** Voice input on `/new` (and on chat composers). Previous
-  voice button was deleted. Build it for real:
-  - Web Speech API (`window.SpeechRecognition` /
-    `webkitSpeechRecognition`), Chinese locale, push-to-talk button
-    with mic permission prompt, inserts transcription into the composer.
-  - Graceful fallback if browser doesn't support: hide the button.
-  - Cover with e2e using a mocked SpeechRecognition.
+- [x] **G3.** Voice input on `/new` (and on chat composers).
+  - `src/components/VoiceButton.tsx` wraps the Web Speech API
+    (`window.SpeechRecognition` / `webkitSpeechRecognition`), zh-CN
+    locale, continuous + interim results. Push-to-talk: tap to start,
+    tap again to stop. `aria-pressed` reflects active state;
+    `aria-label` flips between "语音输入" / "停止录音". Mic-permission
+    denial surfaces a friendly tooltip "麦克风没开". Final transcripts
+    flow into the parent composer via `onTranscript`.
+  - Wired into `IntentHome.StickyComposer` (chat) and
+    `NewIntent.PromptStage` (with "不想打字?点话筒说一句" hint).
+  - Graceful fallback: component returns `null` when neither global
+    is present (Firefox desktop, some WebViews) so lay users on
+    unsupported browsers don't see a broken control.
+  - Tested via `e2e/voice-button.spec.ts` with a deterministic mock
+    SpeechRecognition installed via `addInitScript`. Two cases:
+    transcript reaches the textarea when mocked; button hidden when
+    globals deleted. Both green.
 - [ ] **G4.** Attachment in chat (the 📎 button that was deleted).
   Build for real:
   - Upload to Supabase Storage `chat-attachments/<user_id>/<intent_id>/...`
