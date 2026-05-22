@@ -162,12 +162,25 @@ Previous Ralph closed these by deleting / collapsing / hint-text. Build
 the real feature. If you genuinely cannot, follow the explicit defer
 protocol in PROMPT.md — **do not delete** the UI surface again.
 
-- [ ] **G1.** `/now` activity feed — real implementation. Either:
-  - Build `agent_calls` + `agent_traces` tables (hand-off to `~/myclaw`
-    is acceptable for the migration, but the SPA-side wiring + insert
-    on gateway events lives here), OR
-  - Source the data from the `messages` table grouped by session.
-  No "collapse in real-mode" allowed.
+- [x] **G1.** `/now` activity feed — real implementation.
+  - Implemented option B: `useNowActivity` derives the running/done
+    buckets from the `messages` table grouped by intent. "Running" =
+    intent whose most recent message in the last 5 min is from the
+    user (assistant hasn't replied yet); "Completed" = intent whose
+    most recent message in the last 24h is from the assistant. Each
+    bucket capped at 8 rows. RLS scopes to the user. Refetches every
+    30s.
+  - Wiring: `Now.tsx` now uses `useNowActivity` in real-mode and
+    funnels both sources through the same `NowActivity` shape so the
+    `RunningRow`/`DoneRow` components don't branch. Real intents
+    resolved via `useIntents()` and passed as a prop so the cover +
+    emoji come from the live intent row, not the mock catalogue.
+  - Subtitle now shows the same "等点头 · 在跑 · 刚做完" tri-count in
+    real-mode (was approvals-only).
+  - Spec: `e2e/now-realmode-buckets.spec.ts` seeds throwaway intents
+    + messages and asserts both buckets render. Screenshot at
+    `test-results/walkthrough-now-realmode-buckets.png` shows the
+    feed populated with the user's actual recent assistant replies.
 - [ ] **G2.** `/schedule` add-reminder — real NL parser. Either:
   - Client-side regex for "每天 X 点 / 每周 X / X 月 X 日 X 点" cases
     covering ≥80% of typical user inputs, parse → insert into
