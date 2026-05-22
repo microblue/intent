@@ -6,7 +6,13 @@ import { signOut, useSession } from '@/lib/auth';
 import { useUserPreferences } from '@/data/useUserPreferences';
 import { useUI } from '@/state/ui';
 import { cn } from '@/lib/cn';
+import { env } from '@/lib/env';
 import { friendlyError } from '@/lib/friendlyError';
+import {
+  buildExportFilename,
+  fetchExportData,
+  triggerDownload,
+} from '@/lib/exportMyData';
 
 /**
  * Supported UI languages. Names are written in the *target* language so the
@@ -208,6 +214,7 @@ export function SettingsPage() {
           linkLabel="去看看"
           to="/archive"
         />
+        <ExportDataRow />
       </Section>
 
       <Section title="读懂 MyClaw">
@@ -357,6 +364,60 @@ function SubscriptionRow({ onEnterKey }: { onEnterKey: () => void }) {
           className="btn btn-primary"
         >
           管理 →
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function ExportDataRow() {
+  const { signedIn, user } = useSession();
+  const canExport = env.useRealData && signedIn && !!user?.id;
+  const [busy, setBusy] = useState(false);
+
+  const handleClick = async () => {
+    if (!canExport || !user) {
+      toast('演示模式没有真实数据可导出。登录后再来试一次');
+      return;
+    }
+    setBusy(true);
+    try {
+      const data = await fetchExportData({ id: user.id, email: user.email ?? null });
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      });
+      triggerDownload(blob, buildExportFilename());
+      const total =
+        data.counts.intents +
+        data.counts.messages +
+        data.counts.memory_facts +
+        data.counts.schedule_events;
+      toast(`已导出 ${total} 条`);
+    } catch (err) {
+      toast(friendlyError(err, '导出失败,稍后再试'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <li className="flex flex-col gap-1 border-b border-base-300/40 px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-4">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm">导出我的数据</div>
+        <div className="mt-0.5 text-xs text-base-content/45">
+          想做的事 / 消息 / 助手记得的事 / 提醒,一份 JSON 全打包
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="text-sm text-base-content/65">JSON</div>
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={busy}
+          data-testid="settings-export"
+          className="text-xs font-medium text-primary hover:underline disabled:cursor-wait disabled:opacity-60"
+        >
+          {busy ? '准备中…' : '导出 →'}
         </button>
       </div>
     </li>
