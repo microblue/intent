@@ -11,9 +11,10 @@ import type { Intent } from '@/mocks/types';
  *
  * RLS on `intents` enforces `user_id = auth.uid()` on both SELECT and
  * INSERT, so we hand it auth.uid() explicitly and let Postgres reject
- * mismatches. claw_id comes from useClaws()'s default (oldest claw); if
- * the user has none we surface a friendly error and let the route gate
- * push them to the install flow.
+ * mismatches. claw_id comes from useClaws()'s `activeClaw` (the user's
+ * picked claw, falling back to the first real claw if none is picked);
+ * if the user has none we surface a friendly error and let the route
+ * gate push them to the install flow.
  *
  * Mock mode: rejects with a "演示模式不会保存" message. The /new wizard
  * surfaces this as a toast and keeps the user where they are. We don't
@@ -38,7 +39,7 @@ export interface CreateIntentResult {
 
 export function useCreateIntent(): CreateIntentResult {
   const { signedIn, user } = useSession();
-  const { defaultClaw, hasResolved: clawsResolved } = useClaws();
+  const { activeClaw, hasResolved: clawsResolved } = useClaws();
   const queryClient = useQueryClient();
   const useReal = env.useRealData && signedIn;
 
@@ -63,12 +64,12 @@ export function useCreateIntent(): CreateIntentResult {
 
       // Wait briefly for the claws query to resolve. A fast user can hit
       // the "开始这件事" button before useClaws has finished its initial
-      // SELECT — in that case defaultClaw is transiently null and the
+      // SELECT — in that case activeClaw is transiently null and the
       // friendly "还没有给你分配实例" error fires misleadingly. Poll the
       // React-Query cache for up to 3s, which beats showing the install
       // redirect to a user who's actually fine.
-      let liveDefaultClaw = defaultClaw;
-      if (!liveDefaultClaw && !clawsResolved) {
+      let liveActiveClaw = activeClaw;
+      if (!liveActiveClaw && !clawsResolved) {
         const deadline = Date.now() + 3_000;
         while (Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, 100));
@@ -78,12 +79,12 @@ export function useCreateIntent(): CreateIntentResult {
           const claws = cached.flatMap(([, rows]) => rows ?? []);
           const real = claws.find((c) => c.plan_id !== 'aios-prototype');
           if (real) {
-            liveDefaultClaw = real as typeof defaultClaw;
+            liveActiveClaw = real as typeof activeClaw;
             break;
           }
         }
       }
-      if (!liveDefaultClaw) {
+      if (!liveActiveClaw) {
         throw new Error('还没有给你分配实例,正在带你去安装');
       }
 
@@ -95,7 +96,7 @@ export function useCreateIntent(): CreateIntentResult {
         .insert({
           id,
           user_id: user.id,
-          claw_id: liveDefaultClaw.id,
+          claw_id: liveActiveClaw.id,
           title,
           emoji: input.emoji ?? null,
           cover: input.cover ?? null,

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
+import { useUI } from '@/state/ui';
 import type { Database } from '@/lib/db-types';
 
 /**
@@ -79,6 +80,14 @@ export interface ClawsResult {
   realClaws: Claw[];
   /** Most users currently have one claw; default to the first real claw, falling back to whatever's there. */
   defaultClaw: Claw | null;
+  /**
+   * The claw the SPA should currently treat as "active" — the user's
+   * `selectedClawId` if it resolves to one of their real claws, else
+   * `defaultClaw`. New intents target this claw; the gateway connects
+   * to it. Switches reactively when the user picks a different claw
+   * in ClawPicker.
+   */
+  activeClaw: Claw | null;
   /** True when the user has at least one non-sentinel claw. */
   hasRealClaw: boolean;
   /**
@@ -116,12 +125,22 @@ export function useClaws(): ClawsResult {
   const realClaws = claws.filter((c) => !isSentinelClaw(c));
   const hasRealClaw = realClaws.length > 0;
   const isSentinelOnly = useReal && claws.length > 0 && !hasRealClaw;
+  // Pick the first real claw if one exists; otherwise fall back to whatever's
+  // there (sentinel or mock) so callers still get a non-null FK target.
+  const defaultClaw = realClaws[0] ?? claws[0] ?? null;
+  // The user's UI-store-selected claw. We resolve it against realClaws
+  // only — selecting the sentinel placeholder isn't meaningful.
+  const selectedClawId = useUI((s) => s.selectedClawId);
+  const selectedClaw =
+    selectedClawId !== null
+      ? realClaws.find((c) => c.id === selectedClawId) ?? null
+      : null;
+  const activeClaw = selectedClaw ?? defaultClaw;
   return {
     claws,
     realClaws,
-    // Pick the first real claw if one exists; otherwise fall back to whatever's
-    // there (sentinel or mock) so callers still get a non-null FK target.
-    defaultClaw: realClaws[0] ?? claws[0] ?? null,
+    defaultClaw,
+    activeClaw,
     hasRealClaw,
     isSentinelOnly,
     isLoading: query.isLoading || sessionLoading,

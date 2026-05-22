@@ -87,11 +87,11 @@ export interface UseGatewayResult {
 
 export function useGateway(): UseGatewayResult {
   const { signedIn, loading: sessionLoading } = useSession();
-  const { defaultClaw, hasRealClaw, isMock } = useClaws();
+  const { activeClaw, hasRealClaw, isMock } = useClaws();
   const [status, setStatus] = useState(currentStatus.status);
   const [reason, setReason] = useState<string | null>(currentStatus.reason);
 
-  const targetClawId = hasRealClaw && defaultClaw ? defaultClaw.id : null;
+  const targetClawId = hasRealClaw && activeClaw ? activeClaw.id : null;
   const shouldConnect =
     env.useRealData && signedIn && !sessionLoading && Boolean(targetClawId);
 

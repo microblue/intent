@@ -87,6 +87,18 @@ type UIState = {
   onboardingDismissed: boolean;
   dismissOnboarding: () => void;
   resetOnboarding: () => void;
+
+  /**
+   * User-chosen active claw id. null = "auto" → fall back to the
+   * user's first real claw (preserves single-claw behaviour). Picked
+   * via ClawPicker when the user has more than one real claw. The
+   * value is the raw `claws.id` (text). If it no longer maps to a row
+   * the user owns (claw deleted / signed in as someone else), the
+   * data layer falls back to defaultClaw and the picker shows the
+   * fallback as active.
+   */
+  selectedClawId: string | null;
+  setSelectedClawId: (id: string | null) => void;
 };
 
 const DEFAULT_MINIMIZED: Record<RailSectionKey, boolean> = {
@@ -182,6 +194,9 @@ export const useUI = create<UIState>()(
       onboardingDismissed: false,
       dismissOnboarding: () => set({ onboardingDismissed: true }),
       resetOnboarding: () => set({ onboardingDismissed: false }),
+
+      selectedClawId: null,
+      setSelectedClawId: (id) => set({ selectedClawId: id }),
     }),
     {
       name: 'myclaw-ui-v2',
@@ -194,6 +209,7 @@ export const useUI = create<UIState>()(
         railHidden: s.railHidden,
         userMemoryFacts: s.userMemoryFacts,
         onboardingDismissed: s.onboardingDismissed,
+        selectedClawId: s.selectedClawId,
       }),
     },
   ),
