@@ -292,6 +292,7 @@ export function SettingsPage() {
             type="button"
             role="switch"
             aria-checked={devMode}
+            aria-label="开发者模式"
             onClick={() => {
               toggleDevMode();
               toast(devMode ? '关闭开发者模式' : '开启开发者模式');
