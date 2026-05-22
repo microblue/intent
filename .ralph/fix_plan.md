@@ -121,7 +121,16 @@ either been fixed or filed as a new Phase H/J item.
   - Ralph read both — header 封存的, empty-state mailbox emoji with
     友好 copy ("这里还是空的 / 没有封存过的项目。") and 回到想做的事
     CTA. All controls labelled. No findings.
-- [ ] **F11.** `/settings/engines` (dev mode)
+- [x] **F11.** `/settings/engines` (dev mode)
+  - Spec: `e2e/walkthrough-engines.spec.ts`. Real-mode chromium + mobile,
+    pre-seeds `devMode: true` into `myclaw-ui-v2` localStorage so the
+    surface renders in its intended state.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-engines-{desktop,mobile}.png`.
+  - Ralph read both — 4-plane architecture cards (Supabase / apps-api /
+    OpenClaw / Hermes), HERMES profiles list, per-claw agent matrix
+    (cool-brook shows 12/47 specialists). English product-domain names
+    are intentional for the dev surface. No findings.
 - [ ] **F12.** `/auth/signin`
 - [ ] **F13.** `/auth/reset-password`
 
