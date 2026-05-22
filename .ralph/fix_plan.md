@@ -23,18 +23,18 @@ Previously-completed work lives in `docs/ralph-completed.md`.
 For each journey file under `.ralph/journeys/`, write the matching
 Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
-- [ ] **K1.** `e2e/journey-01-mom-remember-allergy.spec.ts` —
+- [x] **K1.** `e2e/journey-01-mom-remember-allergy.spec.ts` —
   cross-intent memory recall. Will fail until L1 lands the auto-extract path.
-- [ ] **K2.** `e2e/journey-02-reminder-fires.spec.ts` — schedule
+- [x] **K2.** `e2e/journey-02-reminder-fires.spec.ts` — schedule
   firing with `page.clock` mocked forward. Will fail until L2 lands a
   firing sink.
-- [ ] **K3.** `e2e/journey-03-new-intent-handoff.spec.ts` — /new
+- [x] **K3.** `e2e/journey-03-new-intent-handoff.spec.ts` — /new
   clarifying answers must reach /intent's chat as user message. Will
   fail until L3 lands.
-- [ ] **K4.** `e2e/journey-04-rail-honest-numbers.spec.ts` —
+- [x] **K4.** `e2e/journey-04-rail-honest-numbers.spec.ts` —
   cross-component number consistency + zero mock-guard firings on
   /intent. Will fail until L4–L7 land.
-- [ ] **K5.** `e2e/journey-05-overlay-and-interactivity.spec.ts` —
+- [x] **K5.** `e2e/journey-05-overlay-and-interactivity.spec.ts` —
   click-stress every interactive element + overlap check on every
   opened dropdown. Will fail until L8 lands.
 
