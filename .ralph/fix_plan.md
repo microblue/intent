@@ -181,13 +181,26 @@ protocol in PROMPT.md — **do not delete** the UI surface again.
     + messages and asserts both buckets render. Screenshot at
     `test-results/walkthrough-now-realmode-buckets.png` shows the
     feed populated with the user's actual recent assistant replies.
-- [ ] **G2.** `/schedule` add-reminder — real NL parser. Either:
-  - Client-side regex for "每天 X 点 / 每周 X / X 月 X 日 X 点" cases
-    covering ≥80% of typical user inputs, parse → insert into
-    `schedule_events`, OR
-  - Route through `sessions.send` to the reminder agent which returns a
-    structured reminder spec → client inserts the row.
-  No "swap to chat hint" allowed.
+- [x] **G2.** `/schedule` add-reminder — real NL parser.
+  - Implemented option A: `src/lib/parseReminder.ts` covers 每天 X 点 /
+    每周 X (early-week) / X 月 X 日 X 点 / 明天 / 今天 / 下周 / 周X /
+    bare time + HH:MM, with AM/PM hints (上午/下午/晚上/早上),
+    Chinese numerals up to 31, "X 点半" → :30, polite-prefix
+    stripping ("请帮我", "提醒我"), and "tomorrow if past" rollover.
+  - 15 unit tests in `e2e/parse-reminder-unit.spec.ts` cover daily /
+    weekly / absolute-date / relative-day / next-weekday / bare-time /
+    HH:MM / Chinese-numeral / garbage-rejection paths — all green.
+  - Composer UI in `Schedule.tsx` (`AddReminderComposer`): text input
+    with live parse preview, intent picker defaulting to most recent,
+    "记下来" submit → `useAddScheduleEvent` (RLS-gated). Friendly
+    error toast on unparseable input. Empty-intents branch shows the
+    "起一件新事" path so users without intents still have a way in.
+  - Empty-state copy refreshed to point at the composer.
+  - Write-path test: `e2e/schedule-composer-realmode.spec.ts` seeds a
+    throwaway intent, fills the composer, submits, asserts the row in
+    `schedule_events` exists. Green on prod.
+  - F4 walkthrough click-smoke updated to verify the composer's live
+    parse preview instead of the old hint CTA.
 - [ ] **G3.** Voice input on `/new` (and on chat composers). Previous
   voice button was deleted. Build it for real:
   - Web Speech API (`window.SpeechRecognition` /
