@@ -23,16 +23,18 @@ test.describe('L2 — Schedule', () => {
   test.beforeEach(skip);
   test.skip(({ isMobile }) => isMobile === true, 'desktop sweep');
 
-  test('add-hint card replaces the legacy NL composer in real-mode', async ({ page, context }) => {
+  test('NL composer renders + live-parses in real-mode', async ({ page, context }) => {
     await injectRealSession(context, process.env.REAL_TEST_EMAIL!);
     await unlockVercelPreview(page);
     await page.goto('/schedule');
-    // B3 swapped the toast-only NL composer for a hint card that
-    // points users at the chat path (the reminder agent is the one
-    // that parses time expressions, not the SPA).
-    await expect(page.getByTestId('schedule-add-hint')).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByTestId('schedule-add-cta')).toBeVisible();
-    await expect(page.getByPlaceholder(/加一个提醒/)).toHaveCount(0);
+    // G2 rebuilt the natural-language quick-add composer (parseReminder.ts)
+    // — the SPA parses time expressions client-side and previews the
+    // result before submit. Real-mode: a signed-in user with at least
+    // one intent should see the full composer (not the empty-state
+    // CTA). The DZ test account has plenty of intents.
+    await expect(page.getByTestId('schedule-composer')).toBeVisible({ timeout: 5_000 });
+    await page.getByTestId('schedule-composer-input').fill('每周一 9 点 周会');
+    await expect(page.getByTestId('schedule-composer-preview')).toContainText('周会');
   });
 
   test('page renders with 4 bucket headings even when empty', async ({ page, context }) => {
