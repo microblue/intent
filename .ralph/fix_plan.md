@@ -70,7 +70,13 @@ either been fixed or filed as a new Phase H/J item.
   - Ralph read both — header + hint card + empty state all render
     correctly. (Hint card is intentional Phase 1 surface; G2 tracks
     rebuilding the real NL composer.) No findings.
-- [ ] **F5.** `/memory`
+- [x] **F5.** `/memory`
+  - Spec: `e2e/walkthrough-memory.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-memory-{desktop,mobile}.png`.
+  - Ralph read both — header + info banner + add-fact composer (4
+    category chips + 记下来 button) + empty state with examples all
+    render correctly. No findings.
 - [ ] **F6.** `/permissions`
 - [ ] **F7.** `/now`
 - [ ] **F8.** `/settings`
