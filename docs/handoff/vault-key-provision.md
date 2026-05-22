@@ -33,10 +33,14 @@ encrypts existing rows.
 -- The Vault encrypts it at rest with the project master key; the
 -- decrypted_secrets view is the only read path, gated to service
 -- role.
-insert into vault.secrets (name, secret)
-values (
-    'aios_gateway_token_key',
-    encode(gen_random_bytes(32), 'hex')
+--
+-- Use vault.create_secret() (SECURITY DEFINER wrapper), NOT a direct
+-- INSERT into vault.secrets. Direct INSERT calls
+-- pgsodium._crypto_aead_det_noncegen which requires the project owner
+-- role; the wrapper sidesteps that.
+select vault.create_secret(
+    encode(gen_random_bytes(32), 'hex'),
+    'aios_gateway_token_key'
 );
 ```
 
