@@ -106,9 +106,12 @@ test.describe('F4 — walkthrough /schedule', () => {
       `schedule desktop has ${report.missingLabel.length} unlabeled interactive elements:\n${JSON.stringify(report.missingLabel, null, 2)}`,
     ).toEqual([]);
 
-    // Click smoke: the add-CTA leads to /new.
-    await page.getByTestId('schedule-add-cta').click();
-    await expect(page).toHaveURL(/\/new/, { timeout: 5_000 });
+    // Click smoke: the NL composer parses input live. (G2 rebuilt
+    // /schedule's add-reminder hint as a real parser-backed composer.
+    // The old `schedule-add-cta` button only renders for users with
+    // zero intents — for the test user, the composer is shown.)
+    await page.getByTestId('schedule-composer-input').fill('明天 早上 9 点 跑步');
+    await expect(page.getByTestId('schedule-composer-preview')).toContainText(/跑步/);
   });
 
   test('mobile', async ({ page, context }, info) => {

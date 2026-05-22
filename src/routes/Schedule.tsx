@@ -49,7 +49,7 @@ export function SchedulePage() {
             : error
               ? '提醒列表读不出来,稍等再试。'
               : list.length === 0
-                ? '还没有提醒。跟任意一个项目里的助手说一句就行。'
+                ? '还没有提醒。下面一句话就能加一条。'
                 : `一共 ${list.length} 件事在等时间到。点开任意一条进项目里继续聊。`
         }
       />
@@ -93,7 +93,7 @@ export function SchedulePage() {
             <span className="text-base-content/70">「月底整理账单」</span>
           </p>
           <p className="mx-auto mt-3 max-w-md text-xs text-base-content/45">
-            在某件事里跟助手说「到时候提醒我」就行,助手会记下时间。
+            上面那条「加一条提醒」直接打字就行 —— 也可以在某件事的助手对话里说「到时候提醒我」。
           </p>
         </div>
       )}
