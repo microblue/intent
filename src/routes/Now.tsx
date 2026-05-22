@@ -25,7 +25,11 @@ import { friendlyError } from '@/lib/friendlyError';
  */
 export function NowPage() {
   // Approvals: real Supabase table in real-mode; bundled mocks otherwise.
-  const { approvals: pendingApprovals, isMock: approvalsMock } = useApprovals();
+  const {
+    approvals: pendingApprovals,
+    isMock: approvalsMock,
+    isLoading: approvalsLoading,
+  } = useApprovals();
   const items = nowSorted();
   const awaiting = approvalsMock
     ? items.filter((i) => i.kind === 'awaiting_approval')
@@ -40,7 +44,12 @@ export function NowPage() {
   // Both modes funnel through the same NowActivity shape so the row
   // components don't care which source they're rendering.
   const real = useNowActivity();
-  const { intents } = useIntents();
+  const { intents, isLoading: intentsLoading } = useIntents();
+  // Initial fetch — show a skeleton instead of flashing the friendly
+  // "现在很安静" empty state, which would tell the user they have no
+  // activity before the query has even resolved.
+  const isInitialLoading =
+    !approvalsMock && (approvalsLoading || real.isLoading || intentsLoading);
   const realRunning = real.running
     .filter((r) => intents.some((i) => i.id === r.intentId))
     .map<NowActivity>((r) => ({
@@ -82,7 +91,19 @@ export function NowPage() {
         }
       />
 
-      {awaiting.length === 0 &&
+      {isInitialLoading && (
+        <div data-testid="now-skeleton" className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-20 animate-pulse rounded-2xl bg-base-200/60 ring-1 ring-base-300/40"
+            />
+          ))}
+        </div>
+      )}
+
+      {!isInitialLoading &&
+        awaiting.length === 0 &&
         pendingApprovals.length === 0 &&
         running.length === 0 &&
         done.length === 0 && (
