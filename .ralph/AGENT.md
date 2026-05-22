@@ -131,3 +131,18 @@ or Caddy. Key path: `ubuntu@54.218.209.8` via
   mock-mode. Toast assertions in mock-mode that use bare "演示模式"
   will hit a strict-mode locator collision; scope to a toast-only
   substring like "记下的事不会被保存" instead.
+- Realmode-walkthrough screenshots show DZ's actual prod state. Some
+  tests (phase7-prod-readiness fills `smoke-<ts>` into display_name,
+  phaseL3 sets `preferred_lang=ja` then resets to zh-CN) leave
+  `user_preferences` rows dirty if the run is interrupted or the
+  upsert lands out of order — so walkthrough-settings-desktop.png
+  may show "smoke-…" as the name and "日本語" as the lang. This is
+  test hygiene, not a UI bug. Future fix candidates: have
+  phase7/phase8 specs reset display_name to a known good value in a
+  `finally`, and audit phaseL3's await-after-selectOption for the
+  upsert round-trip.
+- A clean cycle = full-product walkthrough across both
+  `--project=chromium` and `--project=mobile` against prod with
+  zero new Phase F items. Loop #3 (2026-05-22) ran both and got
+  18+14 passes / 0 failures; this is clean_cycles_in_a_row=1
+  toward the EXIT_SIGNAL gate of 3.
