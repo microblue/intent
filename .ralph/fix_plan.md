@@ -363,8 +363,31 @@ Phase H items as they run.
       `phase6-realmode-sentinel` (no claws → no picker),
       `phase2-auth` (sidebar account dropdown + sign-out),
       `walkthrough-home` + `walkthrough-settings` all re-run clean.
-- [ ] **H3.** AgentPicker icon-only buttons need names. Audit every
-  trigger and ensure the agent name + emoji are both visible.
+- [x] **H3.** AgentPicker icon-only buttons need names.
+  - Audit result: the AgentPicker chain is already structurally
+    compliant. Verified by code-reading every render point:
+    - `src/components/AgentPicker.tsx:90-91` — trigger renders
+      `<emoji>` + `<name>` + chevron.
+    - `src/components/AgentPicker.tsx:116-121` — each menu option
+      renders 9×9 emoji avatar + `<name>` + one-line desc.
+    - `src/components/TeamPanel.tsx:63-79` — team rows render emoji
+      avatar + name + role + desc.
+    - `src/components/TeamPanel.tsx:185-192` — add-member sheet
+      rows render emoji + name + pitch.
+    - `src/routes/IntentHome.tsx:562, 1307, 2251-2252` — chat
+      message attribution + agent trace badges render emoji + name.
+    - `src/routes/Now.tsx:404-413` — activity AgentBadge renders
+      emoji + name.
+    - `src/routes/NewIntent.tsx:875-883` — preview team badges
+      render emoji + name.
+  - Regression guard: `e2e/walkthrough-agent-picker.spec.ts` opens
+    the picker in mock mode, snaps trigger closed + menu open,
+    asserts the trigger text contains BOTH the '🦞' emoji AND the
+    'Claw' name, and for each of the 13 canonical agents asserts the
+    menu row's visible text contains the agent name and is longer
+    than the name alone (catches an icon-only regression).
+  - Ralph read both screenshots — every visible agent trigger /
+    row shows emoji + name everywhere. No findings.
 - [ ] **H4.** Empty state copy audit. Every empty list/feed/grid
   must have onboarding copy + a primary CTA, not a blank panel.
   Surfaces to check: `/`, `/schedule`, `/memory`, `/now`, `/archive`,
