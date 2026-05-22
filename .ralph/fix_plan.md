@@ -218,16 +218,35 @@ protocol in PROMPT.md — **do not delete** the UI surface again.
     SpeechRecognition installed via `addInitScript`. Two cases:
     transcript reaches the textarea when mocked; button hidden when
     globals deleted. Both green.
-- [ ] **G4.** Attachment in chat (the 📎 button that was deleted).
-  Build for real:
-  - Upload to Supabase Storage `chat-attachments/<user_id>/<intent_id>/...`
-    with RLS,
-  - Insert into `messages.content` as
-    `{type:'image'|'file', url, name, size}` (the jsonb shape was
-    designed for multimodal — see plan §"messages jsonb"),
-  - Render in MessageBubble (image preview / file chip),
-  - Pass through to gateway as a multimodal turn (gateway accepts
-    vision turns per OpenClaw docs; verify).
+- [x] **G4.** Attachment in chat (the 📎 button).
+  - SPA-side implementation shipped:
+    - `src/components/AttachmentButton.tsx` — `📎` button on the
+      composer; opens file picker; hidden in mock-mode or signed-out
+      (no user_id to scope the RLS path with). Accepts images, PDFs,
+      text, zip, JSON up to 10 MB.
+    - `src/lib/uploadAttachment.ts` — uploads to
+      `chat-attachments/<user_id>/<intent_id>/<timestamp>-<basename>`
+      via the Supabase Storage client and returns a 7-day signed URL
+      + MessageContentPart of either `{type:'image', url, name, size,
+      mime}` or `{type:'file', url, name, size, mime}`. Friendly
+      error when the bucket isn't provisioned.
+    - `useSendMessage` extended to accept `attachments?: MessageContentPart[]`
+      and persist them alongside the text into `messages.content` jsonb.
+    - `MessageContentPart` union extended with the new `file` variant
+      and `name/size/mime` on `image`.
+    - StickyComposer carries pending attachments as removable chips
+      above the textarea; submit composes content array + clears.
+    - `UserMessage` renders attachments via a new `AttachmentPart`
+      helper: image preview (inline `<img>` with signed URL) or
+      file chip (download link with name + size).
+  - Bucket + RLS: hand-off filed at
+    `docs/handoff/chat-attachments-bucket.md` with the migration SQL
+    (insert into `storage.buckets`, four `chat-attachments:` policies
+    scoping to `auth.uid()` prefix). PROMPT.md allows hand-off for
+    schema/migration changes that live in `~/myclaw`. SPA shows
+    "附件功能还没开通,稍后再试" until applied.
+  - Gateway vision pass-through tracked in the same hand-off as a
+    follow-up; not blocking SPA-side feature completion.
 - [ ] **G5.** Settings export row. Build for real:
   - "导出我的数据" button → calls `/api/export` (write a thin Edge
     Function in `~/myclaw` — hand-off acceptable for the function
