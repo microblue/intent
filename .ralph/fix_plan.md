@@ -528,8 +528,8 @@ completion here.
   app.myclaw.one ClawStatus reaches `connected` on cool-brook, so
   mint-claw-token's `decrypt_gateway_token()` path is live.
   Hand-off doc deleted.
-- [ ] **I3.** D3 — create Sentry account + add `VITE_SENTRY_DSN` to
-  Vercel env. Hand-off: `docs/handoff/sentry-setup.md`.
+- [moved → Deferred] **I3.** D3 — Sentry signup. See bottom Deferred
+  section. User-accepted on 2026-05-22.
 - [x] **I4.** D4 — `gh secret set` × 4 for the CI realmode-e2e job.
   Applied 2026-05-22 (`gh secret list --repo microblue/myclaw-aios`
   shows 4 entries: `REAL_TEST_EMAIL`, `SUPABASE_URL`,
@@ -546,7 +546,19 @@ Append discovered items during walkthroughs here. Format:
 
 ## ## Deferred (read PROMPT.md "Explicit defer protocol" before adding)
 
-(none yet)
+### I3 (D3) — Sentry observability signup
+
+> **reason:** User does not want to sign up for a third-party error
+> monitoring service right now. Code wiring is already in place
+> (`src/lib/sentry.ts` + dev-only test button on `/settings/engines`)
+> and is a no-op without `VITE_SENTRY_DSN`, so no UI to remove — the
+> integration just stays inert in prod.
+> **reopen when:** User decides they want production error visibility
+> (e.g. after first round of real users, or after a noisy regression
+> that wasn't caught by CI). At that point: sign up at sentry.io →
+> create React project `myclaw-aios` → DSN goes into Vercel via
+> `vercel env add VITE_SENTRY_DSN production` → redeploy prod.
+> **accepted-by:** DZ (microblue@gmail.com), 2026-05-22.
 
 ---
 
