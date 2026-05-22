@@ -28,7 +28,7 @@ export function HelpPage() {
         subtitle="读一分钟就懂 MyClaw 是怎么运转的。每个概念有个中文名(平时 UI 都这么叫)和一个英文名(英文文档、开发者模式、跟工程师交流时用)。"
       />
 
-      <div className="mb-8 rounded-2xl bg-info/10 p-4 text-sm leading-relaxed text-info-content/85 ring-1 ring-info/30">
+      <div className="mb-8 rounded-2xl bg-info/10 p-4 text-sm leading-relaxed text-base-content/80 ring-1 ring-info/30">
         <div className="mb-1 font-medium text-info">为什么有这一页</div>
         MyClaw 跟普通 AI 聊天工具不一样的地方在于 ——
         我们把「事情」拆成了几个有名字的部件,各自有归属。

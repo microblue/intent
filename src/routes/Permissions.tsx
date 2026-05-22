@@ -43,7 +43,7 @@ export function PermissionsPage() {
         subtitle="敏感的事默认会先问你一下。觉得太啰嗦,可以改成「可以」;不放心的,改成「不行」。"
       />
 
-      <div className="mb-6 rounded-2xl bg-warning/10 p-4 text-sm leading-relaxed text-warning-content/90 ring-1 ring-warning/30">
+      <div className="mb-6 rounded-2xl bg-warning/10 p-4 text-sm leading-relaxed text-base-content/80 ring-1 ring-warning/30">
         <div className="mb-1 font-medium text-warning">关于权限</div>
         所有「花钱」和「替你说话给别人」的事 ——
         默认是「每次问」。你愿意全部信任(比如让我自动下单买菜),改成「可以」就行。

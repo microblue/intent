@@ -39,7 +39,7 @@ export function MemoryPage() {
         }
       />
 
-      <div className="mb-6 rounded-2xl bg-info/10 p-4 text-sm leading-relaxed text-info-content/85 ring-1 ring-info/30">
+      <div className="mb-6 rounded-2xl bg-info/10 p-4 text-sm leading-relaxed text-base-content/80 ring-1 ring-info/30">
         <div className="mb-1 font-medium text-info">关于记忆</div>
         平时聊天时,助手会顺手把重要的事写下来 —— 这些是<strong>跨项目</strong>都能用的
         (比如你在「樱花旅行」告诉助手你喜欢早班机,以后订其他行程也会记得)。

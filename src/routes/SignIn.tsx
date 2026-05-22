@@ -254,7 +254,7 @@ export function SignInPage() {
                   <input
                     type="password"
                     autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                    placeholder={mode === 'signup' ? '至少 6 位' : ''}
+                    placeholder={mode === 'signup' ? '至少 6 位' : '••••••••'}
                     {...register('password', { required: '请输入密码' })}
                     className={cn(
                       'input input-bordered w-full',
