@@ -311,8 +311,22 @@ function AccountFooter() {
   // DaisyUI dropdown — opens upward (`dropdown-top`) so the menu pops
   // above the footer at the bottom of the sidebar. Two items: Settings
   // (the previous click target) + Sign out.
+  //
+  // ClawPicker sits ABOVE the account row (sibling, not nested) — when
+  // the user has multiple claws it renders as its own button/listbox,
+  // and nested-button HTML would either invalidate or block clicks.
   return (
-    <div className="dropdown dropdown-top dropdown-end border-t border-base-300/50">
+    <div className="border-t border-base-300/50">
+      <div className="px-3 pt-3">
+        <ClawPicker />
+        {/* ClawStatus stays as a hidden test hook so e2e can keep
+            probing data-status without taking layout. ClawPicker
+            shows the same info visibly. */}
+        <div className="sr-only" aria-hidden>
+          <ClawStatus />
+        </div>
+      </div>
+      <div className="dropdown dropdown-top dropdown-end">
       <button
         type="button"
         tabIndex={0}
@@ -331,15 +345,6 @@ function AccountFooter() {
           </div>
           <div className="mt-0.5 truncate text-[12px] leading-tight text-base-content/55">
             {user?.email}
-          </div>
-          <div className="mt-1.5">
-            <ClawPicker />
-          </div>
-          {/* ClawStatus stays as a hidden test hook so e2e can keep
-              probing data-status without taking layout. ClawPicker
-              shows the same info visibly. */}
-          <div className="sr-only" aria-hidden>
-            <ClawStatus />
           </div>
         </div>
         <span aria-hidden className="text-base text-base-content/40">
@@ -366,6 +371,7 @@ function AccountFooter() {
           </button>
         </li>
       </ul>
+      </div>
     </div>
   );
 }
