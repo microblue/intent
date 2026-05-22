@@ -77,7 +77,14 @@ either been fixed or filed as a new Phase H/J item.
   - Ralph read both — header + info banner + add-fact composer (4
     category chips + 记下来 button) + empty state with examples all
     render correctly. No findings.
-- [ ] **F6.** `/permissions`
+- [x] **F6.** `/permissions`
+  - Spec: `e2e/walkthrough-permissions.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-permissions-{desktop,mobile}.png`.
+  - Ralph read both — header, warning banner, 3 capability groups
+    (看你的资料 / 帮你做事 / 联系外部服务), 3-mode toggles (不行 / 每次问
+    / 可以) on every row, 敏感 badge where applicable. No findings.
+    Write-path (toggle persistence) already covered by phase8-realmode-audit.
 - [ ] **F7.** `/now`
 - [ ] **F8.** `/settings`
 - [ ] **F9.** `/help`
