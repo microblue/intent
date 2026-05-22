@@ -115,7 +115,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L6. Real-mode rail data — agent count (closes part of journey 04)
 
-- [ ] **L6.** Add `useIntentTeam(intentId)` real-mode read (already
+- [x] **L6.** Add `useIntentTeam(intentId)` real-mode read (already
   exists per L4) and replace the `counts.agents` call site at
   `IntentHome.tsx:1339` with `useIntentTeam(intent.id).team.length`.
   - Acceptance: 助手团队 stat row meta reads N where N = real

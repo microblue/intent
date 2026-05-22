@@ -36,6 +36,7 @@ import { Markdown } from '@/components/Markdown';
 import { TeamPanel } from '@/components/TeamPanel';
 import { findBuiltinAgent, phaseVerbFor } from '@/lib/agents';
 import { useAgentActivity, type AgentActivity } from '@/data/useAgentActivity';
+import { useIntentAgents } from '@/data/useIntentAgents';
 import { useGateway } from '@/gateway/useGateway';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
@@ -439,6 +440,9 @@ function InfoSheet({
   const devMode = useUI((s) => s.devMode);
   const bind = bindingsFor(intent.id);
   const profile = bind ? hermesProfiles.find((p) => p.key === bind.profileKey) : undefined;
+  // Real team count for the mobile info-sheet (L6 parity with desktop rail).
+  const { team: realTeam } = useIntentAgents(intent.id);
+  const teamCount = realTeam.length;
 
   return (
     <dialog className={cn('modal modal-bottom', open && 'modal-open')}>
@@ -480,7 +484,7 @@ function InfoSheet({
 
         {/* Stats grid — 2 columns, compact */}
         <div className="grid grid-cols-2 gap-2 px-5 pb-4 sm:grid-cols-3">
-          <SheetStat icon="🤝" title="助手" value={counts.agents} />
+          <SheetStat icon="🤝" title="助手" value={teamCount} />
           <SheetStat icon="☑" title="进度" value={`${counts.outlineDone}/${counts.outlineTotal}`} />
           <SheetStat icon="📁" title="文件" value={counts.files} />
           {counts.schedule > 0 && (
@@ -1245,6 +1249,11 @@ function IntentRail({
   const bind = bindingsFor(intent.id);
   const profile = bind ? hermesProfiles.find((p) => p.key === bind.profileKey) : undefined;
   const navigate = useNavigate();
+  // Real-mode team count (L6). Replaces `counts.agents` (mock-only) so
+  // "助手团队 N 位" reflects the live intent_agents row count, not the
+  // mock bindings table.
+  const { team: realTeam } = useIntentAgents(intent.id);
+  const teamCount = realTeam.length;
 
   const intentFacts = memoryFacts.filter((m) => m.originIntentId === intent.id);
   const intentSchedules = scheduleEvents.filter((s) => s.intentId === intent.id);
@@ -1359,7 +1368,7 @@ function IntentRail({
       case 'files':
         return { icon: '📁', title: '产出文件', meta: `${files.length} 个` };
       case 'team':
-        return { icon: '🤝', title: '助手团队', meta: `${counts.agents} 位` };
+        return { icon: '🤝', title: '助手团队', meta: `${teamCount} 位` };
       case 'memory':
         return { icon: '🧠', title: '记得的事', meta: `${intentFacts.length} 条`, onTitleClick: () => navigate({ to: '/memory' }) };
       case 'schedule':
@@ -1407,7 +1416,7 @@ function IntentRail({
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto bg-base-200/40 px-3 pb-6 pt-3">
-          <RailStats counts={counts} />
+          <RailStats counts={counts} teamCount={teamCount} />
 
           {counts.pendingApprovals > 0 && (
             <button
@@ -1627,7 +1636,13 @@ function AddSectionMenu({ hiddenKeys }: { hiddenKeys: RailSectionKey[] }) {
 
 /* ─── Rail building blocks ─── */
 
-function RailStats({ counts }: { counts: ReturnType<typeof conceptCountsFor> }) {
+function RailStats({
+  counts,
+  teamCount,
+}: {
+  counts: ReturnType<typeof conceptCountsFor>;
+  teamCount: number;
+}) {
   return (
     <div className="stats stats-horizontal w-full bg-base-100 shadow-sm ring-1 ring-base-300/40">
       <div className="stat px-3 py-2">
@@ -1642,7 +1657,7 @@ function RailStats({ counts }: { counts: ReturnType<typeof conceptCountsFor> }) 
       </div>
       <div className="stat px-3 py-2">
         <div className="stat-title text-[0.75rem]">助手</div>
-        <div className="stat-value text-lg font-semibold">{counts.agents}</div>
+        <div className="stat-value text-lg font-semibold">{teamCount}</div>
       </div>
     </div>
   );
