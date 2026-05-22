@@ -45,6 +45,7 @@ import { createSendRateLimiter } from '@/lib/rateLimit';
 import { friendlyError } from '@/lib/friendlyError';
 import { ALL_RAIL_SECTIONS, useUI, type RailSectionKey } from '@/state/ui';
 import { useIsDesktop } from '@/lib/useMediaQuery';
+import { VoiceButton } from '@/components/VoiceButton';
 
 /**
  * Intent home — branches by viewport because phone and desktop want
@@ -2243,6 +2244,12 @@ function StickyComposer({
                   disabled={pickerDisabled}
                 />
               )}
+              <VoiceButton
+                size="sm"
+                onTranscript={(text) =>
+                  setDraft((d) => (d ? `${d} ${text}` : text))
+                }
+              />
               <kbd className="kbd kbd-sm ml-auto hidden text-[0.7rem] opacity-60 sm:inline-flex">⌘ ↵</kbd>
               <button
                 type="submit"

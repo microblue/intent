@@ -8,6 +8,7 @@ import { env } from '@/lib/env';
 import { useSession } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 import { friendlyError } from '@/lib/friendlyError';
+import { VoiceButton } from '@/components/VoiceButton';
 
 /*
  * /new — phase ① "说想做什么" + phase ② "拆开看看".
@@ -588,11 +589,18 @@ function PromptStage({
             }
           }}
         />
-        <div className="flex items-center justify-end">
+        <div className="flex items-center gap-2">
+          <VoiceButton
+            size="sm"
+            onTranscript={(text) => setPrompt(prompt ? `${prompt} ${text}` : text)}
+          />
+          <span className="text-xs text-base-content/40">
+            不想打字?点话筒说一句
+          </span>
           <button
             type="submit"
             disabled={!prompt.trim()}
-            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-content shadow disabled:bg-base-300 disabled:text-base-content/40"
+            className="ml-auto rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-content shadow disabled:bg-base-300 disabled:text-base-content/40"
           >
             继续 →
           </button>
