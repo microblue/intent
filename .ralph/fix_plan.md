@@ -327,10 +327,42 @@ Phase H items as they run.
       visible, no placeholder copy, no English leakage. No findings.
     - Existing `phase6-realmode-sentinel` + `phase6-realmode-multiclaw`
       + `walkthrough-settings` specs re-run clean.
-- [ ] **H2.** Multi-claw picker UI. Today the sidebar shows one claw.
-  If a user has more than one, can they switch? If not, build the
-  picker (`ClawPicker` already exists for sentinel handling — extend
-  for the multi-real case).
+- [x] **H2.** Multi-claw picker UI.
+  - State: `src/state/ui.ts` gained `selectedClawId: string | null`
+    (persisted via partialize). Null = "auto" → fall back to
+    defaultClaw (oldest real claw), so single-claw users + the
+    existing oldest-wins default flow are unchanged.
+  - Data: `useClaws()` exposes a new `activeClaw` derived from
+    `selectedClawId` (matched against realClaws; stale ids fall back
+    to defaultClaw). `useGateway` and `useCreateIntent` now consume
+    `activeClaw` instead of `defaultClaw`, so selecting a different
+    claw recycles the WS singleton and re-targets new-intent FKs.
+  - UI: `ClawPicker` keeps the original quiet pill for the
+    single-claw case (preserves prior F-walkthrough screenshots) and
+    becomes a button-trigger + absolute-positioned `role="listbox"`
+    when `realClaws.length > 1`. The active option has ✓ + primary-
+    tone highlight; every option has aria-label / role / data-testid.
+    A microtask cleanup clears stale `selectedClawId` if it stops
+    matching the user's current claws.
+  - Sidebar layout: moved ClawPicker out of the `<button data-testid=
+    "sidebar-account">` (a button-in-button created by the new
+    listbox trigger silently broke clicks in Chrome). The picker now
+    renders as a sibling row above the account dropdown.
+  - Tests:
+    - `e2e/multi-claw-picker.spec.ts` — throwaway user with two real
+      claws: asserts default is older, click opens menu listing both,
+      click newer flips the label + persists `selectedClawId` to
+      localStorage (`myclaw-ui-v2.state.selectedClawId === newerId`),
+      then drives /new end-to-end and asserts the new intent's
+      `claw_id === newerId` (not the old default).
+    - `e2e/walkthrough-multi-claw.spec.ts` — desktop screenshots of
+      picker closed + open. Ralph read both — trigger has visible
+      claw name + ▾ chevron, menu lists both options with active
+      checkmark + primary highlight, no missing labels.
+    - Existing `phase6-realmode-multiclaw` (oldest-wins default),
+      `phase6-realmode-sentinel` (no claws → no picker),
+      `phase2-auth` (sidebar account dropdown + sign-out),
+      `walkthrough-home` + `walkthrough-settings` all re-run clean.
 - [ ] **H3.** AgentPicker icon-only buttons need names. Audit every
   trigger and ensure the agent name + emoji are both visible.
 - [ ] **H4.** Empty state copy audit. Every empty list/feed/grid
