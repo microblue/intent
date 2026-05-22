@@ -106,7 +106,14 @@ either been fixed or filed as a new Phase H/J item.
     adding `aria-label="开发者模式"`. Re-snap shows clean settings
     surface with all sections (账号 / 外观 / 提醒方式 / 数据与隐私 /
     读懂 MYCLAW / 开发者模式) and labelled controls.
-- [ ] **F9.** `/help`
+- [x] **F9.** `/help`
+  - Spec: `e2e/walkthrough-help.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-help-{desktop,mobile}.png`.
+  - Ralph read both — concept grid renders the 11 concepts (intent /
+    agent / step / capability / memory / schedule / approval / file /
+    outline / activity / engine) with 中文 + ENGLISH labels. Footer
+    link to settings present. No findings.
 - [ ] **F10.** `/archive`
 - [ ] **F11.** `/settings/engines` (dev mode)
 - [ ] **F12.** `/auth/signin`
