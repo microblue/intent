@@ -146,3 +146,9 @@ or Caddy. Key path: `ubuntu@54.218.209.8` via
   zero new Phase F items. Loop #3 (2026-05-22) ran both and got
   18+14 passes / 0 failures; this is clean_cycles_in_a_row=1
   toward the EXIT_SIGNAL gate of 3.
+- Loop #4 (2026-05-22) cycle 2: mock 155 + realmode chromium 18 +
+  realmode mobile 14 = 187 pass / 0 fail. Read 6 mobile +
+  the 5 desktop screenshots from cycle 1 (cycle 2 alternated to
+  read schedule / memory / permissions / help / archive /
+  new-prompt / signin on mobile to cover surfaces cycle 1 hadn't
+  scrutinized). Zero new findings. clean_cycles_in_a_row=2.
