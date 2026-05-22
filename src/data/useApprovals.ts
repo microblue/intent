@@ -74,10 +74,16 @@ export function useApprovals(): ApprovalsResult {
   // we additionally filter on status change in the handler since UPDATE
   // events (when an approval moves to resolved) should remove the row
   // from the pending list.
+  //
+  // Channel name is scoped to user.id (matches the per-intent pattern in
+  // useMessages). A globally-shared channel name caused Supabase Realtime
+  // to throw `cannot add postgres_changes callbacks ... after subscribe()`
+  // on remount when the cached channel was still in the realtime client's
+  // internal map.
   useEffect(() => {
-    if (!useReal) return;
+    if (!useReal || !user?.id) return;
     const channel = supabase
-      .channel('approvals:pending')
+      .channel(`approvals:pending:${user.id}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'approvals' },
