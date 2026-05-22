@@ -65,3 +65,31 @@ the new fix_plan to be rebuilt for real:
 - D1 — Vault secret INSERT (Supabase Dashboard owner role).
 - D3 — Sentry account + DSN env var (human signup).
 - D4 — `gh secret set` × 4 (CI secrets).
+
+## Run 2 (2026-05-22, ~80 loops) — genuinely completed
+
+PROMPT v2 hardened against punting. Net delivered:
+- F1-F13 walkthroughs (13 specs)
+- G1-G5 reopened items built for real (`/now` activity feed real, `/schedule` NL parser, voice via Web Speech API, attachments via Supabase Storage + multimodal jsonb, Settings 导出 client-side)
+- H1-H7 lay-user readiness (install flow, multi-claw picker, AgentPicker name+emoji audit, empty-state CTAs, skeleton loading, ErrorPanel/retry on every async surface, mobile fixes)
+- I1, I2, I4 hand-offs satisfied (sibling spec, Vault key INSERT, GH secrets)
+
+EXIT_SIGNAL fired Loop #5 (cycle 3) but methodology had blind spots —
+real-mode pages were silently reading mocks, journey-level promises
+were unchecked, and decorative-but-non-functional buttons passed
+walkthroughs because they had aria-labels.
+
+## Run 2 — gaps that motivated v3
+
+These were not in fix_plan but were found in DZ's hands-on session:
+- Sidebar collapsed account dropdown overlaid by chat composer
+- /new clarifying answers discarded on navigate to /intent
+- Memory copy promises auto-recording, no code path exists
+- Schedule reminders never fire (no sink, no cron)
+- TeamPanel rows look clickable, no handler
+- TeamPanel agent count and AgentPicker list disagree
+- 助手团队 stat row shows "0 位" (reads conceptCountsFor mock)
+- 大纲/进度/文件 all show 0 in real mode (read mocks)
+
+→ v3 introduces mock-guard, persona journeys, cross-component
+consistency checks, interactivity follow-through assertions.

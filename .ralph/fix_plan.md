@@ -1,544 +1,176 @@
-# myclaw-aios — Build Plan (revised after first-run audit)
+# myclaw-aios — Build Plan (v3, persona+journey)
 
-Top to bottom, one item per loop. Mark `[x]` only when: code on `main`
-+ deployed to `app.myclaw.one` + relevant e2e green + **headless
-browser walkthrough clean** (see PROMPT.md "Walkthrough protocol").
+Top to bottom, one item per loop. Mark `[x]` only when:
+- code on `main` + deployed to `app.myclaw.one`,
+- the relevant journey spec passes against prod,
+- mock-guard fired 0 times in the related real-mode walkthrough.
 
-**No punting** — see PROMPT.md "Hard ban: no punting." Items previously
-"closed" by deleting the UI or writing a deferral have been reopened
-below.
+**No punting** — see PROMPT.md "Hard ban: no punting." Failing a
+`pass_criteria` line is not an option to be debugged into a softer
+assertion; the criterion is the contract.
 
 `EXIT_SIGNAL: true` only when (a) zero open `[ ]` and `## Deferred`
-items, (b) mock + realmode e2e 0-fail on prod, (c) 3 consecutive full
-walkthrough cycles produce zero new findings.
+items, (b) all journeys pass on prod, (c) mock-guard 0 firings in any
+real-mode run, (d) three consecutive full cycles produce zero new
+findings.
 
-Pre-Ralph baseline + first-run completed items in
-`docs/ralph-completed.md`.
+Previously-completed work lives in `docs/ralph-completed.md`.
 
 ---
 
-## Phase F — Deep surface walkthrough (do this first)
+## Phase K — Journey specs (build these first)
 
-For each route, write `e2e/walkthrough-<route>.spec.ts` that:
-- Signs in with `injectRealSession()`
-- Navigates and takes a full-page screenshot at desktop + mobile viewport
-- Enumerates every interactive element via the selector in PROMPT.md
-- For each element, asserts visible label OR aria-label is non-empty
-- Clicks each element (or a representative subset) and asserts something
-  observable happens (URL change, modal opens, network request, toast)
-- Ralph then **reads the screenshots** and looks for: placeholder copy
-  ("敬请期待" / "Coming soon" / "TODO"), English leakage, broken
-  layouts, decorative buttons that do nothing, mock data visible in
-  real-mode.
+For each journey file under `.ralph/journeys/`, write the matching
+Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
-Each `[ ]` here closes when (a) the spec passes, (b) the screenshots
-look correct under Ralph's read, (c) every finding it surfaces has
-either been fixed or filed as a new Phase H/J item.
+- [ ] **K1.** `e2e/journey-01-mom-remember-allergy.spec.ts` —
+  cross-intent memory recall. Will fail until L1 lands the auto-extract path.
+- [ ] **K2.** `e2e/journey-02-reminder-fires.spec.ts` — schedule
+  firing with `page.clock` mocked forward. Will fail until L2 lands a
+  firing sink.
+- [ ] **K3.** `e2e/journey-03-new-intent-handoff.spec.ts` — /new
+  clarifying answers must reach /intent's chat as user message. Will
+  fail until L3 lands.
+- [ ] **K4.** `e2e/journey-04-rail-honest-numbers.spec.ts` —
+  cross-component number consistency + zero mock-guard firings on
+  /intent. Will fail until L4–L7 land.
+- [ ] **K5.** `e2e/journey-05-overlay-and-interactivity.spec.ts` —
+  click-stress every interactive element + overlap check on every
+  opened dropdown. Will fail until L8 lands.
 
-- [x] **F1.** `/` (IntentHome) — desktop + mobile
-  - Spec: `e2e/walkthrough-home.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has aria-label or visible text.
-  - Screenshots: `test-results/walkthrough-home-{desktop,mobile}.png`.
-  - Ralph read both — no placeholder copy, no English leakage, no
-    decorative buttons. Click smoke opens Launcher.
-- [x] **F2.** `/intent/<id>` — chat surface, both empty and with history
-  - Spec: `e2e/walkthrough-intent.spec.ts`. Real-mode chromium + mobile,
-    creates throwaway intents (empty + 2-turn seeded) per pass and
-    cleans up in finally.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-intent-{desktop,mobile}-{empty,history}.png`.
-  - Ralph read all four — empty-state copy is friendly, chrome buttons
-    all labelled, message bubbles render correctly, composer send button
-    is disabled-correctly when empty. No findings.
-- [x] **F3.** `/new` (NewIntent)
-  - Spec: `e2e/walkthrough-new.spec.ts`. Real-mode chromium + mobile,
-    drives prompt-stage → clarifying-stage by clicking the "帮我规划
-    一次旅行" starter chip then "继续".
-  - Asserts every interactive element has an accessible name across
-    both stages.
-  - Screenshots: `test-results/walkthrough-new-{desktop,mobile}-{prompt,clarifying}.png`.
-  - Ralph read all four — surfaced one finding: on mobile clarifying,
-    "下一问 →" was wrapping to "下一/问 →" in the cramped row with
-    跳过 + free-text input. Fixed in same commit by adding
-    `whitespace-nowrap` + `shrink-0` to both buttons. Re-snap confirms
-    single-line label.
-- [x] **F4.** `/schedule`
-  - Spec: `e2e/walkthrough-schedule.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name. Click
-    smoke: schedule-add-cta navigates to `/new`.
-  - Screenshots: `test-results/walkthrough-schedule-{desktop,mobile}.png`.
-  - Ralph read both — header + hint card + empty state all render
-    correctly. (Hint card is intentional Phase 1 surface; G2 tracks
-    rebuilding the real NL composer.) No findings.
-- [x] **F5.** `/memory`
-  - Spec: `e2e/walkthrough-memory.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-memory-{desktop,mobile}.png`.
-  - Ralph read both — header + info banner + add-fact composer (4
-    category chips + 记下来 button) + empty state with examples all
-    render correctly. No findings.
-- [x] **F6.** `/permissions`
-  - Spec: `e2e/walkthrough-permissions.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-permissions-{desktop,mobile}.png`.
-  - Ralph read both — header, warning banner, 3 capability groups
-    (看你的资料 / 帮你做事 / 联系外部服务), 3-mode toggles (不行 / 每次问
-    / 可以) on every row, 敏感 badge where applicable. No findings.
-    Write-path (toggle persistence) already covered by phase8-realmode-audit.
-- [x] **F7.** `/now`
-  - Spec: `e2e/walkthrough-now.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-now-{desktop,mobile}.png`.
-  - Ralph found a real bug: mobile /now crashed with TanStack Router
-    error boundary ("Something went wrong!"). Root cause was Supabase
-    Realtime channel-name reuse in `useApprovals.ts` — the topic
-    `approvals:pending` was constant, so React 19 strict-mode remount
-    cycles produced the error `cannot add postgres_changes callbacks
-    ... after subscribe()`. Fixed by using a per-effect-run UUID in
-    the channel name. Re-snap shows clean header + empty state on
-    both viewports.
-- [x] **F8.** `/settings`
-  - Spec: `e2e/walkthrough-settings.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-settings-{desktop,mobile}.png`.
-  - Ralph found one finding: the dev-mode toggle (`role="switch"` button)
-    had `aria-checked` but no `aria-label`. Fixed in same commit by
-    adding `aria-label="开发者模式"`. Re-snap shows clean settings
-    surface with all sections (账号 / 外观 / 提醒方式 / 数据与隐私 /
-    读懂 MYCLAW / 开发者模式) and labelled controls.
-- [x] **F9.** `/help`
-  - Spec: `e2e/walkthrough-help.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-help-{desktop,mobile}.png`.
-  - Ralph read both — concept grid renders the 11 concepts (intent /
-    agent / step / capability / memory / schedule / approval / file /
-    outline / activity / engine) with 中文 + ENGLISH labels. Footer
-    link to settings present. No findings.
-- [x] **F10.** `/archive`
-  - Spec: `e2e/walkthrough-archive.spec.ts`. Real-mode chromium + mobile.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-archive-{desktop,mobile}.png`.
-  - Ralph read both — header 封存的, empty-state mailbox emoji with
-    友好 copy ("这里还是空的 / 没有封存过的项目。") and 回到想做的事
-    CTA. All controls labelled. No findings.
-- [x] **F11.** `/settings/engines` (dev mode)
-  - Spec: `e2e/walkthrough-engines.spec.ts`. Real-mode chromium + mobile,
-    pre-seeds `devMode: true` into `myclaw-ui-v2` localStorage so the
-    surface renders in its intended state.
-  - Asserts every interactive element has an accessible name.
-  - Screenshots: `test-results/walkthrough-engines-{desktop,mobile}.png`.
-  - Ralph read both — 4-plane architecture cards (Supabase / apps-api /
-    OpenClaw / Hermes), HERMES profiles list, per-claw agent matrix
-    (cool-brook shows 12/47 specialists). English product-domain names
-    are intentional for the dev surface. No findings.
-- [x] **F12.** `/auth/signin`
-  - Spec: `e2e/walkthrough-signin.spec.ts`. Unauthenticated route — does
-    NOT inject a real session (page redirects when signedIn). Desktop
-    pass covers all 4 modes (signin / signup / magic / forgot) by
-    clicking the mode-nav links on a fresh page each time. Mobile pass
-    covers signin only.
-  - Enumeration helper enhanced for this spec to consider implicit/
-    explicit `<label>` association (signin has form inputs whose
-    accessible name comes from a wrapping `<label>`, not aria-label).
-  - Screenshots: `test-results/walkthrough-signin-desktop-{signin,signup,magic,forgot}.png`
-    + `walkthrough-signin-mobile.png`.
-  - Ralph read all five — brand, friendly headings + subtitles, labelled
-    form fields, primary CTA, mode-nav links, "先看看演示" all render
-    correctly. No findings.
-- [x] **F13.** `/auth/reset-password`
-  - Spec: `e2e/walkthrough-reset-password.spec.ts`. Unauthenticated visit
-    (no recovery token) renders the friendly "链接好像失效了" stale-link
-    card with `重新发一个` CTA back to `/auth/signin`.
-  - Click smoke verified the CTA navigation.
-  - Screenshots: `test-results/walkthrough-reset-password-{desktop,mobile}.png`.
-  - Asserts every interactive element has an accessible name (using
-    the parent-`<label>` aware helper from F12). No findings. The
-    active-recovery-session form is exercised by Supabase's own auth
-    flow tests; F13 verifies the unauthenticated landing only.
+## Phase L — Make the journeys pass (one bug per item)
 
-## Phase G — Reopened (was punted in run 1)
+### L1. Memory auto-record (closes journey 01)
 
-Previous Ralph closed these by deleting / collapsing / hint-text. Build
-the real feature. If you genuinely cannot, follow the explicit defer
-protocol in PROMPT.md — **do not delete** the UI surface again.
+- [ ] **L1.** UI promises "我会顺手把重要的事写下来" but no code path
+  extracts memory candidates from chat. Build it:
+  - On each user message INSERT, run a lightweight candidate
+    extractor (keyword + LLM call via existing gateway path).
+  - For each candidate, render a "我把这件事记下来好吗?" confirm
+    card next to the message. On ✓ → INSERT into `memory_facts` with
+    `origin_intent_id = current_intent.id`.
+  - Cross-intent recall: before sending any chat message, fetch the
+    user's `memory_facts` (categories `about-you` / `people` /
+    `preferences`) and prepend a compact summary into the gateway's
+    system context.
+  - Acceptance: journey 01 passes — sending "对花生过敏" in intent A
+    then "给女儿带零食" in intent B causes assistant to acknowledge
+    the allergy.
+  - If LLM extraction is too heavy for this scope, fall back to a
+    regex-based "remember that I/my <noun>" detector; ship that
+    first.
 
-- [x] **G1.** `/now` activity feed — real implementation.
-  - Implemented option B: `useNowActivity` derives the running/done
-    buckets from the `messages` table grouped by intent. "Running" =
-    intent whose most recent message in the last 5 min is from the
-    user (assistant hasn't replied yet); "Completed" = intent whose
-    most recent message in the last 24h is from the assistant. Each
-    bucket capped at 8 rows. RLS scopes to the user. Refetches every
-    30s.
-  - Wiring: `Now.tsx` now uses `useNowActivity` in real-mode and
-    funnels both sources through the same `NowActivity` shape so the
-    `RunningRow`/`DoneRow` components don't branch. Real intents
-    resolved via `useIntents()` and passed as a prop so the cover +
-    emoji come from the live intent row, not the mock catalogue.
-  - Subtitle now shows the same "等点头 · 在跑 · 刚做完" tri-count in
-    real-mode (was approvals-only).
-  - Spec: `e2e/now-realmode-buckets.spec.ts` seeds throwaway intents
-    + messages and asserts both buckets render. Screenshot at
-    `test-results/walkthrough-now-realmode-buckets.png` shows the
-    feed populated with the user's actual recent assistant replies.
-- [x] **G2.** `/schedule` add-reminder — real NL parser.
-  - Implemented option A: `src/lib/parseReminder.ts` covers 每天 X 点 /
-    每周 X (early-week) / X 月 X 日 X 点 / 明天 / 今天 / 下周 / 周X /
-    bare time + HH:MM, with AM/PM hints (上午/下午/晚上/早上),
-    Chinese numerals up to 31, "X 点半" → :30, polite-prefix
-    stripping ("请帮我", "提醒我"), and "tomorrow if past" rollover.
-  - 15 unit tests in `e2e/parse-reminder-unit.spec.ts` cover daily /
-    weekly / absolute-date / relative-day / next-weekday / bare-time /
-    HH:MM / Chinese-numeral / garbage-rejection paths — all green.
-  - Composer UI in `Schedule.tsx` (`AddReminderComposer`): text input
-    with live parse preview, intent picker defaulting to most recent,
-    "记下来" submit → `useAddScheduleEvent` (RLS-gated). Friendly
-    error toast on unparseable input. Empty-intents branch shows the
-    "起一件新事" path so users without intents still have a way in.
-  - Empty-state copy refreshed to point at the composer.
-  - Write-path test: `e2e/schedule-composer-realmode.spec.ts` seeds a
-    throwaway intent, fills the composer, submits, asserts the row in
-    `schedule_events` exists. Green on prod.
-  - F4 walkthrough click-smoke updated to verify the composer's live
-    parse preview instead of the old hint CTA.
-- [x] **G3.** Voice input on `/new` (and on chat composers).
-  - `src/components/VoiceButton.tsx` wraps the Web Speech API
-    (`window.SpeechRecognition` / `webkitSpeechRecognition`), zh-CN
-    locale, continuous + interim results. Push-to-talk: tap to start,
-    tap again to stop. `aria-pressed` reflects active state;
-    `aria-label` flips between "语音输入" / "停止录音". Mic-permission
-    denial surfaces a friendly tooltip "麦克风没开". Final transcripts
-    flow into the parent composer via `onTranscript`.
-  - Wired into `IntentHome.StickyComposer` (chat) and
-    `NewIntent.PromptStage` (with "不想打字?点话筒说一句" hint).
-  - Graceful fallback: component returns `null` when neither global
-    is present (Firefox desktop, some WebViews) so lay users on
-    unsupported browsers don't see a broken control.
-  - Tested via `e2e/voice-button.spec.ts` with a deterministic mock
-    SpeechRecognition installed via `addInitScript`. Two cases:
-    transcript reaches the textarea when mocked; button hidden when
-    globals deleted. Both green.
-- [x] **G4.** Attachment in chat (the 📎 button).
-  - SPA-side implementation shipped:
-    - `src/components/AttachmentButton.tsx` — `📎` button on the
-      composer; opens file picker; hidden in mock-mode or signed-out
-      (no user_id to scope the RLS path with). Accepts images, PDFs,
-      text, zip, JSON up to 10 MB.
-    - `src/lib/uploadAttachment.ts` — uploads to
-      `chat-attachments/<user_id>/<intent_id>/<timestamp>-<basename>`
-      via the Supabase Storage client and returns a 7-day signed URL
-      + MessageContentPart of either `{type:'image', url, name, size,
-      mime}` or `{type:'file', url, name, size, mime}`. Friendly
-      error when the bucket isn't provisioned.
-    - `useSendMessage` extended to accept `attachments?: MessageContentPart[]`
-      and persist them alongside the text into `messages.content` jsonb.
-    - `MessageContentPart` union extended with the new `file` variant
-      and `name/size/mime` on `image`.
-    - StickyComposer carries pending attachments as removable chips
-      above the textarea; submit composes content array + clears.
-    - `UserMessage` renders attachments via a new `AttachmentPart`
-      helper: image preview (inline `<img>` with signed URL) or
-      file chip (download link with name + size).
-  - Bucket + RLS: hand-off filed at
-    `docs/handoff/chat-attachments-bucket.md` with the migration SQL
-    (insert into `storage.buckets`, four `chat-attachments:` policies
-    scoping to `auth.uid()` prefix). PROMPT.md allows hand-off for
-    schema/migration changes that live in `~/myclaw`. SPA shows
-    "附件功能还没开通,稍后再试" until applied.
-  - Gateway vision pass-through tracked in the same hand-off as a
-    follow-up; not blocking SPA-side feature completion.
-- [x] **G5.** Settings export row.
-  - Built client-side per CLAUDE.md's "SPA reads Supabase directly
-    with the anon key + RLS" rule — no Edge Function needed since
-    the per-user read scope is already enforced by table RLS.
-  - `src/lib/exportMyData.ts`: parallel `select *` from intents +
-    messages + memory_facts + schedule_events + user_preferences;
-    strips `user_id` from output rows; returns a schema-versioned
-    blob `{schema_version:1, exported_at, user:{id,email}, counts,
-    intents, messages, memory_facts, schedule_events, user_preferences}`.
-    `triggerDownload` uses an off-DOM `<a download>` with object URL;
-    `buildExportFilename` produces `myclaw-export-YYYYMMDD-HHMM.json`.
-  - `Settings.tsx`: `ExportDataRow` reinstates the row under 数据与隐私
-    with hint copy "想做的事 / 消息 / 助手记得的事 / 提醒, 一份 JSON
-    全打包". Real-mode signed-in click → fetch + download + success
-    toast (`已导出 N 条`). Mock-mode / signed-out click → friendly
-    "演示模式没有真实数据可导出。登录后再来试一次". `busy` state
-    flips the button to "准备中…" + disabled while the fetch runs.
-  - `e2e/export-my-data.spec.ts`: realmode chromium seeds throwaway
-    intent + memory_fact, clicks 导出, awaits the browser download
-    event, parses the JSON file, asserts `schema_version === 1`,
-    `user.id` matches the minted session user, and the seeded intent
-    + fact appear under the right keys. Cleans up afterwards. Green
-    on prod.
-  - F8 walkthrough re-run on both viewports — the new row is labeled
-    and present; no missing-label findings.
+### L2. Schedule firing (closes journey 02)
 
-## Phase H — Lay-user readiness
+- [ ] **L2.** Reminders never fire today. Build the firing sink:
+  - Phase A (in-SPA polling): `useScheduleEvents` starts a
+    `setInterval(60_000)` that scans for rows WHERE `user_id = me AND
+    status='pending' AND fire_at <= NOW()`, surfaces an in-app toast +
+    optional browser notification, and UPDATEs `status='fired'`.
+  - Phase B (offline reach): hand-off to `~/myclaw` for a pg_cron
+    job + Edge Function that pushes via the user's preferred channel
+    (Telegram if set, else email). Hand-off doc OK for the cron
+    piece; SPA polling must ship in this repo.
+  - Acceptance: journey 02 passes — submitted reminder lands a
+    toast within the polling window with `data-testid="reminder-fired"`.
 
-These come from the user's "UI 上面很多功能就没有实现" feedback. Walk
-each surface as a non-technical user and verify the user-visible
-controls are all functional. Open Phase F items will produce more
-Phase H items as they run.
+### L3. /new → /intent chat handoff (closes journey 03)
 
-- [x] **H1.** Sentinel-claw install flow end-to-end UX.
-  - Walked as a brand-new throwaway user (sentinel-only state):
-    - Primary CTA "去开一台" → already links to
-      https://myclaw.one/aios/install (returns 200, is the canonical
-      redeem flow per aios-design.md §A.1).
-    - SSH + curl one-click copy step lives on the myclaw.one install
-      page, not in the SPA — out of scope here.
-    - Activation-code path was the broken half: the Settings → 订阅
-      → 激活码 modal toasted "激活码已提交,稍后处理" and never
-      redeemed. Rebuilt as a real hand-off: submit now encodes the
-      key and `window.location.assign`s to
-      `https://myclaw.one/aios/install?key=<encoded>` so the
-      canonical redemption controller (in `~/myclaw/apps/api/src/
-      controllers/claws/helpers/redeemActivationCode.ts`) actually
-      runs against the user's input.
-    - Banner-dismissal already correct: `showSentinelBanner`
-      depends on `isSentinelOnly`, which flips false the moment any
-      non-sentinel claw appears — covered by the existing
-      phase6-realmode-multiclaw spec.
-  - Implementation:
-    - `src/components/ActivationKeyModal.tsx` — new reusable modal;
-      Enter-to-submit, aria-label on the input, friendly copy
-      ("带你去开通页面完成激活"), every button has data-testid +
-      visible label. Optional `redirectFn` prop for tests.
-    - `src/routes/Settings.tsx` — replaced the inline dialog +
-      toast-only handler with the shared modal. Removed `useRef` +
-      `keyInput` local state.
-    - `src/routes/IntentList.tsx` — added secondary
-      "已经有激活码?点这儿激活" button under the primary CTA so
-      users who arrived with a code from a partner / friend have a
-      discoverable entry point right next to the prompt. Mounts the
-      shared modal.
-  - Tests:
-    - `e2e/sentinel-install-flow.spec.ts` — creates throwaway
-      sentinel-only user, asserts banner renders, intercepts
-      cross-origin navigation via `page.route('https://myclaw.one/**')`,
-      clicks secondary CTA, fills `MYCL-TEST-0000-0001`, submits,
-      asserts the intercepted URL has origin=`https://myclaw.one`,
-      pathname=`/aios/install`, `?key=` decodes back to the input.
-      Clean up the throwaway user.
-    - `e2e/walkthrough-sentinel.spec.ts` — desktop + mobile
-      screenshot the sentinel-only home; enumerates every interactive
-      element, asserts each has an accessible name. Ralph read both
-      screenshots — banner legible, both CTAs clearly labelled and
-      visible, no placeholder copy, no English leakage. No findings.
-    - Existing `phase6-realmode-sentinel` + `phase6-realmode-multiclaw`
-      + `walkthrough-settings` specs re-run clean.
-- [x] **H2.** Multi-claw picker UI.
-  - State: `src/state/ui.ts` gained `selectedClawId: string | null`
-    (persisted via partialize). Null = "auto" → fall back to
-    defaultClaw (oldest real claw), so single-claw users + the
-    existing oldest-wins default flow are unchanged.
-  - Data: `useClaws()` exposes a new `activeClaw` derived from
-    `selectedClawId` (matched against realClaws; stale ids fall back
-    to defaultClaw). `useGateway` and `useCreateIntent` now consume
-    `activeClaw` instead of `defaultClaw`, so selecting a different
-    claw recycles the WS singleton and re-targets new-intent FKs.
-  - UI: `ClawPicker` keeps the original quiet pill for the
-    single-claw case (preserves prior F-walkthrough screenshots) and
-    becomes a button-trigger + absolute-positioned `role="listbox"`
-    when `realClaws.length > 1`. The active option has ✓ + primary-
-    tone highlight; every option has aria-label / role / data-testid.
-    A microtask cleanup clears stale `selectedClawId` if it stops
-    matching the user's current claws.
-  - Sidebar layout: moved ClawPicker out of the `<button data-testid=
-    "sidebar-account">` (a button-in-button created by the new
-    listbox trigger silently broke clicks in Chrome). The picker now
-    renders as a sibling row above the account dropdown.
-  - Tests:
-    - `e2e/multi-claw-picker.spec.ts` — throwaway user with two real
-      claws: asserts default is older, click opens menu listing both,
-      click newer flips the label + persists `selectedClawId` to
-      localStorage (`myclaw-ui-v2.state.selectedClawId === newerId`),
-      then drives /new end-to-end and asserts the new intent's
-      `claw_id === newerId` (not the old default).
-    - `e2e/walkthrough-multi-claw.spec.ts` — desktop screenshots of
-      picker closed + open. Ralph read both — trigger has visible
-      claw name + ▾ chevron, menu lists both options with active
-      checkmark + primary highlight, no missing labels.
-    - Existing `phase6-realmode-multiclaw` (oldest-wins default),
-      `phase6-realmode-sentinel` (no claws → no picker),
-      `phase2-auth` (sidebar account dropdown + sign-out),
-      `walkthrough-home` + `walkthrough-settings` all re-run clean.
-- [x] **H3.** AgentPicker icon-only buttons need names.
-  - Audit result: the AgentPicker chain is already structurally
-    compliant. Verified by code-reading every render point:
-    - `src/components/AgentPicker.tsx:90-91` — trigger renders
-      `<emoji>` + `<name>` + chevron.
-    - `src/components/AgentPicker.tsx:116-121` — each menu option
-      renders 9×9 emoji avatar + `<name>` + one-line desc.
-    - `src/components/TeamPanel.tsx:63-79` — team rows render emoji
-      avatar + name + role + desc.
-    - `src/components/TeamPanel.tsx:185-192` — add-member sheet
-      rows render emoji + name + pitch.
-    - `src/routes/IntentHome.tsx:562, 1307, 2251-2252` — chat
-      message attribution + agent trace badges render emoji + name.
-    - `src/routes/Now.tsx:404-413` — activity AgentBadge renders
-      emoji + name.
-    - `src/routes/NewIntent.tsx:875-883` — preview team badges
-      render emoji + name.
-  - Regression guard: `e2e/walkthrough-agent-picker.spec.ts` opens
-    the picker in mock mode, snaps trigger closed + menu open,
-    asserts the trigger text contains BOTH the '🦞' emoji AND the
-    'Claw' name, and for each of the 13 canonical agents asserts the
-    menu row's visible text contains the agent name and is longer
-    than the name alone (catches an icon-only regression).
-  - Ralph read both screenshots — every visible agent trigger /
-    row shows emoji + name everywhere. No findings.
-- [x] **H4.** Empty state copy audit.
-  Walked all six surfaces; only `/now` needed a real fix.
-  - `/` (IntentList) — 6 starter-template links sit above an empty
-    panel with 👋 + "还没有任何事在做" + primary "起一个新意图"
-    CTA → `/new` + a "小贴士" keyboard-shortcut card.
-  - `/schedule` — `AddReminderComposer` is always mounted above the
-    list; the textbox itself is the always-visible primary CTA.
-    Empty branch has 🔔 + "没有要提醒的事" + three example phrasings
-    + hint pointing back at the composer.
-  - `/memory` — `AddFactComposer` is always mounted above the list;
-    the textarea is the always-visible primary CTA. Empty branch has
-    🧠 + "还没记下任何事" + three example facts + "起一个新意图"
-    hint. Per-category sub-empty rows have "聊着聊着会有的" copy.
-  - `/now` — FIXED: empty CTA was a quiet `btn-ghost btn-sm`
-    "去看看你正在做的事" → `/` which just bounced the user back to
-    the page they came from. Promoted to `btn-primary btn-md
-    rounded-full` with ✨ icon + "起一件新事" → `/new`. "现在很安静"
-    implies "start something" — action beats back-navigation.
-  - `/archive` — 📭 + "这里还是空的" + "没有封存过的项目" + back
-    link to `/`. Quiet by design (archive doesn't demand action).
-  - `/permissions` — never empty (11 static capabilities in 3
-    groups); onboarding banner "关于权限" explains the page.
-  - Tests:
-    - `e2e/walkthrough-empty-states.spec.ts` — mock-mode pass covers
-      /, /schedule, /memory, /archive, /permissions (assertions on
-      composer / CTA / onboarding copy presence). Separate real-mode
-      describe creates a throwaway user (sentinel-only → no /now
-      activity → empty-state branch reachable) and asserts the new
-      CTA has class `btn-primary`, text "起一件新事", and `href`
-      starts with `/new`. All green.
-    - `e2e/walkthrough-now.spec.ts` docstring updated to reflect
-      the new CTA target.
-- [x] **H5.** Loading state audit.
-  Walked every async-data surface; only `/now` flashed blank.
-  - `/`            — 6-card animate-pulse grid (gated on
-                     useIntents().isLoading). ✓
-  - `/schedule`    — `schedule-skeleton` (3 animate-pulse rows). ✓
-  - `/memory`      — `memory-skeleton` (3 animate-pulse rows). ✓
-  - `/archive`     — 3-card animate-pulse grid. ✓
-  - `/intent/<id>` — `intent-skeleton`. ✓
-  - `/settings`    — "加载账号信息…" sub-row + spinner on saves. ✓
-  - signin / reset — submit-button spinners. ✓
-  - `/now`         — FIXED: page rendered without consulting any
-                     isLoading flag. On initial fetch users with real
-                     activity briefly saw "现在很安静" before
-                     approvals + messages + intents queries resolved
-                     — a lay user reads that as "nothing in flight",
-                     which is alarming AND wrong. Added
-                     `isInitialLoading` derived from `!approvalsMock
-                     && (approvalsLoading || real.isLoading ||
-                     intentsLoading)`. During loading: render
-                     `now-skeleton` (3 animate-pulse rows), suppress
-                     the empty panel. Empty panel only fires when
-                     fetch settled AND every bucket is empty.
-  - Static surfaces (`/permissions`, `/help`, `/settings/engines`,
-    `/new`) fetch no async data — no skeleton needed.
-  - Tests: `e2e/walkthrough-loading-states.spec.ts` fetches the
-    served JS bundle and asserts every required skeleton marker
-    (`schedule-skeleton`, `memory-skeleton`, `intent-skeleton`,
-    `now-skeleton`, `animate-pulse`) is present in the prod bundle.
-    Catches a future refactor that quietly drops a skeleton. Plus
-    settled-state checks on `/schedule` and `/memory` that the
-    composer is visible (never a blank panel). Bundle-markers test
-    runs in both mock + real mode; real-mode pass against prod
-    confirms the new `now-skeleton` shipped.
-- [x] **H6.** Error state audit.
-  Audit found two gaps:
-    - Every existing error branch (IntentList, Memory, Schedule,
-      Archive) showed friendly copy but no explicit retry button —
-      lay users were stuck unless they knew to refresh manually.
-    - `/now` had no error branch at all: failed queries silently
-      rendered the empty state ("现在很安静"), telling users they
-      had no activity when in fact the fetch had failed.
-  Built shared component + wired every surface through it:
-    - `src/components/ErrorPanel.tsx` — `title` + `friendlyError(
-      error, fallback)`-piped message + "再试一次" button
-      (`btn-error btn-sm rounded-full`). Default retry =
-      `window.location.reload()` (action a lay user already
-      understands); pass `onRetry` to use a TanStack-Query
-      `refetch()` when available. Test hooks: `data-testid` on the
-      panel + `error-panel-retry` on the button.
-    - IntentList → `ErrorPanel` with `onRetry={refetch}`.
-    - Memory → `ErrorPanel` (reload fallback).
-    - Schedule → new `ErrorPanel` block under the composer (was a
-      silent subtitle warning only).
-    - Archive → `ErrorPanel` with `onRetry={refetch}`.
-    - Now → consolidates `approvalsError ?? real.error` into
-      `feedError`; renders `ErrorPanel` when set + not loading.
-      Empty panel only fires when settled, no error, AND every
-      bucket is empty.
-  Static surfaces (`/permissions`, `/help`, `/settings/engines`,
-  `/new`) fetch no async data — no error panel needed.
-  Tests: `e2e/walkthrough-error-states.spec.ts` is a bundle-content
-  audit asserting every per-surface error testid
-  (`intentlist-error`, `schedule-error`, `memory-error`,
-  `archive-error`, `now-error`, `intent-error`) + the
-  `error-panel-retry` testid + the "再试一次" Chinese copy all ship
-  in the prod JS bundle. Real-mode pass against prod green; all F-
-  walkthroughs for the touched surfaces re-run clean.
-- [x] **H7.** Mobile audit.
-  Re-ran every F-walkthrough mobile pass against prod
-  (iPhone-14-class viewport, 390×844 — covers the 375×667 SE/8
-  contract). All 13 mobile passes (F1–F13) green; Ralph read each
-  screenshot. Two real lay-user findings surfaced and were fixed:
-    - **Info-banner contrast (Memory, Help, Permissions)**: each
-      surface had a `bg-{info,warning}/10` rounded banner using
-      `text-{info,warning}-content` for the body. Those content
-      tones are the high-contrast pair to a *saturated*
-      `bg-{info,warning}` — against a 10 %-opacity tint they wash
-      out, and on mobile (where the banner takes a larger share of
-      the visible area) the body paragraph is nearly unreadable.
-      Swapped body to `text-base-content/80` (keyed to the
-      surrounding base bg, legible in both light and dark themes).
-      Header (`text-info` / `text-warning` saturated) untouched.
-    - **/auth/signin password input invisible**: `placeholder=''`
-      in signin mode meant the empty bordered input looked like a
-      layout gap below the "密码" label on both mobile and desktop
-      — lay users couldn't see there was a field to type in. Added
-      `placeholder="••••••••"` for signin; signup keeps its
-      informative `"至少 6 位"`.
-  Regression: `e2e/walkthrough-signin.spec.ts` mobile pass now
-  asserts the password input has a non-empty placeholder — catches
-  a future change that strips it. All 13 F-mobile passes re-run
-  clean on the post-fix prod build.
+- [ ] **L3.** /new flow discards prompt + clarifying answers on
+  navigate. Build the handoff:
+  - intentRoute `validateSearch` accepts `kickoff?: string`.
+  - NewIntent's `goSpawn` composes a markdown kickoff message
+    (`{prompt}\n\n我已经准备好了:\n- {q1}: {a1}\n- {q2}: {a2}\n…`)
+    and navigates with `search: { kickoff }`.
+  - IntentHome reads `useSearch().kickoff` in a once-only effect,
+    calls `chat.send(kickoff)`, then navigates `replace: true` with
+    `search: {}` to prevent re-sending on refresh.
+  - Acceptance: journey 03 passes.
 
-## Phase I — Remaining hand-off-blocked items
+### L4. TeamPanel ↔ AgentPicker consistency (closes part of journey 04)
 
-Genuinely cross-repo or human-action only. Hand-off is the correct
-completion here.
+- [ ] **L4.** AgentPicker imports `BUILTIN_AGENTS` (12 personas);
+  TeamPanel reads `intent_agents` (variable, 1–N). They disagree.
+  Fix:
+  - AgentPicker consumes the same `useIntentTeam(intentId)` hook
+    TeamPanel uses; its dropdown lists ONLY the team.
+  - Add an explicit "+ 加入助手" CTA at the bottom of TeamPanel that
+    opens the full BUILTIN_AGENTS catalog as a picker (existing
+    `AgentCatalogPicker` already does this — wire it).
+  - Acceptance: journey 04 step 2 vs step 3 — AgentPicker list ⊆
+    TeamPanel list and equal in size.
 
-- [x] **I1.** A3 — append 3 routes to `aios-ui-spec.md §3.1`. Applied
-  in `~/myclaw` commit `63d890a` (2026-05-22); hand-off satisfied and
-  doc deleted.
-- [x] **I2.** D1 — Vault secret `aios_gateway_token_key` provisioned
-  2026-05-22 via `vault.create_secret()` (`length(decrypted_secret)=64`).
-  Self-update backfill encrypted all 3 existing claws
-  (`plaintext_remaining=0`, `encrypted_now=3`). End-to-end verified:
-  app.myclaw.one ClawStatus reaches `connected` on cool-brook, so
-  mint-claw-token's `decrypt_gateway_token()` path is live.
-  Hand-off doc deleted.
-- [moved → Deferred] **I3.** D3 — Sentry signup. See bottom Deferred
-  section. User-accepted on 2026-05-22.
-- [x] **I4.** D4 — `gh secret set` × 4 for the CI realmode-e2e job.
-  Applied 2026-05-22 (`gh secret list --repo microblue/myclaw-aios`
-  shows 4 entries: `REAL_TEST_EMAIL`, `SUPABASE_URL`,
-  `SUPABASE_PUB_KEY`, `SUPABASE_SERVICE_ROLE_KEY`); hand-off doc deleted.
+### L5. TeamPanel rows clickable → switch active agent (closes journey 04 step 6)
 
-## Phase J — Self-audit findings (append-only)
+- [ ] **L5.** Add an onClick to each TeamPanel member row:
+  - Click row → `onPickAgent(agentKey)` → updates `useChatThread`'s
+    `activeAgentId`.
+  - Visual: active member shows a `ring-2 ring-primary` and a "正在
+    说话" badge.
+  - Long-press / right-click → opens a per-agent info popover (name,
+    emoji, what-it's-good-at, recent traces with this intent).
+  - Acceptance: journey 04 step 6 passes — clicking specialist in
+    TeamPanel changes AgentPicker's selected value and the next
+    chat send routes to that specialist.
 
-Append discovered items during walkthroughs here. Format:
-`### J<n>. <surface>` body: step that triggered · expected · actual.
+### L6. Real-mode rail data — agent count (closes part of journey 04)
+
+- [ ] **L6.** Add `useIntentTeam(intentId)` real-mode read (already
+  exists per L4) and replace the `counts.agents` call site at
+  `IntentHome.tsx:1339` with `useIntentTeam(intent.id).team.length`.
+  - Acceptance: 助手团队 stat row meta reads N where N = real
+    `intent_agents` row count; mock-guard fires 0 times for this
+    path.
+
+### L7. Real-mode rail data — outline / files (closes rest of journey 04)
+
+- [ ] **L7.** Build `useIntentArtifacts(intentId, kind?)`:
+  - Real mode reads `public.intent_artifacts` filtered by user + intent
+    + optional kind ∈ `{outline_node, file, plan_step, …}`.
+  - Mock mode returns the existing mock arrays via `outlineFor` /
+    `filesFor` so mock-mode pages still render.
+  - Replace every IntentHome call site of `outline.length` /
+    `files.length` / `counts.outlineDone` / `counts.outlineTotal` /
+    `counts.files` with the hook's data.
+  - If `intent_artifacts` is empty (most real intents are early in
+    their lifecycle), the UI shows the empty state, not "0/0" or
+    "0 个" — there's no plan/file YET, not "no plan."
+  - Acceptance: journey 04 steps 4–5 pass; mock-guard fires 0 times
+    for outlineFor / filesFor in real-mode walkthrough.
+
+### L8. Overlay + interactivity sweep (closes journey 05)
+
+- [ ] **L8.** Sidebar collapsed account dropdown extends past sidebar
+  right edge and gets covered by chat composer. Plus assorted
+  decorative-only buttons. Fix in one sweep:
+  - AppShell sidebar Panel gets `relative z-10`, content Panel gets
+    `relative z-0` (stacking context for dropdowns).
+  - Bump all `dropdown-content` from `z-50` to `z-[60]`.
+  - StickyComposer's `z-10` stays (needed inside chat pane) but
+    chat-pane's parent gets `relative z-0` so it can't overlay
+    sidebar.
+  - Audit every element with cursor-pointer / hover-highlight / ring
+    classes that lacks an onClick → either add a handler or remove
+    the visual affordance.
+  - Acceptance: journey 05 passes — overlap check across every
+    opened dropdown returns 0 overlaps > 4px.
+
+## Phase M — Honest UI copy
+
+If a feature's implementation is genuinely deferred (e.g. user accepts
+delay on memory auto-record), the UI copy must reflect that — don't
+promise what we can't keep.
+
+- [ ] **M1.** Audit every `subtitle` / hint / empty-state copy on
+  `/memory`, `/schedule`, `/now`, `/permissions` for promises that
+  imply automation. For each, EITHER build the implementation (Phase
+  L) OR rewrite the copy to match what actually happens. The bar:
+  if a user reads the copy and waits 5 minutes for it to happen, the
+  expected thing must happen.
+
+## Phase N — Self-audit findings (append-only)
+
+Append items discovered during journey runs or walkthroughs.
 
 (none yet)
 
@@ -548,34 +180,30 @@ Append discovered items during walkthroughs here. Format:
 
 ### I3 (D3) — Sentry observability signup
 
-> **reason:** User does not want to sign up for a third-party error
-> monitoring service right now. Code wiring is already in place
-> (`src/lib/sentry.ts` + dev-only test button on `/settings/engines`)
-> and is a no-op without `VITE_SENTRY_DSN`, so no UI to remove — the
-> integration just stays inert in prod.
-> **reopen when:** User decides they want production error visibility
-> (e.g. after first round of real users, or after a noisy regression
-> that wasn't caught by CI). At that point: sign up at sentry.io →
-> create React project `myclaw-aios` → DSN goes into Vercel via
-> `vercel env add VITE_SENTRY_DSN production` → redeploy prod.
-> **accepted-by:** DZ (microblue@gmail.com), 2026-05-22.
+> reason: User does not want third-party error monitoring right now.
+> Code wired (`src/lib/sentry.ts` + dev-only test button); no-op
+> without DSN, so no UI to remove.
+> reopen when: User decides production error visibility is worth the
+> third-party dependency.
+> accepted-by: DZ (microblue@gmail.com), 2026-05-22.
 
 ---
 
 ## Notes (rationale, only read when picking the item)
 
-**F1-F13** are not optional polish — they are the only mechanism that
-catches features that look done in commits but don't actually work for
-a user. Don't skip them to chase G/H items.
+**Why journeys come first (Phase K before L):**
+Writing the spec first locks the acceptance contract. When the fix
+ships, we already have the proof-of-correctness ready. This also
+prevents lowering criteria mid-fix.
 
-**G1-G5** were closed in run 1 via patterns now banned in PROMPT.md.
-The git log will show the deletion commits; do not revert them
-mechanically — rebuild the feature correctly with the gateway/storage
-wiring described above.
+**Why mock-guard is non-negotiable:**
+The previous run shipped pages that displayed "0 位 / 0 个" in real
+mode because the data layer was silently reading mocks. The guard
+makes this impossible to ship — any walkthrough that triggers a guard
+firing fails CI.
 
-**H4-H7** can be filled partially from a single walkthrough cycle —
-work them in parallel with Phase F, not sequentially.
-
-**Phase I hand-offs** stay `[ ]` until the human confirms the external
-action is done. They do not block EXIT_SIGNAL — but the user must
-explicitly accept that the build ships with these pending.
+**L4 vs L5 ordering:**
+L4 fixes the data inconsistency; L5 fixes interactivity. Together
+they make journey 04 pass. Land L4 first because a clickable row that
+points to a phantom agent (i.e. one in BUILTIN_AGENTS but not in the
+team) would be worse than nothing.

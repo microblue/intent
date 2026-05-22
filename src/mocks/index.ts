@@ -1,5 +1,6 @@
 // Single-source mock barrel: import once, re-export, build helpers on top.
 
+import { guardedMock } from '@/lib/mock-guard';
 import {
   intents,
   messages,
@@ -37,14 +38,27 @@ export {
 };
 
 /* ─── Intent / message lookups ─── */
-export const findIntent = (id: string) => intents.find((i) => i.id === id);
-export const messagesFor = (intentId: string) => messages.filter((m) => m.intentId === intentId);
-export const outlineFor = (intentId: string) => outline.filter((o) => o.intentId === intentId);
-export const filesFor = (intentId: string) => files.filter((f) => f.intentId === intentId);
-export const threadOutlineFor = (intentId: string) =>
-  threadOutline.filter((t) => t.intentId === intentId);
-export const tracesForMessage = (messageId: string) =>
-  agentTraces.filter((t) => t.messageId === messageId);
+// Each lookup is wrapped with mock-guard: in real mode it logs a
+// console.error so walkthrough specs catch the call site. The wrappers
+// stay in place forever as a regression smoke test.
+export const findIntent = guardedMock('findIntent', (id: string) =>
+  intents.find((i) => i.id === id),
+);
+export const messagesFor = guardedMock('messagesFor', (intentId: string) =>
+  messages.filter((m) => m.intentId === intentId),
+);
+export const outlineFor = guardedMock('outlineFor', (intentId: string) =>
+  outline.filter((o) => o.intentId === intentId),
+);
+export const filesFor = guardedMock('filesFor', (intentId: string) =>
+  files.filter((f) => f.intentId === intentId),
+);
+export const threadOutlineFor = guardedMock('threadOutlineFor', (intentId: string) =>
+  threadOutline.filter((t) => t.intentId === intentId),
+);
+export const tracesForMessage = guardedMock('tracesForMessage', (messageId: string) =>
+  agentTraces.filter((t) => t.messageId === messageId),
+);
 
 export const sortedIntents = (): Intent[] =>
   [...intents].sort((a, b) => {
@@ -103,7 +117,7 @@ export const runningCount = () => nowActivities.filter((a) => a.kind === 'runnin
  *   approvals    ← NowActivity.kind = awaiting_approval
  *   running      ← NowActivity.kind = running
  */
-export const conceptCountsFor = (intentId: string) => {
+export const conceptCountsFor = guardedMock('conceptCountsFor', (intentId: string) => {
   const intentOutline = outline.filter((o) => o.intentId === intentId);
   return {
     agents: intentBindings[intentId]?.agentKeys.length ?? 0,
@@ -117,4 +131,4 @@ export const conceptCountsFor = (intentId: string) => {
     ).length,
     running: nowActivities.filter((a) => a.kind === 'running' && a.intentId === intentId).length,
   };
-};
+});

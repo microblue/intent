@@ -151,7 +151,11 @@ function Chrome({ children }: { children: React.ReactNode }) {
           collapsedSize={6}
           onCollapse={() => setSidebarCollapsed(true)}
           onExpand={() => setSidebarCollapsed(false)}
-          className="overflow-hidden"
+          // `relative z-10` puts sidebar's stacking context above content's
+          // so dropdowns (account menu, ClawPicker) overlay the chat
+          // composer when they extend past the sidebar's right edge in
+          // collapsed mode — bug fixed 2026-05-22.
+          className="overflow-hidden relative z-10"
         >
           <div className="h-full overflow-y-auto">
             <Sidebar collapsed={sidebarCollapsed} />
