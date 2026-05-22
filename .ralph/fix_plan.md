@@ -518,15 +518,18 @@ Phase H items as they run.
 Genuinely cross-repo or human-action only. Hand-off is the correct
 completion here.
 
-- [ ] **I1.** A3 — append 3 routes to `aios-ui-spec.md §3.1` (sibling
-  `~/myclaw`). Hand-off: `docs/handoff/aios-ui-spec-3.1-extra-routes.md`.
+- [x] **I1.** A3 — append 3 routes to `aios-ui-spec.md §3.1`. Applied
+  in `~/myclaw` commit `63d890a` (2026-05-22); hand-off satisfied and
+  doc deleted.
 - [ ] **I2.** D1 — INSERT Vault secret `aios_gateway_token_key` via
   Supabase Dashboard SQL Editor (pooler role can't). Hand-off:
   `docs/handoff/vault-key-provision.md`.
 - [ ] **I3.** D3 — create Sentry account + add `VITE_SENTRY_DSN` to
   Vercel env. Hand-off: `docs/handoff/sentry-setup.md`.
-- [ ] **I4.** D4 — `gh secret set` × 4 for the CI realmode-e2e job.
-  Hand-off: `docs/handoff/github-secrets.md`.
+- [x] **I4.** D4 — `gh secret set` × 4 for the CI realmode-e2e job.
+  Applied 2026-05-22 (`gh secret list --repo microblue/myclaw-aios`
+  shows 4 entries: `REAL_TEST_EMAIL`, `SUPABASE_URL`,
+  `SUPABASE_PUB_KEY`, `SUPABASE_SERVICE_ROLE_KEY`); hand-off doc deleted.
 
 ## Phase J — Self-audit findings (append-only)
 
