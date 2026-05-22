@@ -97,7 +97,15 @@ either been fixed or filed as a new Phase H/J item.
     ... after subscribe()`. Fixed by using a per-effect-run UUID in
     the channel name. Re-snap shows clean header + empty state on
     both viewports.
-- [ ] **F8.** `/settings`
+- [x] **F8.** `/settings`
+  - Spec: `e2e/walkthrough-settings.spec.ts`. Real-mode chromium + mobile.
+  - Asserts every interactive element has an accessible name.
+  - Screenshots: `test-results/walkthrough-settings-{desktop,mobile}.png`.
+  - Ralph found one finding: the dev-mode toggle (`role="switch"` button)
+    had `aria-checked` but no `aria-label`. Fixed in same commit by
+    adding `aria-label="开发者模式"`. Re-snap shows clean settings
+    surface with all sections (账号 / 外观 / 提醒方式 / 数据与隐私 /
+    读懂 MYCLAW / 开发者模式) and labelled controls.
 - [ ] **F9.** `/help`
 - [ ] **F10.** `/archive`
 - [ ] **F11.** `/settings/engines` (dev mode)
