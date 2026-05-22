@@ -7,8 +7,9 @@ import { injectRealSession } from './helpers/real-session';
  *
  * Real-mode signed-in pass at desktop + mobile. Screenshots the
  * surface, enumerates every interactive element, asserts each has an
- * accessible name. Click-smoke: if the page is in the cold-start
- * empty state, the "去看看你正在做的事" CTA should navigate back to /.
+ * accessible name. The cold-start empty state has a primary CTA
+ * "起一件新事" → /new (was "去看看你正在做的事" → / before H4 made
+ * /now's empty CTA more action-oriented for lay users).
  *
  * Activity-feed real-data wiring is tracked separately as G1; this
  * spec is shape-only.

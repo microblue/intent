@@ -94,11 +94,13 @@ export function NowPage() {
               这里会显示:正在干活的助手 · 等你做决定的事 · 刚刚做完的步骤。
             </p>
             <Link
-              to="/"
+              to="/new"
+              search={{ seed: undefined }}
               data-testid="now-empty-cta"
-              className="btn btn-ghost btn-sm mt-4 rounded-full text-base-content/65"
+              className="btn btn-primary btn-md mt-4 gap-2 rounded-full px-6 shadow"
             >
-              去看看你正在做的事 →
+              <span aria-hidden>✨</span>
+              起一件新事
             </Link>
           </div>
         )}
