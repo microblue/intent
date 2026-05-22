@@ -131,7 +131,20 @@ either been fixed or filed as a new Phase H/J item.
     OpenClaw / Hermes), HERMES profiles list, per-claw agent matrix
     (cool-brook shows 12/47 specialists). English product-domain names
     are intentional for the dev surface. No findings.
-- [ ] **F12.** `/auth/signin`
+- [x] **F12.** `/auth/signin`
+  - Spec: `e2e/walkthrough-signin.spec.ts`. Unauthenticated route — does
+    NOT inject a real session (page redirects when signedIn). Desktop
+    pass covers all 4 modes (signin / signup / magic / forgot) by
+    clicking the mode-nav links on a fresh page each time. Mobile pass
+    covers signin only.
+  - Enumeration helper enhanced for this spec to consider implicit/
+    explicit `<label>` association (signin has form inputs whose
+    accessible name comes from a wrapping `<label>`, not aria-label).
+  - Screenshots: `test-results/walkthrough-signin-desktop-{signin,signup,magic,forgot}.png`
+    + `walkthrough-signin-mobile.png`.
+  - Ralph read all five — brand, friendly headings + subtitles, labelled
+    form fields, primary CTA, mode-nav links, "先看看演示" all render
+    correctly. No findings.
 - [ ] **F13.** `/auth/reset-password`
 
 ## Phase G — Reopened (was punted in run 1)
