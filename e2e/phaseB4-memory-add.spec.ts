@@ -65,7 +65,10 @@ test.describe('B4 — Memory composer (mock-mode)', () => {
     // Type + submit → mock-mode toast.
     await page.getByTestId('memory-add-input').fill('演示模式下不会保存');
     await page.getByTestId('memory-add-submit').click();
-    await expect(page.getByText(/演示模式|登录后再来/)).toBeVisible({ timeout: 5_000 });
+    // Match a substring that's unique to the failure toast — the
+    // sidebar already renders "演示模式 · 数据不保存" as static copy,
+    // so we'd hit a strict-mode locator collision on bare "演示模式".
+    await expect(page.getByText(/记下的事不会被保存/)).toBeVisible({ timeout: 5_000 });
   });
 });
 

@@ -29,15 +29,15 @@ test('/permissions: clicking a mode triggers the persistence toast', async ({
   await expect(page.getByText(/已改成「不行」/)).toBeVisible({ timeout: 5_000 });
 });
 
-test('/schedule: add-hint card points at the chat-with-assistant path', async ({
+test('/schedule: NL composer renders + live-parses time expressions', async ({
   page,
 }) => {
-  // B3 removed the natural-language quick-add composer: parsing time
-  // expressions belongs in the reminder agent, not the SPA. /schedule
-  // is now read-only and points users at the chat path. Confirm the
-  // hint card + CTA render, and the old composer is gone.
+  // G2 rebuilt the natural-language quick-add composer client-side
+  // (src/lib/parseReminder.ts) so users can type "每周一 9 点 周会"
+  // and see the parsed result before submitting. Confirm the composer
+  // mounts and the live preview reflects the input.
   await page.goto('/schedule');
-  await expect(page.getByTestId('schedule-add-hint')).toBeVisible({ timeout: 5_000 });
-  await expect(page.getByTestId('schedule-add-cta')).toHaveAttribute('href', /\/new/);
-  await expect(page.getByPlaceholder(/加一个提醒/)).toHaveCount(0);
+  await expect(page.getByTestId('schedule-composer')).toBeVisible({ timeout: 5_000 });
+  await page.getByTestId('schedule-composer-input').fill('每周一 9 点 周会');
+  await expect(page.getByTestId('schedule-composer-preview')).toContainText('周会');
 });
