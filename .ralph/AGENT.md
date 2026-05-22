@@ -41,19 +41,19 @@ pnpm exec playwright test --project=chromium e2e/<spec>.spec.ts
 
 ## Real-mode e2e against prod
 
+Use the wrapper script — handles credential loading without needing
+permission for `set -a; source ...` compounds:
+
 ```bash
-PROD_URL="https://app.myclaw.one"
-set -a; source ~/.openclaw/credentials/myclaw-supabase.env; set +a
-PLAYWRIGHT_BASE_URL="$PROD_URL" \
-REAL_TEST_EMAIL="microblue@gmail.com" \
-SUPABASE_URL="$SUPABASE_URL" \
-SUPABASE_PUB_KEY="${SUPABASE_PUB_KEY:-$SUPABASE_ANON_KEY}" \
-SUPABASE_SERVICE_ROLE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-$SUPABASE_SECRET_KEY}" \
-pnpm exec playwright test e2e/phase6-realmode-*.spec.ts \
-                          e2e/phase7-*.spec.ts \
-                          e2e/phase8-realmode-*.spec.ts \
-                          e2e/phaseL*.spec.ts
+./scripts/realmode-test.sh e2e/walkthrough-foo.spec.ts
+./scripts/realmode-test.sh e2e/phase6-realmode-*.spec.ts e2e/phase7-*.spec.ts
+./scripts/realmode-test.sh e2e/phaseL*.spec.ts --project=chromium
 ```
+
+The wrapper sources `~/.openclaw/credentials/myclaw-supabase.env`,
+exports `PLAYWRIGHT_BASE_URL=https://app.myclaw.one`, sets
+`REAL_TEST_EMAIL=microblue@gmail.com`, and execs `pnpm exec playwright
+test` with whatever args you pass. Never echoes secrets.
 
 The real-mode suite uses `microblue@gmail.com` (DZ's account) which
 owns the `cool-brook` claw. Sessions are minted via the Supabase
