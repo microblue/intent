@@ -247,11 +247,31 @@ protocol in PROMPT.md — **do not delete** the UI surface again.
     "附件功能还没开通,稍后再试" until applied.
   - Gateway vision pass-through tracked in the same hand-off as a
     follow-up; not blocking SPA-side feature completion.
-- [ ] **G5.** Settings export row. Build for real:
-  - "导出我的数据" button → calls `/api/export` (write a thin Edge
-    Function in `~/myclaw` — hand-off acceptable for the function
-    source; client wiring + UI lives here),
-  - Returns a ZIP of intents + messages + memory_facts as JSON.
+- [x] **G5.** Settings export row.
+  - Built client-side per CLAUDE.md's "SPA reads Supabase directly
+    with the anon key + RLS" rule — no Edge Function needed since
+    the per-user read scope is already enforced by table RLS.
+  - `src/lib/exportMyData.ts`: parallel `select *` from intents +
+    messages + memory_facts + schedule_events + user_preferences;
+    strips `user_id` from output rows; returns a schema-versioned
+    blob `{schema_version:1, exported_at, user:{id,email}, counts,
+    intents, messages, memory_facts, schedule_events, user_preferences}`.
+    `triggerDownload` uses an off-DOM `<a download>` with object URL;
+    `buildExportFilename` produces `myclaw-export-YYYYMMDD-HHMM.json`.
+  - `Settings.tsx`: `ExportDataRow` reinstates the row under 数据与隐私
+    with hint copy "想做的事 / 消息 / 助手记得的事 / 提醒, 一份 JSON
+    全打包". Real-mode signed-in click → fetch + download + success
+    toast (`已导出 N 条`). Mock-mode / signed-out click → friendly
+    "演示模式没有真实数据可导出。登录后再来试一次". `busy` state
+    flips the button to "准备中…" + disabled while the fetch runs.
+  - `e2e/export-my-data.spec.ts`: realmode chromium seeds throwaway
+    intent + memory_fact, clicks 导出, awaits the browser download
+    event, parses the JSON file, asserts `schema_version === 1`,
+    `user.id` matches the minted session user, and the seeded intent
+    + fact appear under the right keys. Cleans up afterwards. Green
+    on prod.
+  - F8 walkthrough re-run on both viewports — the new row is labeled
+    and present; no missing-label findings.
 
 ## Phase H — Lay-user readiness
 
