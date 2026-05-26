@@ -62,7 +62,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L2. Schedule firing (closes journey 02)
 
-- [ ] **L2.** Reminders never fire today. Build the firing sink:
+- [x] **L2.** Reminders never fire today. Build the firing sink:
   - Phase A (in-SPA polling): `useScheduleEvents` starts a
     `setInterval(60_000)` that scans for rows WHERE `user_id = me AND
     status='pending' AND fire_at <= NOW()`, surfaces an in-app toast +
