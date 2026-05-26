@@ -139,7 +139,7 @@ test.describe('Journey 04 — rail honest numbers + cross-component consistency'
       // Pass criterion 1: TeamPanel row count == intent_agents row count.
       const teamPanel = page.getByTestId('team-panel');
       await expect(teamPanel).toBeVisible({ timeout: 10_000 });
-      const memberRows = teamPanel.locator('[data-testid^="team-member-"]');
+      const memberRows = teamPanel.locator('li[data-testid^="team-member-"]');
       await expect(memberRows, `TeamPanel should show ${truthCount} members`).toHaveCount(
         truthCount,
       );
@@ -164,9 +164,12 @@ test.describe('Journey 04 — rail honest numbers + cross-component consistency'
       await page.keyboard.press('Escape');
 
       // Pass criterion 3: rail header meta "助手 N 位" matches truth.
+      // The rail window is a `<section>` whose direct child `<header>` is
+      // the drag-handle title bar — TeamPanel inside has its own
+      // `<header>`, so `.first()` keeps us on the outer rail window header.
       const teamWindow = page.locator('section', { hasText: '助手团队' }).first();
       await expect(teamWindow).toBeVisible({ timeout: 5_000 });
-      const teamMeta = await teamWindow.locator('header').innerText();
+      const teamMeta = await teamWindow.locator('header').first().innerText();
       const metaMatch = teamMeta.match(/(\d+)\s*位/);
       expect(metaMatch, `team window header should expose "N 位": "${teamMeta}"`).not.toBeNull();
       expect(Number(metaMatch![1]), '助手 N 位 must equal intent_agents truth').toBe(truthCount);
@@ -177,7 +180,7 @@ test.describe('Journey 04 — rail honest numbers + cross-component consistency'
       // Outline meta — find rail "计划" section meta "X/Y".
       const planWindow = page.locator('section', { hasText: '计划' }).first();
       if (await planWindow.isVisible().catch(() => false)) {
-        const planMeta = await planWindow.locator('header').innerText();
+        const planMeta = await planWindow.locator('header').first().innerText();
         const planMatch = planMeta.match(/(\d+)\/(\d+)/);
         if (planMatch) {
           expect(
@@ -188,7 +191,7 @@ test.describe('Journey 04 — rail honest numbers + cross-component consistency'
       }
       const filesWindow = page.locator('section', { hasText: '产出文件' }).first();
       if (await filesWindow.isVisible().catch(() => false)) {
-        const filesMeta = await filesWindow.locator('header').innerText();
+        const filesMeta = await filesWindow.locator('header').first().innerText();
         const filesMatch = filesMeta.match(/(\d+)\s*个/);
         if (filesMatch) {
           expect(Number(filesMatch[1]), 'files count must equal intent_artifacts(kind=file)').toBe(fileTruth);

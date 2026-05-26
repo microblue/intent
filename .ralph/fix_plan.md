@@ -124,7 +124,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L7. Real-mode rail data — outline / files (closes rest of journey 04)
 
-- [ ] **L7.** Build `useIntentArtifacts(intentId, kind?)`:
+- [x] **L7.** Build `useIntentArtifacts(intentId, kind?)`:
   - Real mode reads `public.intent_artifacts` filtered by user + intent
     + optional kind ∈ `{outline_node, file, plan_step, …}`.
   - Mock mode returns the existing mock arrays via `outlineFor` /
