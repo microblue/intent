@@ -109,10 +109,11 @@ test.describe('H3 — AgentPicker name + emoji audit (mock mode)', () => {
       path: `${ARTIFACTS}/walkthrough-agent-picker-open.png`,
     });
 
-    // Every menu option must contain its agent's name. We assert
-    // against the canonical 12-agent name set so we catch the case
-    // where a future regression removes the name span and leaves
-    // only the emoji avatar.
+    // Post-L4 the AgentPicker shows ONLY the intent's team, not the
+    // 12-persona catalog. Mock mode's default team is just `main`, so
+    // we assert the single Claw row carries both name + a visible
+    // label (not icon-only). The "+ 加入助手" CTA in TeamPanel is the
+    // surface that opens the full catalog for team additions.
     const optionLabels = await menu
       .locator('button[data-testid^="agent-option-"]')
       .evaluateAll((els) =>
@@ -123,33 +124,14 @@ test.describe('H3 — AgentPicker name + emoji audit (mock mode)', () => {
       );
     expect(
       optionLabels.length,
-      'every built-in agent should render an option row',
-    ).toBeGreaterThanOrEqual(13);
-    const expectedNames = [
-      'Claw',
-      '研究员',
-      '规划员',
-      '写手',
-      '机票助手',
-      '住宿助手',
-      '吃饭助手',
-      '陪练',
-      '比价员',
-      '提醒员',
-      '邮件助手',
-      '购物员',
-      '家人联络员',
-    ];
-    for (const name of expectedNames) {
-      const row = optionLabels.find((o) => o.text.includes(name));
-      expect(row, `option for ${name} should be present`).toBeTruthy();
-      // Each row must be more than just whitespace + emoji — i.e.
-      // contain the agent name string itself, not just an icon.
-      expect(
-        row!.text.length,
-        `${name} row should have visible label, not icon-only`,
-      ).toBeGreaterThan(name.length);
-    }
+      'team picker should expose at least one option row',
+    ).toBeGreaterThanOrEqual(1);
+    const clawRow = optionLabels.find((o) => o.text.includes('Claw'));
+    expect(clawRow, 'option for Claw should be present').toBeTruthy();
+    expect(
+      clawRow!.text.length,
+      'Claw row should have visible label, not icon-only',
+    ).toBeGreaterThan('Claw'.length);
 
     // Full enumeration: nothing in the menu may be label-less.
     const report = await enumerate(menu);

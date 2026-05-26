@@ -11,7 +11,6 @@ import {
   findMemoryFact,
   hermesProfiles,
   memoryFacts,
-  outlineFor,
   scheduleEvents,
   threadOutlineFor,
   tracesForMessage,
@@ -45,6 +44,7 @@ import { TeamPanel } from '@/components/TeamPanel';
 import { findBuiltinAgent, phaseVerbFor } from '@/lib/agents';
 import { useAgentActivity, type AgentActivity } from '@/data/useAgentActivity';
 import { useIntentAgents } from '@/data/useIntentAgents';
+import { useIntentArtifacts } from '@/data/useIntentArtifacts';
 import { useGateway } from '@/gateway/useGateway';
 import { useSession } from '@/lib/auth';
 import { env } from '@/lib/env';
@@ -106,6 +106,10 @@ export function IntentHomePage() {
   // 3-dot indicator for the "we just sent something" moment before
   // the gateway responds.
   const agentActivity = useAgentActivity(intentId);
+  // Read outline/files now (real or mock-fallback) so the hook lives in
+  // the top-level scope — placing it after the early returns below would
+  // violate Rules of Hooks.
+  const artifacts = useIntentArtifacts(intentId);
 
   if (isLoading) {
     return <IntentHomeSkeleton />;
@@ -148,8 +152,7 @@ export function IntentHomePage() {
     );
   }
 
-  const outline = outlineFor(intent.id);
-  const files = filesFor(intent.id);
+  const { outline, files, outlineDone, isMock } = artifacts;
 
   return isDesktop ? (
     <DesktopIntentHome
@@ -160,6 +163,8 @@ export function IntentHomePage() {
       onSend={chat.send}
       outline={outline}
       files={files}
+      outlineDone={outlineDone}
+      isMock={isMock}
       activeAgentId={chat.activeAgentId}
       onAgentChange={chat.setActiveAgentId}
     />
@@ -172,6 +177,8 @@ export function IntentHomePage() {
       onSend={chat.send}
       outline={outline}
       files={files}
+      outlineDone={outlineDone}
+      isMock={isMock}
       activeAgentId={chat.activeAgentId}
       onAgentChange={chat.setActiveAgentId}
     />
@@ -380,6 +387,8 @@ function MobileIntentHome({
   onSend,
   outline,
   files,
+  outlineDone,
+  isMock,
   activeAgentId,
   onAgentChange,
 }: {
@@ -390,11 +399,19 @@ function MobileIntentHome({
   onSend: (text: string) => void;
   outline: OutlineNode[];
   files: IntentFile[];
+  outlineDone: number;
+  isMock: boolean;
   activeAgentId: string;
   onAgentChange: (agentId: string) => void;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
-  const counts = conceptCountsFor(intent.id);
+  // In real mode the count-aggregate mock fires the mock-guard; the only
+  // count this surface actually reads is `pendingApprovals` for the urgent
+  // banner. That stays mock-only for now (Phase N) — read 0 in real mode
+  // so the banner suppresses itself rather than lying.
+  const counts = isMock
+    ? conceptCountsFor(intent.id)
+    : { pendingApprovals: 0 };
   const navigate = useNavigate();
   const { team } = useIntentAgents(intent.id);
   const teamKeys = team.map((m) => m.agentKey);
@@ -476,6 +493,8 @@ function MobileIntentHome({
         intent={intent}
         outline={outline}
         files={files}
+        outlineDone={outlineDone}
+        isMock={isMock}
       />
     </div>
   );
@@ -487,14 +506,34 @@ function InfoSheet({
   intent,
   outline,
   files,
+  outlineDone,
+  isMock,
 }: {
   open: boolean;
   onClose: () => void;
   intent: Intent;
   outline: OutlineNode[];
   files: IntentFile[];
+  outlineDone: number;
+  isMock: boolean;
 }) {
-  const counts = conceptCountsFor(intent.id);
+  // Real-mode-safe counts: outline/files come from useIntentArtifacts via
+  // props; the rest (pendingApprovals/schedule/memoryFacts) is still
+  // mock-only — fall back to 0 in real mode so the badges hide instead
+  // of triggering the mock-guard. Phase N tracks per-section real-mode
+  // counts for schedule/memory/approvals.
+  const counts = isMock
+    ? conceptCountsFor(intent.id)
+    : {
+        outlineDone,
+        outlineTotal: outline.length,
+        files: files.length,
+        pendingApprovals: 0,
+        schedule: 0,
+        memoryFacts: 0,
+        running: 0,
+        agents: 0,
+      };
   const navigate = useNavigate();
   const devMode = useUI((s) => s.devMode);
   const bind = bindingsFor(intent.id);
@@ -584,9 +623,10 @@ function InfoSheet({
 
         {/* Thread outline — primary nav for long threads. Sheet closes
             first so the user lands on the scrolled message, not back at
-            the sheet they just dismissed. */}
+            the sheet they just dismissed. Real mode has no thread-outline
+            data source yet (schema TBD), so the section auto-hides. */}
         {(() => {
-          const intentOutlineEntries = threadOutlineFor(intent.id);
+          const intentOutlineEntries = isMock ? threadOutlineFor(intent.id) : [];
           if (intentOutlineEntries.length === 0) return null;
           return (
             <div className="px-5 pb-3">
@@ -801,6 +841,8 @@ function DesktopIntentHome({
   onSend,
   outline,
   files,
+  outlineDone,
+  isMock,
   activeAgentId,
   onAgentChange,
 }: {
@@ -811,6 +853,8 @@ function DesktopIntentHome({
   onSend: (text: string) => void;
   outline: OutlineNode[];
   files: IntentFile[];
+  outlineDone: number;
+  isMock: boolean;
   activeAgentId: string;
   onAgentChange: (agentId: string) => void;
 }) {
@@ -857,6 +901,8 @@ function DesktopIntentHome({
                 intent={intent}
                 outline={outline}
                 files={files}
+                outlineDone={outlineDone}
+                isMock={isMock}
                 activeAgentId={activeAgentId}
                 onPickAgent={onAgentChange}
               />
@@ -1121,9 +1167,15 @@ function ReflectionModal({
 }) {
   const navigate = useNavigate();
   const addFact = useUI((s) => s.addUserMemoryFact);
-  const reflection = useMemo(() => buildReflection(intent), [intent.id]);
+  // Compute reflection only when the modal opens — otherwise the mock
+  // sources it reads (threadOutlineFor / filesFor) fire the mock-guard
+  // on every /intent mount in real mode even though the modal is hidden.
+  const reflection = useMemo(
+    () => (open ? buildReflection(intent) : null),
+    [open, intent.id],
+  );
 
-  if (!open) return null;
+  if (!open || !reflection) return null;
 
   const onSave = () => {
     addFact({
@@ -1301,6 +1353,8 @@ function IntentRail({
   intent,
   outline,
   files,
+  outlineDone,
+  isMock,
   activeAgentId,
   onPickAgent,
 }: {
@@ -1308,10 +1362,27 @@ function IntentRail({
   intent: Intent;
   outline: OutlineNode[];
   files: IntentFile[];
+  outlineDone: number;
+  isMock: boolean;
   activeAgentId: string;
   onPickAgent: (agentKey: string) => void;
 }) {
-  const counts = conceptCountsFor(intent.id);
+  // Counts: mock mode pulls the aggregate fixture; real mode computes
+  // outline/files inline from props (the only counts the rail actually
+  // reads). Schedule/memory/approvals stay 0 in real mode for now — the
+  // sections that depend on them auto-hide via the availability check.
+  const counts = isMock
+    ? conceptCountsFor(intent.id)
+    : {
+        outlineDone,
+        outlineTotal: outline.length,
+        files: files.length,
+        pendingApprovals: 0,
+        schedule: 0,
+        memoryFacts: 0,
+        running: 0,
+        agents: 0,
+      };
   const devMode = useUI((s) => s.devMode);
   const bind = bindingsFor(intent.id);
   const profile = bind ? hermesProfiles.find((p) => p.key === bind.profileKey) : undefined;
@@ -1322,9 +1393,16 @@ function IntentRail({
   const { team: realTeam } = useIntentAgents(intent.id);
   const teamCount = realTeam.length;
 
-  const intentFacts = memoryFacts.filter((m) => m.originIntentId === intent.id);
-  const intentSchedules = scheduleEvents.filter((s) => s.intentId === intent.id);
-  const intentOutline = threadOutlineFor(intent.id);
+  // memory_facts / schedule_events filters are mock-only data sources
+  // for now — in real mode they return empty (Phase N to wire real
+  // per-intent reads). Thread outline has no schema yet → empty in real.
+  const intentFacts = isMock
+    ? memoryFacts.filter((m) => m.originIntentId === intent.id)
+    : [];
+  const intentSchedules = isMock
+    ? scheduleEvents.filter((s) => s.intentId === intent.id)
+    : [];
+  const intentOutline = isMock ? threadOutlineFor(intent.id) : [];
 
   const railOrder = useUI((s) => s.railOrder);
   const railHidden = useUI((s) => s.railHidden);

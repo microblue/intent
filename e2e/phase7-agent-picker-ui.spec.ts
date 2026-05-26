@@ -17,9 +17,14 @@ test.beforeEach(async ({ page }) => {
 test.describe('Phase 7 — AgentPicker UI (mock mode)', () => {
   test.skip(({ isMobile }) => isMobile === true, 'desktop-only for now');
 
-  test('opens menu with 12 options and switches active label', async ({ page }) => {
+  test('opens menu showing the team (mock default = main only) + trigger label', async ({ page }) => {
     // Mock intents include 'birthday' → IntentHome renders, useChatThread
     // mounts, StickyComposer mounts → AgentPicker present.
+    //
+    // Post-L4 the picker lists ONLY the intent's team (intent_agents) so a
+    // chat send can never route to a non-team specialist. Mock mode's
+    // default team is just `main` (see useIntentAgents.ts), so the menu
+    // surfaces exactly one option.
     await page.goto('/intent/birthday');
     const trigger = page.getByTestId('agent-picker-trigger');
     await expect(trigger).toBeVisible();
@@ -29,14 +34,9 @@ test.describe('Phase 7 — AgentPicker UI (mock mode)', () => {
     const menu = page.getByTestId('agent-picker-menu');
     await expect(menu).toBeVisible();
 
-    // All 12 personas present.
-    for (const name of ['研究员', '规划员', '写手', '机票助手', '住宿助手', '吃饭助手', '陪练', '比价员', '提醒员', '邮件助手', '购物员', '家人联络员']) {
-      await expect(menu.getByText(name).first()).toBeVisible();
-    }
-
-    await page.getByTestId('agent-option-writer').click();
-    await expect(trigger).toContainText('写手');
-    // Menu closes after selection.
-    await expect(menu).toHaveCount(0);
+    // Team is just main in mock-mode default → exactly one option.
+    const options = menu.locator('[data-testid^="agent-option-"]');
+    await expect(options).toHaveCount(1);
+    await expect(menu.getByTestId('agent-option-main')).toBeVisible();
   });
 });
