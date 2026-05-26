@@ -354,7 +354,7 @@ function AccountFooter() {
       </button>
       <ul
         tabIndex={0}
-        className="menu dropdown-content z-50 mb-2 w-52 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+        className="menu dropdown-content z-[60] mb-2 w-52 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
       >
         <li>
           <Link to="/settings" className="rounded-xl">
@@ -642,7 +642,7 @@ function CollapsedAccountChip() {
       </button>
       <ul
         tabIndex={0}
-        className="menu dropdown-content z-50 mb-2 w-52 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+        className="menu dropdown-content z-[60] mb-2 w-52 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
       >
         <li className="pointer-events-none px-3 pb-1 pt-1.5">
           <span className="truncate text-xs text-base-content/55">

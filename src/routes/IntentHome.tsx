@@ -1091,7 +1091,7 @@ function SlimHeader({
           </button>
           <ul
             tabIndex={0}
-            className="menu dropdown-content z-50 mt-2 w-44 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+            className="menu dropdown-content z-[60] mt-2 w-44 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
           >
             <li>
               <button
@@ -1770,7 +1770,7 @@ function AddSectionMenu({ hiddenKeys }: { hiddenKeys: RailSectionKey[] }) {
       </button>
       <ul
         tabIndex={0}
-        className="menu dropdown-content z-30 mt-2 w-56 rounded-box bg-base-100 p-2 shadow-lg ring-1 ring-base-300/50"
+        className="menu dropdown-content z-[60] mt-2 w-56 rounded-box bg-base-100 p-2 shadow-lg ring-1 ring-base-300/50"
       >
         <li className="menu-title">加回这些</li>
         {hiddenKeys.map((k) => (

@@ -161,11 +161,17 @@ function Chrome({ children }: { children: React.ReactNode }) {
           // so dropdowns (account menu, ClawPicker) overlay the chat
           // composer when they extend past the sidebar's right edge in
           // collapsed mode — bug fixed 2026-05-22.
-          className="overflow-hidden relative z-10"
+          //
+          // overflow-visible (not overflow-hidden) on the panel itself so
+          // the account / claw dropdowns can extend past the sidebar's
+          // right edge into the content pane without getting clipped. The
+          // wrapper has no overflow-y-auto either — overflow-y-auto would
+          // computed-promote overflow-x to auto (CSS spec) and re-clip the
+          // dropdown. Sidebar's own "recent intents" list has its own
+          // overflow-y-auto, so nothing else needs to scroll here.
+          className="overflow-visible relative z-10"
         >
-          <div className="h-full overflow-y-auto">
-            <Sidebar collapsed={sidebarCollapsed} />
-          </div>
+          <Sidebar collapsed={sidebarCollapsed} />
         </Panel>
         <PanelResizeHandle className="group relative w-1 bg-base-300/40 transition hover:bg-primary/40 data-[resize-handle-state=drag]:bg-primary">
           <span
@@ -175,7 +181,7 @@ function Chrome({ children }: { children: React.ReactNode }) {
             <span className="h-8 w-0.5 rounded-full bg-base-content/15 opacity-0 transition group-hover:opacity-100" />
           </span>
         </PanelResizeHandle>
-        <Panel id="content" order={2} className="overflow-hidden">
+        <Panel id="content" order={2} className="overflow-hidden relative z-0">
           <div className="h-full overflow-y-auto">{children}</div>
         </Panel>
       </PanelGroup>
