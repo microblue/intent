@@ -162,14 +162,13 @@ function Chrome({ children }: { children: React.ReactNode }) {
           // composer when they extend past the sidebar's right edge in
           // collapsed mode — bug fixed 2026-05-22.
           //
-          // overflow-visible (not overflow-hidden) on the panel itself so
-          // the account / claw dropdowns can extend past the sidebar's
-          // right edge into the content pane without getting clipped. The
-          // wrapper has no overflow-y-auto either — overflow-y-auto would
-          // computed-promote overflow-x to auto (CSS spec) and re-clip the
-          // dropdown. Sidebar's own "recent intents" list has its own
-          // overflow-y-auto, so nothing else needs to scroll here.
-          className="overflow-visible relative z-10"
+          // The Panel needs overflow:visible so the sidebar's account /
+          // claw-picker dropdowns can extend past the sidebar's right
+          // edge into the content pane without getting clipped. Tailwind's
+          // `overflow-visible` class is shadowed by react-resizable-panels'
+          // inline `overflow: hidden`, so we override via `style` here.
+          style={{ overflow: 'visible' }}
+          className="relative z-10"
         >
           <Sidebar collapsed={sidebarCollapsed} />
         </Panel>
