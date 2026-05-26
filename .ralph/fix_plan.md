@@ -89,7 +89,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L4. TeamPanel ↔ AgentPicker consistency (closes part of journey 04)
 
-- [ ] **L4.** AgentPicker imports `BUILTIN_AGENTS` (12 personas);
+- [x] **L4.** AgentPicker imports `BUILTIN_AGENTS` (12 personas);
   TeamPanel reads `intent_agents` (variable, 1–N). They disagree.
   Fix:
   - AgentPicker consumes the same `useIntentTeam(intentId)` hook
@@ -102,7 +102,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L5. TeamPanel rows clickable → switch active agent (closes journey 04 step 6)
 
-- [ ] **L5.** Add an onClick to each TeamPanel member row:
+- [x] **L5.** Add an onClick to each TeamPanel member row:
   - Click row → `onPickAgent(agentKey)` → updates `useChatThread`'s
     `activeAgentId`.
   - Visual: active member shows a `ring-2 ring-primary` and a "正在
