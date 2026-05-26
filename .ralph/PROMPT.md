@@ -51,6 +51,53 @@ one-sentence reason + "reopen when:" condition + remove the broken UI
 bit (not the data wiring). Deferred items count as open until the user
 explicitly accepts the deferral.
 
+## Hard ban: UI presence ≠ implementation
+
+This product was prototyped in Phase 1 as a **mock-only SPA**. Many
+routes have polished, well-styled UI surfaces that read from
+`@/mocks/*` or write to in-memory Zustand only. **Looking finished is
+not being finished.**
+
+Before you mark a feature `[x]`:
+
+- **Real data source on read paths.** If the page displays a list /
+  count / detail, that data MUST come from Supabase (or another real
+  service) in real mode. Reading from `@/mocks` in real mode is a bug
+  — `mock-guard.ts` should fire 0 times during real-mode walkthroughs.
+- **Real persistence on write paths.** If the UI has a composer / form
+  / toggle / button that "saves" something, the action MUST result in
+  a Supabase row INSERT/UPDATE (or external API write). Toasting
+  "已保存" while only mutating Zustand is a bug.
+- **Refresh-survives.** Any user-visible change a feature produces
+  must still be visible after a hard page refresh. Test:
+  `page.reload(); await expect(<thing>).toBeVisible();`
+- **Cross-session-survives.** Sign out, sign back in (or open a fresh
+  context with the same session); the change must still be there.
+- **UI copy honesty.** If the surface promises automation
+  ("我会顺手记下重要的事"), there MUST be a code path that fulfils
+  that promise under realistic conditions. No aspirational copy.
+  If the implementation isn't there yet, change the copy first, build
+  the feature second.
+- **Empty state ≠ "nothing wired".** "0 个" / "还没有" must be the
+  result of a real query returning no rows, never the fallback of a
+  hook that hasn't been written yet. If `mock-guard` fires, it isn't
+  empty — it's missing.
+
+Phase-1 UI-only surfaces you should specifically suspect (verify each
+end-to-end before trusting):
+
+- `/now` — running / completed activity buckets, approvals
+- `/memory` — auto-record path, cross-intent recall
+- `/schedule` — reminder firing (NOT just INSERT)
+- `/permissions` — capability toggles persisting + actually gating
+- `/archive` — restore action persisting
+- `/settings` — preferences, activation code redemption
+- Intent rail — outline, plan progress, files, agent count
+- Reflection / 复盘 cards — Zustand only today, no DB
+
+When you find such a gap, the fix is to BUILD the missing real path
+(see "Hard ban: no punting") — not to soften the journey assertion.
+
 ## The three new checks (v3 additions)
 
 Run these every loop, not only at audit time.
@@ -109,7 +156,8 @@ effect — not just "the click didn't throw."
 2. **Read only the spec section the item references** (use Read with
    `offset`/`limit`).
 3. **Implement the item for real.** Bias toward the smallest change
-   that produces working behavior. Build, don't delete.
+   that produces working behavior. Build, don't delete. Honor the
+   "UI presence ≠ implementation" rule (see above).
 4. **Verify locally:** `pnpm typecheck && pnpm build`. If the change
    touches a route or interactive element, run the relevant walkthrough
    spec + the relevant journey spec against the local dev build.
@@ -119,8 +167,72 @@ effect — not just "the click didn't throw."
    - `vercel deploy --prod --token "$VERCEL_TOKEN" --yes --non-interactive`.
 6. **Real-mode against prod**: `./scripts/realmode-test.sh
    e2e/<related>.spec.ts e2e/journey-<related>.spec.ts`.
-7. **Mark `[x]` only when** code is in prod + e2e green + the journey
-   that touches this surface still passes.
+7. **Senior-QA hands-on pass** (mandatory — see "QA pass" below).
+   This is the step that catches the bugs e2e missed. Without it you
+   are not allowed to mark the item `[x]`.
+8. **Mark `[x]` only when** code is in prod + e2e green + the journey
+   that touches this surface still passes + the QA pass returned zero
+   surprises (or every surprise has been filed into Phase N).
+
+## QA pass (mandatory before marking [x])
+
+A "senior QA in the user's shoes" pass. Not a smoke test. Not a code
+audit. **You pretend to be a real person trying to accomplish the
+goal the just-changed feature enables, and you scrutinize every step
+the way a hostile reviewer would.**
+
+The protocol, per feature touched in this loop:
+
+1. **Pick a USER GOAL the feature is supposed to enable.** Not "the
+   button renders" — "I want to remember my daughter's allergy" or
+   "I want to be reminded at 9am" or "I want the team I see in the
+   sidebar to be the team that actually answers me." Goals are
+   user-language, not feature-language.
+
+2. **Drive the feature with Playwright** (headed-equivalent via
+   `page.screenshot({ fullPage: true })` after each step). Use
+   `injectRealSession` + real prod URL. Do not mock anything you
+   wouldn't mock if it were a manual session.
+
+3. **Read the screenshot after every step** — Read tool accepts PNGs
+   as image input. Look at it the way an unfamiliar user would. Ask:
+   - **Did what I expect just happen?** If I clicked save, do I see
+     "saved" + the new data + is it still there if I refresh?
+   - **Is the feedback clear?** Or did the page change in a way the
+     user wouldn't notice?
+   - **Did anything new appear that I didn't expect?** Stray placeholder
+     text, mock data, broken layout, English leak, "0 个" when there
+     are clearly some?
+   - **What's missing that I expected?** Confirmation, undo, an entry
+     in some list elsewhere, a notification?
+   - **Could this confuse me into thinking it failed when it worked,
+     or worked when it failed?**
+   - **Does the URL / DOM survive a refresh?** Hit F5 and re-check.
+     Sign out / sign back in and re-check.
+   - **Does this fail silently?** Watch network tab + console for
+     4xx/5xx/errors. A toast saying success while the network says
+     401 is the worst-case bug.
+
+4. **Run the cross-surface check.** If this feature should be
+   visible elsewhere (a memory added on /memory should appear in
+   chat context; an intent created in /new should show on /),
+   navigate there and verify. End-to-end means END to END.
+
+5. **For every surprise, decide on the spot:**
+   - **Fix in this loop** if small + clearly within the item's scope.
+   - **Add to Phase N** if larger / orthogonal — file with
+     `### N<n>. <surface>` and the screenshot path + expected vs actual.
+   - **Never lower the assertion** to make the QA pass.
+
+6. **Emit a QA narrative in the status block** (see below) — three to
+   five plain-Chinese sentences describing what you tried, what you
+   saw, and what you concluded. Not a bulleted summary — a narrative
+   a senior QA would write. If you wrote no narrative, you didn't do
+   the pass.
+
+The QA pass usually adds 5–10 minutes to a loop. Budget for it. The
+two previous runs that skipped this step shipped 8+ bugs DZ found in
+5 minutes of real use; those minutes belong inside the loop, not after.
 
 ## Journeys (v3 core)
 
@@ -197,13 +309,20 @@ RALPH_STATUS:
   items_marked_complete: <list>
   items_marked_deferred: <list with reason>
   journey_passes: <pass/fail per journey>
-  walkthrough_findings: <count of new Phase J items added>
+  walkthrough_findings: <count of new Phase N items added>
+  qa_pass_narrative: |
+    <3-5 plain-Chinese sentences from the senior-QA pass.
+     What you tried as a user, what you actually saw, what
+     concerns came up, whether the feature kept its promise.
+     If you skipped the QA pass, write "skipped" and you may
+     NOT mark anything [x] this loop.>
+  ui_only_suspects_audited: <list of UI-only suspect surfaces verified end-to-end this loop, e.g. "/now (running bucket reads agent_calls), /memory (auto-record extractor)">
   mock_guard_firings: <count of [mock-in-real-mode] errors seen this loop>
   cycle: <integer>
   clean_cycles_in_a_row: <0..3>
   next_target: <next [ ] item or "journey replay">
   blocked_on: <human action needed, or "none">
-EXIT_SIGNAL: <true ONLY when: zero [ ] items + all journeys pass + mock_guard_firings = 0 + clean_cycles_in_a_row >= 3>
+EXIT_SIGNAL: <true ONLY when: zero [ ] items + all journeys pass + mock_guard_firings = 0 + clean_cycles_in_a_row >= 3 + every UI-only suspect has been verified end-to-end>
 ```
 
 ## When NOT to set EXIT_SIGNAL
@@ -213,6 +332,13 @@ EXIT_SIGNAL: <true ONLY when: zero [ ] items + all journeys pass + mock_guard_fi
 - A hand-off doc is open for non-cross-repo work.
 - A `## Deferred` item exists that the user hasn't explicitly accepted.
 - `clean_cycles_in_a_row < 3`.
+- Any of the UI-only suspect surfaces (see "Hard ban: UI presence ≠
+  implementation") hasn't been audited end-to-end and confirmed to
+  read/write real data.
+- The QA pass for any feature you closed this run produced surprises
+  that haven't been filed as Phase N items or fixed.
 
 Until all of those are clear, the loop continues. Be relentless. Build,
-don't punt. The product must keep its promises.
+don't punt. **The product must keep its promises** — UI presence is
+not implementation, and a passing test is not a working feature unless
+a real user can sit down and complete the goal end-to-end.
