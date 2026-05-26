@@ -200,7 +200,7 @@ function AddReminderComposer() {
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="试试「每周一 9 点 周会」"
+        placeholder="什么时候 提醒你做什么 —— 试试「每周一 9 点 周会」"
         className="input input-bordered w-full"
         autoComplete="off"
       />
@@ -259,7 +259,7 @@ function AddReminderComposer() {
           data-testid="schedule-composer-submit"
           className="btn btn-primary rounded-full"
         >
-          {isPending ? '保存中…' : '记下来'}
+          {isPending ? '保存中…' : '记一下'}
         </button>
       </div>
 
