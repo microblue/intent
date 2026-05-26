@@ -84,8 +84,12 @@ export function useMessages(intentId: string): MessagesResult {
   // append would duplicate.
   useEffect(() => {
     if (!useReal || !intentId) return;
+    // Per-effect-run UUID in the topic so React 19 strict-mode's
+    // mount → cleanup → mount can't hand the same cached channel to
+    // the second mount before removeChannel's round-trip completes
+    // (see useApprovals.ts for full context).
     const channel = supabase
-      .channel(`messages:${intentId}`)
+      .channel(`messages:${intentId}:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {

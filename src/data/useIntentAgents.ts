@@ -87,10 +87,15 @@ export function useIntentAgents(intentId: string | null): IntentAgentsResult {
   });
 
   // Realtime: any insert/delete on intent_agents for this intent → refetch.
+  // Channel name uses a per-effect-run UUID so React 19 strict-mode
+  // mount → cleanup → mount cycles never collide on the same channel
+  // topic (see useApprovals.ts for the full explanation; the same
+  // `cannot add postgres_changes callbacks ... after subscribe()`
+  // crash surfaced here and broke /intent in real mode).
   useEffect(() => {
     if (!useReal || !intentId) return;
     const channel = supabase
-      .channel(`intent_agents:${intentId}`)
+      .channel(`intent_agents:${intentId}:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
