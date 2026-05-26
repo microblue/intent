@@ -42,7 +42,7 @@ Playwright spec. Each `pass_criteria` line is a separate `expect(...)`.
 
 ### L1. Memory auto-record (closes journey 01)
 
-- [ ] **L1.** UI promises "我会顺手把重要的事写下来" but no code path
+- [x] **L1.** UI promises "我会顺手把重要的事写下来" but no code path
   extracts memory candidates from chat. Build it:
   - On each user message INSERT, run a lightweight candidate
     extractor (keyword + LLM call via existing gateway path).
