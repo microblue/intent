@@ -87,8 +87,9 @@ function extractTime(input: string): { hour: number; minute: number; rest: strin
       .trim();
     return { hour, minute, rest };
   }
-  // "9 点 (30 分)" / "9点半" / "上午 11 点"
-  const dot = input.match(/(下午|晚上|傍晚|上午|早上|早晨|清晨|中午|凌晨)?\s*([一二三四五六七八九十0-9]{1,3})\s*点\s*(半|[一二三四五六七八九十0-9]{1,3})?\s*(分)?/);
+  // "9 点 (30 分)" / "9点半" / "上午 11 点" / "晚 9 点"
+  // "晚" alone (vs "晚上") is common shorthand — e.g. "每天晚 9 点".
+  const dot = input.match(/(下午|晚上|晚|傍晚|上午|早上|早晨|清晨|中午|凌晨)?\s*([一二三四五六七八九十0-9]{1,3})\s*点\s*(半|[一二三四五六七八九十0-9]{1,3})?\s*(分)?/);
   if (!dot) return null;
   const ampm = dot[1] ?? '';
   let hour = parseChineseInt(dot[2]);
@@ -99,7 +100,7 @@ function extractTime(input: string): { hour: number; minute: number; rest: strin
     const m = parseChineseInt(dot[3]);
     if (!Number.isNaN(m) && m >= 0 && m < 60) minute = m;
   }
-  if ((ampm === '下午' || ampm === '晚上' || ampm === '傍晚') && hour < 12) hour += 12;
+  if ((ampm === '下午' || ampm === '晚上' || ampm === '晚' || ampm === '傍晚') && hour < 12) hour += 12;
   if (ampm === '中午' && hour < 6) hour = 12; // "中午 12" stays 12; "中午" alone → noon
   if (ampm === '凌晨' && hour >= 12) hour -= 12;
   if ((ampm === '上午' || ampm === '早上' || ampm === '早晨' || ampm === '清晨') && hour === 12) hour = 0;
@@ -130,6 +131,33 @@ function cleanTitle(rest: string): string {
 export function parseReminder(input: string, now: Date = new Date()): ParsedReminder | null {
   const raw = input.trim();
   if (!raw) return null;
+
+  // ───── Pattern 0: X 秒/分/分钟/小时/天 后 [标题] ────────────────
+  // Handles relative offsets like "30 秒后 吃药" / "5 分钟后 出门" /
+  // "1 小时后 喝水" / "2 天后 复诊". Useful for quick test reminders
+  // and the natural way users phrase short-term timers.
+  const relOffset = raw.match(/^([一二三四五六七八九十0-9]{1,3}(?:\.\d{1,3})?)\s*(秒钟|秒|分钟|分|小时|钟头|个钟头|时|天|日)\s*(后|以后|之后)/);
+  if (relOffset) {
+    const nDigits = relOffset[1];
+    const n = /^\d+(?:\.\d+)?$/.test(nDigits)
+      ? parseFloat(nDigits)
+      : parseChineseInt(nDigits);
+    if (Number.isFinite(n) && n > 0) {
+      const unit = relOffset[2];
+      let ms = 0;
+      if (unit === '秒' || unit === '秒钟') ms = n * 1000;
+      else if (unit === '分' || unit === '分钟') ms = n * 60_000;
+      else if (unit === '小时' || unit === '钟头' || unit === '个钟头' || unit === '时') ms = n * 3_600_000;
+      else if (unit === '天' || unit === '日') ms = n * 86_400_000;
+      if (ms > 0) {
+        const rest = raw.slice(relOffset[0].length).trim();
+        const title = cleanTitle(rest);
+        if (!title) return null;
+        const fireAt = new Date(now.getTime() + ms);
+        return { title, fireAt: fireAt.toISOString() };
+      }
+    }
+  }
 
   // ───── Pattern 1: 每天 [时间] [标题] ─────────────────────────────
   if (/^每天/.test(raw) || /^每日/.test(raw)) {

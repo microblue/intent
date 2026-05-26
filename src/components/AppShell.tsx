@@ -10,6 +10,7 @@ import { useUI } from '@/state/ui';
 import { useIsDesktop } from '@/lib/useMediaQuery';
 import { useSession } from '@/lib/auth';
 import { useClaws } from '@/data/useClaws';
+import { useScheduleFiringSink } from '@/data/useScheduleFiringSink';
 import { env } from '@/lib/env';
 import { Sidebar } from './Sidebar';
 import { BottomDock } from './BottomDock';
@@ -90,6 +91,11 @@ function Chrome({ children }: { children: React.ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const isChatRoute = path.startsWith('/intent/');
   const showMobileDock = !isDesktop && !isChatRoute;
+
+  // Drive the in-app reminder firing sink as long as the shell is
+  // mounted (i.e. for any signed-in user, on any route). The hook
+  // is no-op outside real-mode + signed-in.
+  useScheduleFiringSink();
 
   const sidebarCollapsed = useUI((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useUI((s) => s.setSidebarCollapsed);
