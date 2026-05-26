@@ -31,6 +31,14 @@ import {
   appendLocalAssistantMessage,
 } from '@/data/useMessages';
 import { useGatewayChat } from '@/data/useGatewayChat';
+import {
+  useAutoAddMemoryFact,
+  useMemoryFacts,
+} from '@/data/useMemoryFacts';
+import {
+  buildMemoryContextPrefix,
+  extractMemoryCandidates,
+} from '@/lib/memoryExtract';
 import { AgentPicker } from '@/components/AgentPicker';
 import { Markdown } from '@/components/Markdown';
 import { TeamPanel } from '@/components/TeamPanel';
@@ -195,6 +203,14 @@ function useChatThread(intentId: string) {
   const [typing, setTyping] = useState(false);
   const typingResetRef = useRef<number | null>(null);
   const rateLimiterRef = useRef(createSendRateLimiter());
+  // L1 memory auto-record: extract high-confidence facts from each
+  // user message + inject existing facts as cross-intent context
+  // before sending to the gateway. Mock mode no-ops on auto-add but
+  // still reads from mockMemoryFacts for the context prefix.
+  const { facts: memoryFactList } = useMemoryFacts();
+  const { autoAdd: autoAddMemoryFact } = useAutoAddMemoryFact();
+  const memoryFactsRef = useRef(memoryFactList);
+  memoryFactsRef.current = memoryFactList;
 
   // When the gateway delivers an assistant reply, useGatewayChat pushes
   // it into the message cache via appendLocalAssistantMessage. The
@@ -234,6 +250,47 @@ function useChatThread(intentId: string) {
       return;
     }
 
+    // L1 memory auto-record: pull high-confidence candidates out of
+    // the user message and silently INSERT them into memory_facts.
+    // Dedupe against the in-cache fact list so a repeated message
+    // doesn't create duplicates. Mock mode no-ops in autoAdd, so the
+    // call shape is uniform regardless of mode.
+    const candidates = extractMemoryCandidates(text);
+    const autoSavable = candidates.filter((c) => c.confidence >= 0.9);
+    const newlyAddedFacts: typeof memoryFactList = [];
+    for (const cand of autoSavable) {
+      const dup = memoryFactsRef.current.some(
+        (f) => f.text.trim() === cand.text.trim(),
+      );
+      if (dup) continue;
+      try {
+        const added = await autoAddMemoryFact({
+          text: cand.text,
+          category: cand.category,
+          originIntentId: intentId,
+        });
+        if (added) {
+          newlyAddedFacts.push(added);
+          toast(`记下了:${cand.text}`, {
+            id: `mem-${cand.text}`,
+            duration: 4000,
+          });
+        }
+      } catch {
+        // autoAdd already swallows / warns — don't block chat.
+      }
+    }
+
+    // Build the cross-intent recall prefix from currently-known
+    // facts + anything we just added on this turn. Only categories
+    // about-you / people / preferences contribute; project-scoped
+    // facts stay scoped to their on-claw session memory.
+    const recallSourceFacts = [
+      ...memoryFactsRef.current,
+      ...newlyAddedFacts,
+    ];
+    const contextPrefix = buildMemoryContextPrefix(recallSourceFacts);
+
     // Real mode + gateway connected: hand off to the live claw. The
     // assistant reply will arrive via the chat event subscription in
     // useGatewayChat and land in the message cache.
@@ -246,7 +303,7 @@ function useChatThread(intentId: string) {
         typingResetRef.current = null;
       }, 60_000);
       try {
-        await sendViaGateway(text);
+        await sendViaGateway(text, { contextPrefix });
       } catch (err) {
         setTyping(false);
         toast(friendlyError(err, 'claw 没回应,稍后再试'));

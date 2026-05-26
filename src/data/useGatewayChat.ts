@@ -49,8 +49,17 @@ interface GatewayChatResult {
    * Fire the user's text at the agent. Resolves once the send is
    * acknowledged (NOT when the reply arrives — listen to messages
    * via useMessages for that). Throws if the gateway is offline.
+   *
+   * `opts.contextPrefix` is prepended to the message before it
+   * leaves the SPA. The persisted user message (via useSendMessage)
+   * stays clean — only the gateway sees the prefix. Used by L1
+   * cross-intent memory recall: the chat thread injects the user's
+   * memory_facts so the agent can weave them in.
    */
-  sendViaGateway: (text: string) => Promise<void>;
+  sendViaGateway: (
+    text: string,
+    opts?: { contextPrefix?: string },
+  ) => Promise<void>;
 }
 
 export function useGatewayChat(
@@ -200,7 +209,10 @@ export function useGatewayChat(
   });
 
   const sendViaGateway = useCallback(
-    async (text: string): Promise<void> => {
+    async (
+      text: string,
+      opts?: { contextPrefix?: string },
+    ): Promise<void> => {
       if (!connected) {
         throw new Error('gateway is not connected');
       }
@@ -216,13 +228,15 @@ export function useGatewayChat(
           },
         );
       }
+      const prefix = opts?.contextPrefix ?? '';
+      const messageOnWire = prefix ? `${prefix}${trimmed}` : trimmed;
       await gatewaySend('sessions.send', {
         key,
-        message: trimmed,
+        message: messageOnWire,
         idempotencyKey: `aios-${intentId}-${Date.now()}`,
       });
     },
-    [connected, key, gatewaySend, intentId],
+    [connected, key, gatewaySend, intentId, agentId],
   );
 
   return { connected, sendViaGateway };

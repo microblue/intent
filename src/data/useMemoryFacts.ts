@@ -144,6 +144,58 @@ export function useAddMemoryFact(): AddMemoryFactResult {
   };
 }
 
+export interface AutoAddMemoryFactInput extends AddMemoryFactInput {}
+
+export interface AutoAddMemoryFactResult {
+  /**
+   * Insert a fact extracted from chat — silent in mock mode (returns
+   * `null` instead of throwing) so the chat send never aborts because
+   * the user is in the demo. Real mode inserts the row and refreshes
+   * the cache. Used by the L1 memory auto-record pipeline in
+   * `useChatThread`.
+   */
+  autoAdd: (input: AutoAddMemoryFactInput) => Promise<MemoryFact | null>;
+  isMock: boolean;
+}
+
+export function useAutoAddMemoryFact(): AutoAddMemoryFactResult {
+  const { signedIn, user } = useSession();
+  const queryClient = useQueryClient();
+  const useReal = env.useRealData && signedIn;
+
+  const autoAdd = async (
+    input: AutoAddMemoryFactInput,
+  ): Promise<MemoryFact | null> => {
+    const text = input.text.trim();
+    if (!text) return null;
+    if (!useReal) return null;
+    if (!user?.id) return null;
+
+    const { data, error } = await supabase
+      .from('memory_facts')
+      .insert({
+        user_id: user.id,
+        text,
+        category: input.category,
+        origin_intent_id: input.originIntentId ?? null,
+      })
+      .select('*')
+      .single();
+    if (error) {
+      // Don't surface to the user — the chat send already succeeded;
+      // a failed auto-save is a "we missed remembering this" not a
+      // "your message didn't go through" event.
+      // eslint-disable-next-line no-console
+      console.warn('[memory-auto-add] insert failed', error.message);
+      return null;
+    }
+    queryClient.invalidateQueries({ queryKey: ['memory_facts'] });
+    return dbRowToMemoryFact(data);
+  };
+
+  return { autoAdd, isMock: !useReal };
+}
+
 export interface RemoveMemoryFactResult {
   remove: (id: string) => Promise<void>;
   isPending: boolean;
