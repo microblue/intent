@@ -21,7 +21,26 @@ import { friendlyError } from '@/lib/friendlyError';
  * buttons surface a friendly "演示模式" toast.
  */
 
-export function TeamPanel({ intentId }: { intentId: string }) {
+export function TeamPanel({
+  intentId,
+  activeAgentId,
+  onPickAgent,
+}: {
+  intentId: string;
+  /**
+   * Currently-active chat agent — receives a ring + 正在说话 badge in
+   * the list. When omitted the panel still renders but rows are not
+   * click-to-switch (e.g. settings / dev surfaces that show team
+   * read-only).
+   */
+  activeAgentId?: string;
+  /**
+   * Called when the user clicks a member row. Wires through to
+   * useChatThread.setActiveAgentId in IntentHome — the next chat
+   * message routes to the picked specialist.
+   */
+  onPickAgent?: (agentKey: string) => void;
+}) {
   const { team, isLoading } = useIntentAgents(intentId);
   const { remove } = useRemoveTeamMember(intentId);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -32,6 +51,16 @@ export function TeamPanel({ intentId }: { intentId: string }) {
     } catch (err) {
       toast(friendlyError(err, '移除失败'));
     }
+  };
+
+  const handleRowClick = (agentKey: string) => {
+    if (!onPickAgent) return;
+    onPickAgent(agentKey);
+    const a = findBuiltinAgent(agentKey);
+    toast(`换 ${a?.emoji ?? '✦'} ${a?.name ?? agentKey} 上场`, {
+      id: 'team-row-pick',
+      description: '下条消息会由这位助手回复',
+    });
   };
 
   return (
@@ -54,11 +83,32 @@ export function TeamPanel({ intentId }: { intentId: string }) {
       <ul className="flex flex-col gap-1.5">
         {team.map((m) => {
           const agent = findBuiltinAgent(m.agentKey);
+          const isActive = activeAgentId === m.agentKey;
+          const clickable = Boolean(onPickAgent);
           return (
             <li
               key={m.agentKey}
               data-testid={`team-member-${m.agentKey}`}
-              className="group flex items-center gap-2.5 rounded-xl bg-base-100 px-2.5 py-1.5 ring-1 ring-base-300/30"
+              data-active={isActive ? 'true' : undefined}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onClick={clickable ? () => handleRowClick(m.agentKey) : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleRowClick(m.agentKey);
+                      }
+                    }
+                  : undefined
+              }
+              aria-pressed={clickable ? isActive : undefined}
+              className={cn(
+                'group flex items-center gap-2.5 rounded-xl bg-base-100 px-2.5 py-1.5 ring-1 transition',
+                isActive ? 'ring-2 ring-primary' : 'ring-base-300/30',
+                clickable && 'cursor-pointer hover:bg-base-200/70',
+              )}
             >
               <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-base-200 text-base">
                 {agent?.emoji ?? '✦'}
@@ -69,6 +119,14 @@ export function TeamPanel({ intentId }: { intentId: string }) {
                   {m.isOrchestrator && (
                     <span className="rounded-full bg-primary/15 px-1.5 py-px text-[10px] font-medium text-primary">
                       主理
+                    </span>
+                  )}
+                  {isActive && (
+                    <span
+                      data-testid={`team-member-${m.agentKey}-active`}
+                      className="rounded-full bg-success/15 px-1.5 py-px text-[10px] font-medium text-success"
+                    >
+                      正在说话
                     </span>
                   )}
                 </div>
@@ -82,7 +140,11 @@ export function TeamPanel({ intentId }: { intentId: string }) {
                 <button
                   type="button"
                   data-testid={`team-remove-${m.agentKey}`}
-                  onClick={() => onRemove(m.agentKey)}
+                  onClick={(e) => {
+                    // Stop the row click from also firing.
+                    e.stopPropagation();
+                    onRemove(m.agentKey);
+                  }}
                   aria-label={`移除 ${agent?.name ?? m.displayName}`}
                   className="rounded-md p-1 text-base-content/40 transition hover:bg-base-200 hover:text-error sm:opacity-0 sm:group-hover:opacity-100"
                   title="移除"

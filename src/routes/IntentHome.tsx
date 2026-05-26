@@ -339,6 +339,8 @@ function MobileIntentHome({
   const [infoOpen, setInfoOpen] = useState(false);
   const counts = conceptCountsFor(intent.id);
   const navigate = useNavigate();
+  const { team } = useIntentAgents(intent.id);
+  const teamKeys = team.map((m) => m.agentKey);
 
   return (
     <div className="relative bg-base-100">
@@ -409,7 +411,7 @@ function MobileIntentHome({
         </div>
       </main>
 
-      <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} intentId={intent.id} />
+      <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} intentId={intent.id} team={teamKeys} />
 
       <InfoSheet
         open={infoOpen}
@@ -757,6 +759,8 @@ function DesktopIntentHome({
 }) {
   const railOpen = useUI((s) => s.intentRailOpen);
   const toggleRail = useUI((s) => s.toggleIntentRail);
+  const { team } = useIntentAgents(intent.id);
+  const teamKeys = team.map((m) => m.agentKey);
 
   return (
     <div className="h-full bg-base-100">
@@ -767,7 +771,7 @@ function DesktopIntentHome({
             <div className="flex-1 overflow-y-auto">
               <Conversation messages={msgs} typing={typing} agentActivity={agentActivity} />
             </div>
-            <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} intentId={intent.id} />
+            <StickyComposer onSend={onSend} activeAgentId={activeAgentId} onAgentChange={onAgentChange} intentId={intent.id} team={teamKeys} />
           </div>
         </Panel>
         {railOpen && (
@@ -796,6 +800,8 @@ function DesktopIntentHome({
                 intent={intent}
                 outline={outline}
                 files={files}
+                activeAgentId={activeAgentId}
+                onPickAgent={onAgentChange}
               />
             </Panel>
           </>
@@ -1238,11 +1244,15 @@ function IntentRail({
   intent,
   outline,
   files,
+  activeAgentId,
+  onPickAgent,
 }: {
   onClose: () => void;
   intent: Intent;
   outline: OutlineNode[];
   files: IntentFile[];
+  activeAgentId: string;
+  onPickAgent: (agentKey: string) => void;
 }) {
   const counts = conceptCountsFor(intent.id);
   const devMode = useUI((s) => s.devMode);
@@ -1286,7 +1296,13 @@ function IntentRail({
       case 'files':
         return <FilesList files={files} />;
       case 'team':
-        return <TeamPanel intentId={intent.id} />;
+        return (
+          <TeamPanel
+            intentId={intent.id}
+            activeAgentId={activeAgentId}
+            onPickAgent={onPickAgent}
+          />
+        );
       case 'memory':
         return (
           <ul className="space-y-1.5">
@@ -2318,11 +2334,14 @@ function StickyComposer({
   activeAgentId,
   onAgentChange,
   intentId,
+  team,
 }: {
   onSend?: (text: string, attachments?: MessageContentPart[]) => void;
   activeAgentId?: string;
   onAgentChange?: (agentId: string) => void;
   intentId?: string;
+  /** Allowed agent IDs for this intent (L4 — picker is team-scoped). */
+  team?: string[];
 }) {
   const [draft, setDraft] = useState('');
   const [pendingAttachments, setPendingAttachments] = useState<MessageContentPart[]>([]);
@@ -2402,6 +2421,7 @@ function StickyComposer({
                   activeAgentId={activeAgentId}
                   onChange={onAgentChange}
                   disabled={pickerDisabled}
+                  team={team}
                 />
               )}
               {intentId && (

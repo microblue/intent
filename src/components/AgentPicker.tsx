@@ -5,9 +5,14 @@ import { cn } from '@/lib/cn';
 
 /**
  * AgentPicker — small inline button + popover that lets the user
- * choose which OpenClaw agent handles the next chat turn. The 12
- * personas live in src/lib/agents.ts (single source of truth) and
- * are provisioned on the user's claw side-by-side with these IDs.
+ * choose which OpenClaw agent handles the next chat turn.
+ *
+ * The picker only lists members of the current intent's team
+ * (intent_agents rows). Adding a NEW specialist to the intent is a
+ * separate action — the "+ 加助手" CTA on TeamPanel. This prevents
+ * the previous bug where the picker showed 12 personas while
+ * TeamPanel only had 3 of them attached, letting the user "switch
+ * to" an agent that wasn't actually invited to the intent.
  *
  * Default = 'main' (general-purpose Claw). Selection is per-thread,
  * persists until the user picks something else.
@@ -21,10 +26,18 @@ export function AgentPicker({
   activeAgentId,
   onChange,
   disabled = false,
+  team,
 }: {
   activeAgentId: string;
   onChange: (agentId: string) => void;
   disabled?: boolean;
+  /**
+   * Optional set of agentKeys the intent's team currently includes.
+   * When provided, the picker shows ONLY these agents. When omitted
+   * (e.g. surfaces outside an intent), falls back to the full
+   * BUILTIN_AGENTS catalog so the picker stays useful.
+   */
+  team?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -70,7 +83,16 @@ export function AgentPicker({
     return () => window.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
-  const active = BUILTIN_AGENTS.find((a) => a.id === activeAgentId) ?? BUILTIN_AGENTS[0];
+  // Filter to team members when a team was provided. Always include
+  // `main` if it isn't listed — the seed trigger guarantees `main`
+  // exists for every intent on the DB side, so this is a safety net
+  // for the first render where Realtime hasn't echoed yet.
+  const teamSet = team ? new Set(team.length === 0 ? ['main'] : team) : null;
+  const visibleAgents = teamSet
+    ? BUILTIN_AGENTS.filter((a) => teamSet.has(a.id))
+    : BUILTIN_AGENTS;
+  const active =
+    visibleAgents.find((a) => a.id === activeAgentId) ?? visibleAgents[0] ?? BUILTIN_AGENTS[0];
 
   return (
     <>
@@ -102,7 +124,7 @@ export function AgentPicker({
             style={{ position: 'fixed', left: pos.left, bottom: pos.bottom, zIndex: 9999 }}
             className="w-72 max-h-80 overflow-y-auto rounded-2xl bg-base-100 p-1.5 shadow-xl ring-1 ring-base-300/60"
           >
-            {BUILTIN_AGENTS.map((a) => (
+            {visibleAgents.map((a) => (
               <button
                 key={a.id}
                 type="button"
