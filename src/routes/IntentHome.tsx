@@ -422,7 +422,7 @@ function MobileIntentHome({
     <div className="relative bg-base-100">
       {/* Thin sticky header with intent-gradient backdrop */}
       <header
-        className="sticky top-0 z-20 overflow-hidden"
+        className="sticky top-0 z-20"
         style={{ background: intent.cover }}
       >
         <div className="absolute inset-0 bg-black/15" />
@@ -994,7 +994,7 @@ function SlimHeader({
 
   return (
     <header
-      className="sticky top-0 z-20 overflow-hidden border-b border-base-300/40"
+      className="sticky top-0 z-20 border-b border-base-300/40"
       style={{ background: intent.cover }}
     >
       <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/20 to-black/30" />
