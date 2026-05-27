@@ -281,21 +281,35 @@ export function extractMemoryCandidates(text: string): MemoryCandidate[] {
  * The prefix is bracketed so the agent treats it as background
  * context rather than echoing it back as if the user just typed it.
  */
-export function buildMemoryContextPrefix(facts: MemoryFact[]): string {
+export function buildMemoryContextPrefix(
+  facts: MemoryFact[],
+  displayName?: string | null,
+): string {
   const relevant = facts.filter(
     (f) =>
       f.category === 'about-you' ||
       f.category === 'people' ||
       f.category === 'preferences',
   );
-  if (relevant.length === 0) return '';
 
-  // Cap at 20 most-recent to keep the prefix small. Memory page caps
-  // visual count via category sections; this is a transport cap.
-  const head = relevant.slice(0, 20);
-  const lines = head.map((f) => `- ${f.text}`);
+  const hasName = !!displayName;
+  const hasFacts = relevant.length > 0;
+  if (!hasName && !hasFacts) return '';
+
+  const lines: string[] = [];
+
+  if (hasName) {
+    lines.push(`- 用户的名字是"${displayName}"，请直接用这个称呼他/她，不要再问叫什么名字。`);
+  }
+
+  if (hasFacts) {
+    // Cap at 20 most-recent to keep the prefix small.
+    const head = relevant.slice(0, 20);
+    head.forEach((f) => lines.push(`- ${f.text}`));
+  }
+
   return [
-    '(以下是用户之前告诉过你的事,请在合适场合考虑这些信息:',
+    '(以下是用户信息，请在合适场合考虑，不要复述给用户听:',
     ...lines,
     ')',
     '',

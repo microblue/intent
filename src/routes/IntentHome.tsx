@@ -47,6 +47,7 @@ import { useIntentAgents } from '@/data/useIntentAgents';
 import { useIntentArtifacts } from '@/data/useIntentArtifacts';
 import { useGateway } from '@/gateway/useGateway';
 import { useSession } from '@/lib/auth';
+import { useUserPreferences } from '@/data/useUserPreferences';
 import { env } from '@/lib/env';
 import { timeAgo } from '@/lib/time';
 import { cn } from '@/lib/cn';
@@ -216,6 +217,7 @@ function useChatThread(intentId: string) {
   // still reads from mockMemoryFacts for the context prefix.
   const { facts: memoryFactList } = useMemoryFacts();
   const { autoAdd: autoAddMemoryFact } = useAutoAddMemoryFact();
+  const { prefs } = useUserPreferences();
   const memoryFactsRef = useRef(memoryFactList);
   memoryFactsRef.current = memoryFactList;
 
@@ -296,7 +298,7 @@ function useChatThread(intentId: string) {
       ...memoryFactsRef.current,
       ...newlyAddedFacts,
     ];
-    const contextPrefix = buildMemoryContextPrefix(recallSourceFacts);
+    const contextPrefix = buildMemoryContextPrefix(recallSourceFacts, prefs?.display_name);
 
     // Real mode + gateway connected: hand off to the live claw. The
     // assistant reply will arrive via the chat event subscription in
