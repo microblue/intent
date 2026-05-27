@@ -205,7 +205,7 @@ function useChatThread(intentId: string) {
   // Active agent picker. Default 'main' (general Claw); can be set to
   // one of the specialized personas by the AgentPicker UI.
   const [activeAgentId, setActiveAgentId] = useState('main');
-  const { connected: gatewayConnected, sendViaGateway } = useGatewayChat(intentId, activeAgentId);
+  const { connected: gatewayConnected, sendViaGateway } = useGatewayChat(intentId);
   const { signedIn, user } = useSession();
   const queryClient = useQueryClient();
   const [typing, setTyping] = useState(false);
@@ -312,7 +312,10 @@ function useChatThread(intentId: string) {
         typingResetRef.current = null;
       }, 60_000);
       try {
-        await sendViaGateway(text, { contextPrefix });
+        await sendViaGateway(text, {
+          contextPrefix,
+          preferAgentId: activeAgentId !== 'main' ? activeAgentId : undefined,
+        });
       } catch (err) {
         setTyping(false);
         toast(friendlyError(err, 'claw 没回应,稍后再试'));

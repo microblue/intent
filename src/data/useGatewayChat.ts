@@ -8,6 +8,7 @@ import {
   messagesQueryKey,
   upsertLocalAssistantMessage,
 } from '@/data/useMessages';
+import { findBuiltinAgent } from '@/lib/agents';
 import type { Message } from '@/mocks/types';
 import type { Database } from '@/lib/db-types';
 
@@ -17,29 +18,45 @@ type DbMessageInsert = Database['public']['Tables']['messages']['Insert'];
  * useGatewayChat — bridge between an aios Intent and an OpenClaw chat
  * session.
  *
- * Per ~/myclaw-studio/docs/aios-plan.md §"数据边界", agent-driven chat
- * messages should live on the claw, not in central Supabase. This hook
- * is the wire that makes that real: it owns the session lifecycle
- * (lazy `sessions.create` with a deterministic key tied to the intent
- * id), exposes a `sendViaGateway(text)` that calls `sessions.send`,
- * and subscribes to the `chat` event stream to surface assistant
- * replies into the React-Query message cache.
+ * Architecture: ONE session per intent, always owned by the 'main'
+ * orchestrator agent. Specialist agents (陪练, 规划员, …) are invoked
+ * internally by the orchestrator via sessions_spawn — the SPA never
+ * creates their sessions directly. This keeps full conversation
+ * context in one place; the orchestrator always knows what has been
+ * discussed, and switching specialists doesn't cause amnesia.
  *
- * Mock mode / disconnected gateway: returns `connected=false` and
- * `sendViaGateway` becomes a no-op. Callers must keep a fallback path
- * (Supabase persistence + mock reply) for those states — this hook
- * doesn't replace useSendMessage; it augments it when the gateway is
- * live.
+ * When the user "picks" a specialist via AgentPicker, that preference
+ * is passed as `preferAgentId` in sendViaGateway — the hook turns it
+ * into a delegation hint prepended to the message. The orchestrator
+ * reads the hint and routes accordingly.
  *
- * Session key: `agent:main:aios:<intentId>`. OpenClaw's
- * `parseAgentSessionKey` accepts this shape. Same intent across
+ * Attribution: OpenClaw emits `agentKey` on each chat frame when a
+ * sub-agent produced the reply; the SPA uses this for per-message
+ * bylines (e.g. "📚 陪练") without needing separate sessions.
+ *
+ * Session key: `agent:main:aios:<intentId>`. Same intent across
  * reloads ⇒ same key ⇒ same conversation history on the claw side.
  */
 
 const DEFAULT_AGENT_ID = 'main';
 
-function sessionKeyFor(intentId: string, agentId: string): string {
-  return `agent:${agentId}:aios:${intentId}`;
+// Session key is always main — the orchestrator owns the session and
+// routes to specialists internally via sessions_spawn.
+function sessionKeyFor(intentId: string): string {
+  return `agent:main:aios:${intentId}`;
+}
+
+/**
+ * Build a delegation hint for the orchestrator when the user has
+ * explicitly selected a specialist. The hint is prepended to the
+ * message text so the orchestrator knows which sub-agent to invoke.
+ * It is bracket-wrapped so the orchestrator treats it as metadata,
+ * not part of the user's natural utterance.
+ */
+function buildDelegationHint(agentId: string): string {
+  const agent = findBuiltinAgent(agentId);
+  if (!agent) return '';
+  return `[委托：请让${agent.emoji}${agent.name}(agentId:${agentId})来处理以下问题]\n\n`;
 }
 
 interface GatewayChatResult {
@@ -55,17 +72,18 @@ interface GatewayChatResult {
    * stays clean — only the gateway sees the prefix. Used by L1
    * cross-intent memory recall: the chat thread injects the user's
    * memory_facts so the agent can weave them in.
+   *
+   * `opts.preferAgentId` — if set and not 'main', a delegation hint
+   * is prepended so the orchestrator routes to the named specialist.
+   * The hint is invisible to the user (stays off the persisted message).
    */
   sendViaGateway: (
     text: string,
-    opts?: { contextPrefix?: string },
+    opts?: { contextPrefix?: string; preferAgentId?: string },
   ) => Promise<void>;
 }
 
-export function useGatewayChat(
-  intentId: string,
-  agentId: string = DEFAULT_AGENT_ID,
-): GatewayChatResult {
+export function useGatewayChat(intentId: string): GatewayChatResult {
   const { status, send: gatewaySend } = useGateway();
   const { user } = useSession();
   const queryClient = useQueryClient();
@@ -73,7 +91,7 @@ export function useGatewayChat(
   userIdRef.current = user?.id ?? null;
 
   const connected = status === 'connected';
-  const key = sessionKeyFor(intentId, agentId);
+  const key = sessionKeyFor(intentId);
 
   // Lazy session creation. We don't block on this — if the session
   // already exists OpenClaw returns ok (the call is idempotent for
@@ -85,13 +103,13 @@ export function useGatewayChat(
     if (!connected) return;
     if (createdRef.current.has(key)) return;
     createdRef.current.add(key);
-    gatewaySend('sessions.create', { agentId, key }).catch(() => {
+    gatewaySend('sessions.create', { agentId: DEFAULT_AGENT_ID, key }).catch(() => {
       // Swallow — sessions.send below will reveal the real reason if
       // the create attempt actually failed (vs. session-already-exists,
       // which is the expected case after the first turn).
       createdRef.current.delete(key);
     });
-  }, [connected, key, agentId, gatewaySend]);
+  }, [connected, key, gatewaySend]);
 
   // Listen for chat events on this session and stream them into the
   // message cache.
@@ -112,12 +130,11 @@ export function useGatewayChat(
           sessionKey?: string;
           state?: string;
           runId?: string;
-          // Optional per-turn attribution. The session is named for
-          // the user-selected agent (typically 'main'), but a chat
-          // frame may carry the key of a subagent that actually
-          // produced the reply (e.g. 'planner' after main delegated).
-          // OpenClaw emits this at the top level or nested under
-          // `message`; accept both for forward-compatibility.
+          // Optional per-turn attribution. The session is always owned
+          // by 'main', but a chat frame may carry the key of a subagent
+          // that actually produced the reply (e.g. 'planner' after main
+          // delegated via sessions_spawn). OpenClaw emits this at the
+          // top level or nested under `message`; accept both.
           agentKey?: string;
           message?: {
             role?: string;
@@ -137,10 +154,8 @@ export function useGatewayChat(
     if (!text) return;
     // Prefer per-turn attribution from the gateway payload so the
     // specialist (e.g. 🗺️ 规划员) shows on its own reply instead of
-    // inheriting the session's session-owner agent (typically main).
-    // Fall back to the user-selected agentId when the gateway doesn't
-    // carry one — current behavior until OpenClaw starts emitting it.
-    const turnAgentId = payload.message?.agentKey ?? payload.agentKey ?? agentId;
+    // always showing 'main'. Fall back to DEFAULT_AGENT_ID.
+    const turnAgentId = payload.message?.agentKey ?? payload.agentKey ?? DEFAULT_AGENT_ID;
     // Stable per-run id keeps every delta updating the same DOM node;
     // when the agent runs again it'll have a new runId and produce a
     // fresh message. Fall back to a session-scoped id if the gateway
@@ -211,7 +226,7 @@ export function useGatewayChat(
   const sendViaGateway = useCallback(
     async (
       text: string,
-      opts?: { contextPrefix?: string },
+      opts?: { contextPrefix?: string; preferAgentId?: string },
     ): Promise<void> => {
       if (!connected) {
         throw new Error('gateway is not connected');
@@ -222,21 +237,30 @@ export function useGatewayChat(
       // raced and lost (cleared from createdRef), retry it inline.
       if (!createdRef.current.has(key)) {
         createdRef.current.add(key);
-        await gatewaySend('sessions.create', { agentId, key }).catch(
+        await gatewaySend('sessions.create', { agentId: DEFAULT_AGENT_ID, key }).catch(
           () => {
             createdRef.current.delete(key);
           },
         );
       }
+      // Build the delegation hint when the user picked a specialist.
+      // Prepend: context prefix (memory recall) → delegation hint → user message.
       const prefix = opts?.contextPrefix ?? '';
-      const messageOnWire = prefix ? `${prefix}${trimmed}` : trimmed;
+      const delegationHint =
+        opts?.preferAgentId && opts.preferAgentId !== DEFAULT_AGENT_ID
+          ? buildDelegationHint(opts.preferAgentId)
+          : '';
+      const messageOnWire =
+        prefix || delegationHint
+          ? `${prefix}${delegationHint}${trimmed}`
+          : trimmed;
       await gatewaySend('sessions.send', {
         key,
         message: messageOnWire,
         idempotencyKey: `aios-${intentId}-${Date.now()}`,
       });
     },
-    [connected, key, gatewaySend, intentId, agentId],
+    [connected, key, gatewaySend, intentId],
   );
 
   return { connected, sendViaGateway };

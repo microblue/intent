@@ -5,21 +5,25 @@ import { cn } from '@/lib/cn';
 
 /**
  * AgentPicker — small inline button + popover that lets the user
- * choose which OpenClaw agent handles the next chat turn.
+ * choose which specialist should handle the NEXT message.
+ *
+ * Architecture note: selecting a specialist does NOT create a new
+ * chat session. The session is always `agent:main:aios:<intentId>`,
+ * owned by the main orchestrator. Picking a specialist turns the
+ * selection into a delegation hint prepended to the user's message
+ * (`[委托：请让 … 处理以下问题]`). The orchestrator reads the hint and
+ * routes to the specialist via sessions_spawn internally.
+ *
+ * This means the conversation history is always in one place — the
+ * specialist inherits everything the main agent knows, so there is
+ * no context loss when the user switches mid-thread.
  *
  * The picker only lists members of the current intent's team
- * (intent_agents rows). Adding a NEW specialist to the intent is a
- * separate action — the "+ 加助手" CTA on TeamPanel. This prevents
- * the previous bug where the picker showed 12 personas while
- * TeamPanel only had 3 of them attached, letting the user "switch
- * to" an agent that wasn't actually invited to the intent.
- *
- * Default = 'main' (general-purpose Claw). Selection is per-thread,
- * persists until the user picks something else.
+ * (intent_agents rows). Adding a NEW specialist is a separate action
+ * via the "+ 加助手" CTA on TeamPanel.
  *
  * The popover is portal-rendered to <body> so it escapes the
- * composer's sticky positioning + z-index stacking context
- * (otherwise the chat conversation area was capturing clicks).
+ * composer's sticky positioning + z-index stacking context.
  */
 
 export function AgentPicker({
@@ -106,7 +110,7 @@ export function AgentPicker({
           'flex items-center gap-1.5 rounded-full bg-base-200/70 px-2.5 py-1 text-xs',
           'hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-50',
         )}
-        title={disabled ? '等连上 claw 才能切换助手' : '切换助手'}
+        title={disabled ? '等连上 claw 才能选择助手' : '选择下一条消息交给谁处理'}
         aria-disabled={disabled || undefined}
       >
         <span aria-hidden>{active.emoji}</span>
