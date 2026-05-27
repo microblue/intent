@@ -235,8 +235,8 @@ export function Sidebar({ collapsed = false }: { collapsed?: boolean } = {}) {
                 {it.emoji}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="truncate text-[14px] font-medium leading-tight">
+                <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+                  <span className="min-w-0 truncate text-[14px] font-medium leading-tight">
                     {it.title}
                   </span>
                   {it.lifecycle === 'pinned' && (
