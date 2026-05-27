@@ -167,8 +167,13 @@ function Chrome({ children }: { children: React.ReactNode }) {
           // edge into the content pane without getting clipped. Tailwind's
           // `overflow-visible` class is shadowed by react-resizable-panels'
           // inline `overflow: hidden`, so we override via `style` here.
+          // min-w-0 prevents the Panel (a flex item in PanelGroup) from
+          // expanding beyond its flex-basis when overflow:visible is set.
+          // CSS spec: overflow:visible on a flex item makes min-width:auto
+          // use min-content, which would let long sidebar text stretch the
+          // panel. min-w-0 overrides that, keeping flex-basis as the bound.
           style={{ overflow: 'visible' }}
-          className="relative z-10"
+          className="relative z-10 min-w-0"
         >
           <Sidebar collapsed={sidebarCollapsed} />
         </Panel>
