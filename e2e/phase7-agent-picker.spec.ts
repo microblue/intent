@@ -31,7 +31,33 @@ async function createIntent(userId: string): Promise<IntentRow> {
     headers: { ...hdr(), 'content-type': 'application/json', Prefer: 'return=representation' },
     body: JSON.stringify({ id, user_id: userId, claw_id: claws[0].id, title: 'agent-picker', emoji: '🧪' }),
   });
-  return (await r.json() as IntentRow[])[0];
+  const intent = (await r.json() as IntentRow[])[0];
+
+  // Seed the team so the AgentPicker shows all specialists.
+  // Without intent_agents rows, teamKeys=[] and the picker only shows main.
+  const teamAgents = [
+    { agent_key: 'main',       display_name: 'Claw',  is_orchestrator: true  },
+    { agent_key: 'researcher', display_name: '研究员', is_orchestrator: false },
+    { agent_key: 'planner',    display_name: '规划员', is_orchestrator: false },
+    { agent_key: 'writer',     display_name: '写手',  is_orchestrator: false },
+    { agent_key: 'coach',      display_name: '陪练',  is_orchestrator: false },
+  ];
+  // main is auto-inserted by the DB trigger on intent creation; upsert so
+  // we don't 409 on the duplicate and still add the remaining specialists.
+  const seedRes = await fetch(`${url}/rest/v1/intent_agents`, {
+    method: 'POST',
+    headers: {
+      ...hdr(),
+      'content-type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=representation',
+    },
+    body: JSON.stringify(teamAgents.map((a) => ({ ...a, intent_id: id }))),
+  });
+  if (!seedRes.ok) {
+    const body = await seedRes.text();
+    throw new Error(`intent_agents seed failed ${seedRes.status}: ${body}`);
+  }
+  return intent;
 }
 
 async function deleteIntent(id: string): Promise<void> {
@@ -74,8 +100,9 @@ test.describe('Phase 7 — AgentPicker UI', () => {
       const menu = page.getByTestId('agent-picker-menu');
       await expect(menu).toBeVisible();
 
-      // Spot-check the major personas surface in the menu.
-      for (const name of ['研究员', '规划员', '写手', '机票助手']) {
+      // Spot-check the seeded team members surface in the menu.
+      // 陪练 is below the fold (max-h-80 menu) so only check the first 3.
+      for (const name of ['研究员', '规划员', '写手']) {
         await expect(menu.getByText(name)).toBeVisible();
       }
 
