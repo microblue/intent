@@ -1096,7 +1096,7 @@ function SlimHeader({
           </button>
           <ul
             tabIndex={0}
-            className="menu dropdown-content z-[60] mt-2 w-44 rounded-2xl bg-base-100 p-2 text-sm shadow-xl ring-1 ring-base-300/40"
+            className="menu dropdown-content z-[60] mt-2 w-44 rounded-2xl bg-base-100 p-2 text-sm text-base-content shadow-xl ring-1 ring-base-300/40"
           >
             <li>
               <button
