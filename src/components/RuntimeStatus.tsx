@@ -5,7 +5,7 @@ import { usePrefs } from '@/state/prefs';
 export function RuntimeStatus() {
   const lang = usePrefs(s => s.lang);
   const { data, error, refetch } = useQuery({ queryKey: ['runtime'], queryFn: api.runtime, retry: false, staleTime: 60_000 });
-  if (error) return <div role="alert" className="mb-5 rounded-2xl border-2 border-line bg-sand p-4 text-lg">
+  if (error) return <div role="alert" className="mb-5 rounded-2xl ring-1 ring-line bg-sand p-4 text-lg">
     <p>{lang === 'zh' ? '暂时连不上助手，您的事情还没有开始。' : 'The helper is unavailable. Your task has not started.'}</p>
     <button className="btn-soft mt-3" onClick={() => void refetch()}>{lang === 'zh' ? '重新连接' : 'Reconnect'}</button>
   </div>;

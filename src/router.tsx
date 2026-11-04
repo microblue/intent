@@ -4,6 +4,7 @@ import { TodayPage } from '@/pages/Today';
 import { NewThingPage } from '@/pages/NewThing';
 import { ThingPage } from '@/pages/ThingPage';
 import { MePage } from '@/pages/Me';
+import { MemoryPage } from '@/pages/Memory';
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -21,6 +22,7 @@ const routes = [
   createRoute({ getParentRoute: () => rootRoute, path: '/new', component: NewThingPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/t/$id', component: ThingPage }),
   createRoute({ getParentRoute: () => rootRoute, path: '/me', component: MePage }),
+  createRoute({ getParentRoute: () => rootRoute, path: '/memory', component: MemoryPage }),
 ];
 
 export const router = createRouter({ routeTree: rootRoute.addChildren(routes) });

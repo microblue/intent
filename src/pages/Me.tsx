@@ -12,8 +12,8 @@ import { api, ApiError, resetSession } from '@/api/client';
 export function MePage() {
   const t = useT();
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-ink">{t.me.title}</h1>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <h1 className="text-3xl font-bold tracking-tight text-ink">{t.me.title}</h1>
       <TextSize />
       <NameAndLanguage />
       <WhatItCanDo />
@@ -26,7 +26,7 @@ export function MePage() {
 
 function Section({ title, children, id }: { title: string; children: React.ReactNode; id: string }) {
   return (
-    <section aria-labelledby={id} className="space-y-3 rounded-3xl border-2 border-line bg-white p-5">
+    <section aria-labelledby={id} className="space-y-3 card p-5">
       <h2 id={id} className="text-xl font-bold text-ink">
         {title}
       </h2>
@@ -52,7 +52,7 @@ function TextSize() {
               set({ fontScale: n });
               update.mutate({ fontScale: n });
             }}
-            className={`btn-big px-2 ${fontScale === n ? 'bg-brand text-white' : 'border-2 border-line bg-white text-ink'}`}
+            className={`btn-big px-2 ${fontScale === n ? 'bg-brand text-white' : 'bg-white shadow-sm ring-1 ring-line text-ink'}`}
           >
             <span style={{ fontSize: `${0.9 + i * 0.25}em` }}>{t.me.sizes[i]}</span>
           </button>
@@ -87,7 +87,7 @@ function NameAndLanguage() {
           onChange={(e) => setName(e.target.value)}
           placeholder={t.me.namePlaceholder}
           maxLength={40}
-          className="min-h-[2.6rem] w-full rounded-2xl border-2 border-line px-4 text-lg focus:border-brand focus:outline-none"
+          className="min-h-[2.6rem] w-full rounded-2xl ring-1 ring-line px-4 text-lg focus:border-brand focus:outline-none"
         />
         <button
           type="button"
@@ -112,7 +112,7 @@ function NameAndLanguage() {
             aria-checked={lang === l}
             lang={l === 'zh' ? 'zh-CN' : 'en'}
             onClick={() => pickLang(l)}
-            className={`btn-big ${lang === l ? 'bg-brand text-white' : 'border-2 border-line bg-white text-ink'}`}
+            className={`btn-big ${lang === l ? 'bg-brand text-white' : 'bg-white shadow-sm ring-1 ring-line text-ink'}`}
           >
             {label}
           </button>
@@ -172,7 +172,7 @@ function WhatItCanDo() {
   );
 }
 
-function Remembers() {
+export function Remembers() {
   const t = useT();
   const { data: memories } = useMemories();
   const forget = useForget();
@@ -181,11 +181,11 @@ function Remembers() {
       {!memories?.length ? (
         <p className="text-lg text-ink-soft">{t.me.memoryEmpty}</p>
       ) : (
-        <ul className="divide-y-2 divide-line">
+        <ul className="divide-y divide-line">
           {memories.map((m) => (
             <li key={m.id} className="flex items-center gap-3 py-2">
               <span className="flex-1 text-lg">{m.text}</span>
-              <button type="button" onClick={() => forget.mutate(m.id)} className="btn-small border-2 border-line text-ink">
+              <button type="button" onClick={() => forget.mutate(m.id)} className="btn-small ring-1 ring-line text-ink">
                 {t.me.forget}
               </button>
             </li>
@@ -208,7 +208,7 @@ function PutAway() {
         <ul className="space-y-2">
           {archived.map((x) => (
             <li key={x.id}>
-              <Link to="/t/$id" params={{ id: x.id }} className="btn-small w-full justify-start border-2 border-line text-lg">
+              <Link to="/t/$id" params={{ id: x.id }} className="btn-small w-full justify-start ring-1 ring-line text-lg">
                 <span aria-hidden>{x.emoji}</span> {x.title}
               </Link>
             </li>
@@ -306,13 +306,13 @@ function SignIn() {
       <label className="block text-lg">
         {t.me.username}
         <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required minLength={2} maxLength={32}
-          className="mt-1 w-full rounded-2xl border-2 border-line bg-white px-4 py-3 text-lg" />
+          className="mt-1 w-full card px-4 py-3 text-lg" />
       </label>
       <label className="block text-lg">
         {t.me.password}
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} maxLength={128}
           autoComplete={mode === 'create' ? 'new-password' : 'current-password'}
-          className="mt-1 w-full rounded-2xl border-2 border-line bg-white px-4 py-3 text-lg" />
+          className="mt-1 w-full card px-4 py-3 text-lg" />
       </label>
       {error && <p role="alert" className="text-lg text-danger">{error}</p>}
       <div className="flex flex-wrap gap-3">

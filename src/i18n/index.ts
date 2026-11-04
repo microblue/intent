@@ -4,15 +4,24 @@ import { usePrefs } from '@/state/prefs';
 const zh = {
   appName: 'Intent',
   comma: '，',
-  nav: { today: '今天', say: '说一件事', me: '我的' },
+  nav: {
+    today: '想做的事', say: '说一件事', me: '我的', memory: '记得的事', browse: '浏览', recent: '最近',
+    newTitle: '新想做的事', newSub: '一句话告诉我', tagline: 'Personal AI helper',
+    guest: '还没设账号', guestSub: '不注册也能用', setUp: '设账号', signedIn: '已登录',
+  },
   greeting: { morning: '早上好', afternoon: '下午好', evening: '晚上好' },
   today: {
     needsYou: '等您点头',
-    yourThings: '您的事',
+    yourThings: '您正在做的事',
     sayNew: '说一件新的事',
     look: '去看看',
     seeResult: '看看结果',
     empty: '还没有事情。',
+    summary: (n: number, title: string) => `你有 ${n} 件事在做。最近忙的是「${title}」。`,
+    tryOther: '想试点别的？',
+    tryHint: '点一下，我帮您办',
+    newCard: '新想做的事',
+    newCardSub: '一句话告诉我想做什么',
   },
   welcome: {
     hello: '您好，我是 Intent。',
@@ -21,9 +30,10 @@ const zh = {
     promise: '我是 AI，会尽力帮您，但有时也会出错。花钱和重要的事，我都会先问您。',
   },
   say: {
-    title: '说一件新的事',
+    title: '想做什么？',
+    subtitle: '一句话告诉我就行，不用想清楚，我帮您理。',
     placeholder: '比如：帮我给孙子挑个生日礼物',
-    examplesTitle: '不知道说什么？看看这些：',
+    examplesTitle: '或者试试这些',
     send: '发送',
     start: '开始',
   },
@@ -134,6 +144,12 @@ const zh = {
     deleteYes: '确定删除',
     cancel: '不删了',
   },
+  memoryPage: {
+    title: '助手记得您的事',
+    sub: '看到不该记的，点「忘掉」让它忘掉。',
+    aboutTitle: '关于记忆',
+    about: '平时聊天时，助手会把对您有用的事记下来（比如过敏、家人的名字、喜欢的时间），以后办别的事也会用上。卡号、密码、验证码永远不会被记住。',
+  },
   errors: {
     network: '网络好像不太好，请稍后再试。',
     busy: '我还在忙上一件，请等一下。',
@@ -145,7 +161,11 @@ export type Dict = typeof zh;
 const en: Dict = {
   appName: 'Intent',
   comma: ', ',
-  nav: { today: 'Today', say: 'New', me: 'Me' },
+  nav: {
+    today: 'My things', say: 'New', me: 'Me', memory: 'Memories', browse: 'Browse', recent: 'Recent',
+    newTitle: 'Something new', newSub: 'Just say it in one sentence', tagline: 'Personal AI helper',
+    guest: 'No account yet', guestSub: 'Works without sign-up', setUp: 'Set up', signedIn: 'Signed in',
+  },
   greeting: { morning: 'Good morning', afternoon: 'Good afternoon', evening: 'Good evening' },
   today: {
     needsYou: 'Waiting for you',
@@ -154,6 +174,11 @@ const en: Dict = {
     look: 'Take a look',
     seeResult: 'See the result',
     empty: 'Nothing here yet.',
+    summary: (n: number, title: string) => `You have ${n} things going. Most recent: "${title}".`,
+    tryOther: 'Try something else?',
+    tryHint: "Tap one and I'll take it from there",
+    newCard: 'Something new',
+    newCardSub: 'Tell me in one sentence',
   },
   welcome: {
     hello: "Hello, I'm Intent.",
@@ -162,9 +187,10 @@ const en: Dict = {
     promise: "I'm an AI. I'll do my best, but I can make mistakes. I always ask before spending money or doing anything important.",
   },
   say: {
-    title: 'Tell me something new',
+    title: 'What would you like to do?',
+    subtitle: "Just one sentence — no need to have it figured out. I'll help you sort it.",
     placeholder: 'For example: help me pick a birthday gift for my grandson',
-    examplesTitle: 'Not sure what to say? Try these:',
+    examplesTitle: 'Or try one of these',
     send: 'Send',
     start: 'Start',
   },
@@ -279,6 +305,12 @@ const en: Dict = {
     deleteConfirm: 'Really delete all your things and everything I remember? This cannot be undone.',
     deleteYes: 'Yes, delete',
     cancel: 'Keep it',
+  },
+  memoryPage: {
+    title: 'What Intent remembers',
+    sub: "See something it shouldn't keep? Tap Forget.",
+    aboutTitle: 'About memory',
+    about: 'While helping you, Intent notes things that will be useful later (an allergy, family names, the times you prefer) and uses them in other tasks. Card numbers, passwords and codes are never remembered.',
   },
   errors: {
     network: 'The connection seems slow. Please try again soon.',

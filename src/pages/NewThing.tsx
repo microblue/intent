@@ -4,7 +4,7 @@ import { useT } from '@/i18n';
 import { useCreateThing } from '@/api/hooks';
 import { Composer } from '@/components/Composer';
 
-/** Say something new: microphone first, then typing, then examples (spec §5.2). */
+/** "What would you like to do?" — the original new-intent page. */
 export function NewThingPage() {
   const t = useT();
   const nav = useNavigate();
@@ -16,27 +16,35 @@ export function NewThingPage() {
     });
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="text-2xl font-bold text-ink">{t.say.title}</h1>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-ink">{t.say.title}</h1>
+        <p className="text-lg text-ink-soft">{t.say.subtitle}</p>
+      </header>
       <Composer variant="hero" onSend={start} disabled={create.isPending} sendLabel={t.say.start} placeholder={t.say.placeholder} autoFocus />
-      <div className="space-y-3">
-        <p className="text-lg text-ink-soft">{t.say.examplesTitle}</p>
+      <section className="space-y-3">
+        <p className="text-base font-medium text-ink-soft">{t.say.examplesTitle}</p>
         <Examples onPick={start} disabled={create.isPending} />
-      </div>
+      </section>
     </div>
   );
 }
 
+/** Rounded chips, as in the original. */
 export function Examples({ onPick, disabled }: { onPick: (text: string) => void; disabled?: boolean }) {
   const t = useT();
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="flex flex-wrap gap-2.5">
       {t.examples.map((ex) => (
-        <button key={ex.text} type="button" disabled={disabled} onClick={() => onPick(ex.text)} className="btn-soft min-h-[3.6rem] justify-start py-2 text-left">
-          <span aria-hidden className="text-2xl">
-            {ex.emoji}
-          </span>
-          <span className="text-lg font-medium leading-snug">{ex.text}</span>
+        <button
+          key={ex.text}
+          type="button"
+          disabled={disabled}
+          onClick={() => onPick(ex.text)}
+          className="inline-flex min-h-[2.8rem] items-center gap-2 rounded-full bg-white px-4 py-1.5 text-left text-base text-ink shadow-sm ring-1 ring-line transition hover:bg-brand-soft hover:ring-brand/40 disabled:opacity-60"
+        >
+          <span aria-hidden className="text-lg">{ex.emoji}</span>
+          <span>{ex.text}</span>
         </button>
       ))}
     </div>

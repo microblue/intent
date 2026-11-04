@@ -6,6 +6,7 @@ import { useT } from '@/i18n';
 import { usePrefs } from '@/state/prefs';
 import { useArchive, useSendInput, useThing } from '@/api/hooks';
 import { ApiError } from '@/api/client';
+import { coverFor } from '@/components/look';
 import { Composer } from '@/components/Composer';
 import { EntryView, type Act } from '@/components/cards';
 import { useSpeaker } from '@/components/voice';
@@ -73,8 +74,8 @@ export function ThingPage() {
   const onSay = (text: string) => (openQuestion ? go({ type: 'answer', entryId: openQuestion.id, answer: text }) : go({ type: 'say', text }));
 
   return (
-    <div className="flex min-h-[calc(100vh-9rem)] flex-col">
-      <header className="sticky top-0 z-10 -mx-4 border-b-2 border-line bg-paper/95 px-4 pb-3 pt-1 backdrop-blur md:-mx-8 md:px-8">
+    <div className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col">
+      <header className="sticky top-0 z-10 -mx-4 border-b border-line bg-paper/95 px-4 pb-4 pt-1 backdrop-blur md:-mx-6 md:px-6">
         <div className="flex items-center justify-between">
           <Link to="/" className="btn-small -ml-3 text-brand hover:bg-brand-soft">
             ← {t.thing.back}
@@ -87,13 +88,17 @@ export function ThingPage() {
             {thing.status === 'archived' ? t.thing.unarchive : t.thing.archive}
           </button>
         </div>
-        <h1 className="mt-1 text-2xl font-bold text-ink">
-          <span aria-hidden>{thing.emoji} </span>
-          {thing.title}
-        </h1>
-        <p className="text-lg text-ink-soft" role="status" aria-live="polite">
-          {busy ? t.thing.thinking : thing.statusLine || t.status[thing.status]}
-        </p>
+        <div className="mt-2 flex items-center gap-4">
+          <span aria-hidden className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-3xl shadow-md" style={{ background: coverFor(thing.id) }}>
+            {thing.emoji}
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-ink">{thing.title}</h1>
+            <p className="text-lg text-ink-soft" role="status" aria-live="polite">
+              {busy ? t.thing.thinking : thing.statusLine || t.status[thing.status]}
+            </p>
+          </div>
+        </div>
       </header>
 
       <div className="flex-1 space-y-4 py-5">
@@ -104,13 +109,13 @@ export function ThingPage() {
         )}
         {busy && (
           <div className="flex items-center gap-4">
-            <div className="rounded-2xl rounded-bl-md bg-sand px-5 py-4 text-2xl leading-none text-ink-soft" aria-label={t.thing.thinking}>
+            <div className="rounded-2xl rounded-bl-md bg-white px-5 py-4 text-2xl leading-none text-brand shadow-sm ring-1 ring-line" aria-label={t.thing.thinking}>
               <span className="thinking-dot">●</span>
               <span className="thinking-dot [animation-delay:0.2s]"> ●</span>
               <span className="thinking-dot [animation-delay:0.4s]"> ●</span>
             </div>
             {thing.busy && (
-              <button type="button" onClick={() => go({ type: 'stop' })} className="btn-small border-2 border-line bg-white text-ink">
+              <button type="button" onClick={() => go({ type: 'stop' })} className="btn-small bg-white shadow-sm ring-1 ring-line text-ink">
                 {t.thing.stop}
               </button>
             )}
@@ -124,7 +129,7 @@ export function ThingPage() {
         <div ref={bottom} />
       </div>
 
-      <div className="sticky bottom-[5.2rem] z-10 -mx-4 bg-paper/95 px-4 py-3 backdrop-blur md:bottom-0 md:-mx-8 md:px-8">
+      <div className="sticky bottom-[5.2rem] z-10 -mx-4 bg-paper/95 px-4 py-3 backdrop-blur md:bottom-0 md:-mx-6 md:px-6">
         <Composer
           onSend={onSay}
           disabled={busy}

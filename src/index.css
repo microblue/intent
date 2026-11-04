@@ -1,11 +1,9 @@
 @import "tailwindcss";
 
 /*
- * Intent visual base — design spec §9.
- * Senior-friendly is the default UI, not a mode:
- *   body text 20px at size 1 (24 / 30 at sizes 2 / 3), line height ≥ 1.5,
- *   text contrast ≥ 7:1, main buttons ≥ 60px, nothing smaller than 16px.
- * Everything is sized in rem, so changing the root font size scales the app.
+ * Intent visual base — the original myclaw look (cool grey canvas, white
+ * cards with soft shadows, purple → teal → gold accents), kept senior-
+ * friendly: rem sizing, nothing under 16px, strong focus rings, big targets.
  */
 
 @plugin "daisyui" {
@@ -16,52 +14,54 @@
   name: "intent";
   default: true;
   color-scheme: light;
-  --color-base-100: #fffdf9;
-  --color-base-200: #f7f1e8;
-  --color-base-300: #e9e0d2;
-  --color-base-content: #1d1a16;
-  --color-primary: #1e5a47;
-  --color-primary-content: #ffffff;
-  --color-secondary: #e9f2ee;
-  --color-secondary-content: #133d30;
-  --color-accent: #f3d9a4;
-  --color-accent-content: #3d2a05;
-  --color-neutral: #3a342c;
-  --color-neutral-content: #ffffff;
-  --color-error: #a3221a;
-  --color-error-content: #ffffff;
-  --radius-box: 1.25rem;
-  --radius-field: 1rem;
+  --color-base-100: oklch(99% 0.003 270);
+  --color-base-200: oklch(96% 0.005 270);
+  --color-base-300: oklch(92% 0.008 270);
+  --color-base-content: oklch(20% 0.012 270);
+  --color-primary: oklch(52% 0.2 290);
+  --color-primary-content: oklch(98% 0.005 290);
+  --color-secondary: oklch(58% 0.14 200);
+  --color-secondary-content: oklch(98% 0.005 200);
+  --color-accent: oklch(70% 0.15 80);
+  --color-accent-content: oklch(15% 0.02 80);
+  --color-neutral: oklch(28% 0.012 270);
+  --color-neutral-content: oklch(98% 0.005 270);
+  --color-error: oklch(52% 0.19 25);
+  --color-error-content: oklch(98% 0.005 25);
+  --radius-selector: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
 }
 
 @theme {
-  --font-sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Inter', 'PingFang SC', 'HarmonyOS Sans SC', 'Noto Sans SC', 'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Smallest allowed text is 0.8rem = 16px at size 1. */
-  --text-sm: 0.8rem;
+  /* Smallest allowed text is 0.9412rem = 16px at size 1. */
+  --text-sm: 0.9412rem; /* 16px at size 1 */
   --text-sm--line-height: 1.5;
   --text-base: 1rem;
   --text-base--line-height: 1.6;
-  --text-lg: 1.15rem;
+  --text-lg: 1.1rem;
   --text-lg--line-height: 1.5;
-  --text-xl: 1.35rem;
+  --text-xl: 1.3rem;
   --text-xl--line-height: 1.4;
-  --text-2xl: 1.65rem;
+  --text-2xl: 1.6rem;
   --text-2xl--line-height: 1.3;
-  --text-3xl: 2.1rem;
+  --text-3xl: 2rem;
   --text-3xl--line-height: 1.2;
 
-  --color-ink: #1d1a16;
-  --color-ink-soft: #4a433a; /* 9.6:1 on paper */
-  --color-paper: #fffdf9;
-  --color-sand: #f7f1e8;
-  --color-line: #e2d8c9;
-  --color-brand: #1e5a47; /* 7.9:1 with white */
-  --color-brand-soft: #e9f2ee;
-  --color-wait: #fdf3dc;
-  --color-wait-line: #e8c77a;
-  --color-danger: #a3221a;
-  --color-danger-soft: #fdecea;
+  --color-ink: oklch(20% 0.012 270);
+  --color-ink-soft: oklch(42% 0.015 270); /* ≥ 7:1 on the canvas */
+  --color-paper: oklch(96.5% 0.005 270); /* page canvas */
+  --color-sand: oklch(94% 0.007 270); /* sidebar, hover */
+  --color-line: oklch(90% 0.008 270);
+  --color-brand: oklch(50% 0.2 290); /* purple, 7:1 with white */
+  --color-brand-dark: oklch(44% 0.2 290);
+  --color-brand-soft: oklch(95% 0.03 290);
+  --color-wait: oklch(97% 0.04 85);
+  --color-wait-line: oklch(82% 0.13 80);
+  --color-danger: oklch(50% 0.19 25);
+  --color-danger-soft: oklch(96% 0.03 25);
 }
 
 html {
@@ -78,14 +78,16 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss03';
   line-height: 1.6;
+  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
 
 /* Visible, thick focus for keyboard and switch users. */
 :focus-visible {
-  outline: 3px solid #1e5a47;
+  outline: 3px solid var(--color-brand);
   outline-offset: 3px;
 }
 
@@ -103,10 +105,24 @@ body {
   @apply inline-flex min-h-[3.2rem] items-center justify-center gap-2 rounded-2xl px-6 text-lg font-semibold transition-colors disabled:opacity-50;
 }
 @utility btn-main {
-  @apply btn-big bg-brand text-white hover:bg-[#174a3a] active:bg-[#123c2f];
+  @apply btn-big bg-brand text-white shadow-sm hover:bg-brand-dark;
 }
 @utility btn-soft {
-  @apply btn-big border-2 border-line bg-white text-ink hover:bg-sand;
+  @apply btn-big bg-white text-ink shadow-sm ring-1 ring-line hover:bg-sand;
+}
+/* White card on the grey canvas, as in the original design. */
+@utility card {
+  @apply rounded-2xl bg-white shadow-[0_1px_2px_rgba(20,20,40,0.04),0_4px_14px_rgba(20,20,40,0.04)] ring-1 ring-line/70;
+}
+/* The signature purple → teal → gold gradient. */
+@utility bg-signature {
+  background-image: linear-gradient(120deg, oklch(55% 0.2 292) 0%, oklch(56% 0.13 210) 58%, oklch(70% 0.14 75) 100%);
+}
+@utility text-signature {
+  background-image: linear-gradient(90deg, oklch(55% 0.2 292), oklch(56% 0.13 210) 60%, oklch(68% 0.14 75));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 /* Secondary hit targets: ≥ 48px. */
 @utility btn-small {
@@ -128,7 +144,7 @@ body {
   margin: 0.25em 0;
 }
 .prose-intent :where(a) {
-  color: #1e5a47;
+  color: var(--color-brand);
   text-decoration: underline;
 }
 .prose-intent :where(strong) {
