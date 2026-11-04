@@ -3,8 +3,8 @@ export const ADMIN_PAGE = /* html */ `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Intent admin</title>
 <style>
-:root{--bg:#fffdf9;--card:#fff;--ink:#1f1b16;--soft:#5b5348;--line:#e2d8c9;--brand:#1e5a47;--danger:#a3221a;--sand:#f7f1e8}
-@media (prefers-color-scheme:dark){:root{--bg:#14120f;--card:#1d1a16;--ink:#f3eee6;--soft:#b9ae9f;--line:#3a332b;--brand:#5fb394;--danger:#f08a80;--sand:#221e19}}
+:root{--bg:#f4f5f8;--card:#fff;--ink:#1d1f2a;--soft:#5a5f70;--line:#e3e5ec;--brand:#6a4be0;--danger:#b4232a;--sand:#eef0f5}
+@media (prefers-color-scheme:dark){:root{--bg:#14151b;--card:#1c1e26;--ink:#eef0f6;--soft:#a9aec0;--line:#2f3240;--brand:#a48cff;--danger:#f08a80;--sand:#1a1c24}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:1040px;margin:0 auto;padding:24px 16px 64px}h1{font-size:22px;margin:0}h2{font-size:17px;margin:0 0 12px}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}.muted{color:var(--soft)}
