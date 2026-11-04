@@ -23,7 +23,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const nav = [
     { to: '/', label: t.nav.today, icon: '✶', tint: 'bg-[oklch(93%_0.04_290)] text-brand', active: path === '/' || path.startsWith('/t/'), badge: waiting },
     { to: '/memory', label: t.nav.memory, icon: '🧠', tint: 'bg-[oklch(93%_0.05_75)]', active: path.startsWith('/memory'), badge: 0 },
-    { to: '/me', label: t.nav.me, icon: '👤', tint: 'bg-[oklch(93%_0.04_200)]', active: path.startsWith('/me'), badge: 0 },
+    { to: '/me', label: t.nav.me, icon: '👤', tint: 'bg-[oklch(93%_0.04_200)]', active: path === '/me' || path.startsWith('/me/'), badge: 0 },
   ] as const;
 
   return (
