@@ -1,5 +1,7 @@
 # Intent
 
+**Live demo:** https://intent-azure.vercel.app (Meta Muse Spark 1.3) · **Submission details (English):** [docs/submission/SUBMISSION_FORM.md](docs/submission/SUBMISSION_FORM.md)
+
 面向第一次使用 AI 的人，尤其是长辈的日常助手。用一句话开始，通过追问、计划、结果卡与明确的同意按钮处理事情。支持中文、英文、大字号、浏览器语音输入和朗读。
 
 ## 当前可运行版本
