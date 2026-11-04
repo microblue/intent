@@ -2,7 +2,7 @@ import { RuntimeStatus } from './RuntimeStatus';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import { useT } from '@/i18n';
-import { useProfile, useThings, useUpdateProfile } from '@/api/hooks';
+import { useLiveUpdates, useProfile, useThings, useUpdateProfile } from '@/api/hooks';
 import { usePrefs } from '@/state/prefs';
 import { needsYou } from '@/lib/things';
 
@@ -16,6 +16,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: things } = useThings();
   const waiting = (things ?? []).filter(needsYou).length;
   useSyncProfile();
+  useLiveUpdates();
 
   const items = [
     { to: '/', label: t.nav.today, icon: '☀️', active: path === '/' || path.startsWith('/t/'), badge: waiting },

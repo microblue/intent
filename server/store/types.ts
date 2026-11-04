@@ -3,10 +3,21 @@ import type { Entry, Memory, Profile, Thing } from '../../shared/types';
 /** New entry before the store assigns id + time. */
 export type NewEntry = Omit<Entry, 'id' | 'at' | 'thingId'> & { thingId?: string };
 
+/** Optional login for a user: lets them return from another device. */
+export interface Account {
+  username: string;
+  userId: string;
+  /** scrypt$<salt hex>$<hash hex> */
+  hash: string;
+  createdAt: string;
+}
+
+/** Pushed to a user's open pages when their data changes. */
+export type LiveEvent = { type: 'thing'; id: string } | { type: 'memories' } | { type: 'profile' };
+
 /**
- * Persistence for everything user-visible. Our store is the source of truth;
- * model platforms only execute. Two implementations: a local JSON file (dev,
- * tests) and Supabase (production).
+ * Persistence for everything user-visible. Intent's own database is the
+ * source of truth; model platforms only execute.
  */
 export interface Store {
   getProfile(userId: string): Promise<Profile>;
@@ -26,5 +37,10 @@ export interface Store {
   addMemory(userId: string, text: string): Promise<Memory>;
   deleteMemory(userId: string, memoryId: string): Promise<void>;
 
+  getAccount(username: string): Promise<Account | null>;
+  getAccountByUser(userId: string): Promise<Account | null>;
+  createAccount(account: Account): Promise<boolean>;
+
   deleteUserData(userId: string): Promise<void>;
+  subscribe(userId: string, fn: (e: LiveEvent) => void): () => void;
 }

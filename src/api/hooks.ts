@@ -1,15 +1,49 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Profile, ThingDetail, UserInput } from '@shared/types';
-import { api } from './client';
+import { api, ensureSessionReady } from './client';
 
-/** While Intent is working on something, poll every second; otherwise stay quiet. */
-const POLL_BUSY_MS = 1000;
+/**
+ * The server pushes change events (SSE). Polling is only a fallback while
+ * something is busy: every second without a live connection, every 5 s with one.
+ */
+let live = false;
+const pollBusy = () => (live ? 5000 : 1000);
+
+/** Subscribe to the server's change events; refresh exactly what changed. */
+export function useLiveUpdates() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (typeof EventSource === 'undefined') return;
+    let es: EventSource | undefined;
+    let closed = false;
+    void ensureSessionReady().then(() => {
+      if (closed) return;
+      es = new EventSource('/api/events');
+      es.onopen = () => { live = true; };
+      es.onerror = () => { live = false; };
+      es.onmessage = (m) => {
+        const e = JSON.parse(m.data) as { type: string; id?: string };
+        if (e.type === 'thing') {
+          void qc.invalidateQueries({ queryKey: ['things'] });
+          if (e.id) void qc.invalidateQueries({ queryKey: ['thing', e.id] });
+        } else if (e.type === 'memories') void qc.invalidateQueries({ queryKey: ['memories'] });
+        else if (e.type === 'profile') void qc.invalidateQueries({ queryKey: ['profile'] });
+      };
+    });
+    return () => { closed = true; live = false; es?.close(); };
+  }, [qc]);
+}
+
+export function useAccount() {
+  return useQuery({ queryKey: ['account'], queryFn: api.account, staleTime: 60_000 });
+}
 
 export function useThings() {
   return useQuery({
     queryKey: ['things'],
     queryFn: api.things,
-    refetchInterval: (q) => (q.state.data?.some((t) => t.busy) ? POLL_BUSY_MS : false),
+    refetchInterval: (q) => (q.state.data?.some((t) => t.busy) ? pollBusy() : false),
   });
 }
 
@@ -17,7 +51,7 @@ export function useThing(id: string) {
   return useQuery({
     queryKey: ['thing', id],
     queryFn: () => api.thing(id),
-    refetchInterval: (q) => (q.state.data?.thing.busy ? POLL_BUSY_MS : false),
+    refetchInterval: (q) => (q.state.data?.thing.busy ? pollBusy() : false),
     retry: (n, err) => (err as { status?: number }).status !== 404 && n < 2,
   });
 }

@@ -35,3 +35,5 @@ dist-server/
 release/
 instance/
 .claude/scheduled_tasks.lock
+intent_data/
+.build/

@@ -1,6 +1,6 @@
 # Intent 演示视频脚本（约 3 分钟）
 
-线上地址：https://intent-azure.vercel.app （真实模型 Meta Muse Spark 1.3）。
+线上地址：https://intent.microvalley.io （真实模型 Meta Muse Spark 1.3）。管理后台：https://intent.microvalley.io/_/ （密码在本机 ~/.config/intent/admin.env）。
 旁白用英文，括号里是中文提示。三分钟是建议长度，表单如有时长限制以表单为准。
 
 ## 录制前
@@ -35,9 +35,10 @@
 **2:10–2:30 适老**
 "Me"页切换三档字号、中英文。回到"Today"，展示每件事的状态。
 
-**2:30–3:00 架构与下一步**
-画面：README 或架构图。
-"Muse Spark 1.3 drives an agent loop with Intent's own tools; all state lives in Intent, not the model platform. It also ships as one self-contained Linux package with an embedded TinyBase database — no Docker, no external DB. Next: a single tiny executable for any OS, a local Llama option, and an Agent-to-Agent interface."
+**2:30–3:00 一个文件 = 全部**
+画面：打开 /_/ 管理后台（内存、数据库大小、用户、请求日志、下载备份），再切到终端 `ls -lh intent-linux-x64` 和 `./intent-linux-x64 serve --dir data`。
+"This whole app — the agent, its memory, the database, accounts, the admin page — is one file. The live demo runs it on a free 1 GB Google Cloud VM, using about 60 MB of memory. No Docker, no cloud database. A family's memory and rules stay on their own machine. Next: a local Llama option and an Agent-to-Agent interface."
+（不要展示管理后台里的用户 ID 以外的个人数据；演示数据都是虚构的。）
 
 ## 注意
 

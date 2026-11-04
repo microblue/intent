@@ -9,11 +9,12 @@ export default defineConfig(({ mode }) => {
   // They are read from .env.local but never exposed to the browser bundle,
   // because only VITE_* variables are.
   const all = loadEnv(mode, process.cwd(), '');
-  for (const k of ['MODEL_API_KEY', 'OPENROUTER_API_KEY', 'INTENT_PROVIDER', 'INTENT_MODEL_MAIN', 'INTENT_MODEL_SEARCH', 'INTENT_DATA_FILE']) {
+  for (const k of ['MODEL_API_KEY', 'OPENROUTER_API_KEY', 'INTENT_PROVIDER', 'INTENT_MODEL_MAIN', 'INTENT_MODEL_SEARCH', 'INTENT_DATA_DIR']) {
     if (all[k] && !process.env[k]) process.env[k] = all[k];
   }
   return {
     ssr: { noExternal: true },
+    build: { rollupOptions: { external: ['bun:sqlite', 'node:sqlite'] } },
     plugins: [react(), tailwindcss(), intentApi()],
     resolve: {
       alias: {

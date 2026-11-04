@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FileStore } from '../server/store/file-store';
+import { TinyBaseStore } from '../server/store/tinybase-store';
 import { runTurn, cancelTurn, type AgentDeps } from '../server/agent/turn';
 import { FakeSearch } from '../server/agent/fake';
 import type { ChatResult, ToolCallWire } from '../server/agent/provider';
@@ -13,7 +13,7 @@ const result = (toolCalls: ToolCallWire[], text: string | null = null): ChatResu
 test('terminal approval card prevents tools later in the same response executing', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'intent-safety-'));
   try {
-    const store = new FileStore(join(dir, 'test.json'));
+    const store = await TinyBaseStore.open(dir);
     const thing = await store.createThing('test', { title: 'Synthetic task', emoji: '🧪' });
     const deps: AgentDeps = { store, search: new FakeSearch(), models: { main: 'test' }, chat: { id: 'test', complete: async () => result([
       call('propose_plan', { steps: ['Ask permission'], eta: 'One minute' }),
@@ -29,7 +29,7 @@ test('terminal approval card prevents tools later in the same response executing
 test('cancelled model result cannot write into a restarted task', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'intent-cancel-'));
   try {
-    const store = new FileStore(join(dir, 'test.json'));
+    const store = await TinyBaseStore.open(dir);
     const thing = await store.createThing('test', { title: 'Synthetic task', emoji: '🧪' });
     let release!: (value: ChatResult) => void;
     let started!: () => void;
@@ -88,12 +88,12 @@ test('a changed spending cap is rechecked at approval, not only proposal', async
 test('restart recovers an interrupted task without deleting its timeline', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'intent-restart-'));
   try {
-    const path = join(dir, 'test.json');
-    const before = new FileStore(path);
+    const before = await TinyBaseStore.open(dir);
     const thing = await before.createThing('test', { title: 'Synthetic', emoji: '🧪' });
     await before.addEntry(thing.id, { by: 'user', kind: 'text', payload: { text: 'Keep this synthetic message' } });
     await before.updateThing('test', thing.id, { busy: true });
-    const after = new FileStore(path);
+    await before.close();
+    const after = await TinyBaseStore.open(dir);
     expect((await after.getThing('test', thing.id))?.busy).toBe(false);
     expect((await after.getThing('test', thing.id))?.status).toBe('asking');
     expect(await after.listEntries(thing.id)).toHaveLength(1);

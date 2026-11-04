@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import type { Lang } from '@shared/types';
 import { useT } from '@/i18n';
 import { usePrefs } from '@/state/prefs';
-import { useForget, useMemories, useProfile, useThings, useUpdateProfile } from '@/api/hooks';
-import { api } from '@/api/client';
+import { useAccount, useForget, useMemories, useProfile, useThings, useUpdateProfile } from '@/api/hooks';
+import { api, ApiError, resetSession } from '@/api/client';
 
 /** Me, ordered by how often people need it: text size first (spec §5.4). */
 export function MePage() {
@@ -225,7 +225,7 @@ function Account() {
   const [confirming, setConfirming] = useState(false);
   return (
     <Section title={t.me.account} id="me-account">
-      <p className="text-lg text-ink-soft">{t.me.accountNote}</p>
+      <SignIn />
       {!confirming ? (
         <button type="button" onClick={() => setConfirming(true)} className="btn-soft text-danger">
           {t.me.deleteAll}
@@ -252,5 +252,75 @@ function Account() {
         </div>
       )}
     </Section>
+  );
+}
+
+/** Optional username + password, so the same things are reachable from another device. */
+function SignIn() {
+  const t = useT();
+  const qc = useQueryClient();
+  const { data: account } = useAccount();
+  const [mode, setMode] = useState<'create' | 'login'>('create');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const after = async () => {
+    resetSession();
+    setPassword('');
+    setError('');
+    await qc.invalidateQueries();
+  };
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === 'create') await api.register(username, password);
+      else await api.login(username, password);
+      await after();
+    } catch (err) {
+      const status = err instanceof ApiError ? err.status : 0;
+      setError(status === 409 ? t.me.accountTaken : status === 401 ? t.me.accountWrong : status === 400 ? t.me.accountBad : t.errors.network);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (account?.username) {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="flex-1 text-lg">
+          {t.me.signedInAs}
+          <b>{account.username}</b>
+        </p>
+        <button type="button" className="btn-soft" onClick={async () => { await api.logout(); await after(); }}>
+          {t.me.signOut}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <p className="text-lg text-ink-soft">{t.me.accountNote}</p>
+      <label className="block text-lg">
+        {t.me.username}
+        <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required minLength={2} maxLength={32}
+          className="mt-1 w-full rounded-2xl border-2 border-line bg-white px-4 py-3 text-lg" />
+      </label>
+      <label className="block text-lg">
+        {t.me.password}
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} maxLength={128}
+          autoComplete={mode === 'create' ? 'new-password' : 'current-password'}
+          className="mt-1 w-full rounded-2xl border-2 border-line bg-white px-4 py-3 text-lg" />
+      </label>
+      {error && <p role="alert" className="text-lg text-danger">{error}</p>}
+      <div className="flex flex-wrap gap-3">
+        <button type="submit" disabled={busy} className="btn-main">{mode === 'create' ? t.me.createAccount : t.me.signInNow}</button>
+        <button type="button" className="btn-soft" onClick={() => { setMode(mode === 'create' ? 'login' : 'create'); setError(''); }}>
+          {mode === 'create' ? t.me.haveAccount : t.me.newAccount}
+        </button>
+      </div>
+    </form>
   );
 }

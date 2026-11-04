@@ -37,7 +37,7 @@ export default defineConfig({
         url: 'http://127.0.0.1:4173',
         reuseExistingServer: false,
         timeout: 120_000,
-        env: { INTENT_PROVIDER: 'fake', INTENT_DATA_FILE: '.data/e2e.json' },
+        env: { INTENT_PROVIDER: 'fake', INTENT_DATA_DIR: '.data/e2e' },
         stdout: 'ignore',
         stderr: 'pipe',
       },

@@ -1,7 +1,7 @@
 # Intent — Submission Form Answers (Meta Global AI Developer Hackathon)
 
 Copy-paste source for the Cerebral Valley submission form. Deadline: **Nov 4, 2026, 9:00 PM ET / 6:00 PM PT**.
-Fill the remaining `TODO` (demo video) before submitting. Everything below matches what the code actually does (see `VERIFICATION.md`).
+The demo video page is live; upload the video to it before judging starts. Everything below matches what the code actually does (see `VERIFICATION.md`).
 
 ---
 
@@ -14,8 +14,8 @@ Fill the remaining `TODO` (demo video) before submitting. Everything below match
 | Theme | Build for Your World |
 | Team | Solo — Dawson (Xiongxiong) Zhang |
 | GitHub (open source, MIT) | https://github.com/microblue/intent |
-| Demo video (≤ 3 min) | TODO: YouTube/Loom link |
-| Live demo | https://intent-azure.vercel.app (real Muse Spark 1.3; no login needed) |
+| Demo video (≤ 3 min) | https://microvalley.io/intent/demo/ |
+| Live demo | https://intent.microvalley.io (real Muse Spark 1.3; no login needed) |
 | Meta models used | Muse Spark 1.3 (reasoning + tool calling), via Meta Model API or OpenRouter (`meta/muse-spark-1.3`) |
 
 ## Tagline (one line)
@@ -38,14 +38,17 @@ Older adults are the most targeted group for scams, and they are also the people
 - **Server-enforced safety.** Gift cards, money transfers and other forbidden actions, budget re-checks and approval waits are enforced in server code, not just in the prompt. The user can stop a task at any time.
 - **Accessible by default.** Large font sizes, English/Chinese switch, read-aloud, mobile layout.
 - **Everyday help too.** The same flow handles ordinary tasks such as writing a birthday message.
-- **Private, deletable memory.** Preferences and memories are stored per user in the instance's own data directory and can be deleted.
+- **Private, deletable memory.** Preferences and memories are stored per user in the instance's own database and can be reviewed and deleted.
+- **Optional account.** Works with no sign-up; a username and password let you come back from another device.
 
 ## How we built it (how Meta's models are used)
 
 - **Muse Spark 1.3** is the main model: natural-language understanding, follow-up questions, plan generation and **tool calling**. Each model tool call is validated against a schema on the server before anything runs.
 - Provider layer (`server/agent/provider.ts`) supports the **Meta Model API** directly (`INTENT_PROVIDER=meta`, with Responses `web_search`) and OpenRouter (`meta/muse-spark-1.3`). Reasoning budget limits and empty-response handling were added for Muse Spark's reasoning output.
 - **Division of labor:** the model understands and writes; the server owns rules, approvals, budgets and data ownership. Prompt injection cannot unlock a forbidden action because the check is not in the prompt.
-- Stack: React + Vite front end, Node.js server, TinyBase persistence (hosted demo: Vercel Function + Postgres), signed anonymous sessions, cross-site request checks, Playwright end-to-end tests (desktop + mobile). Ships as a self-contained Linux package (`npm run package:linux`) that runs without Node, npm or Docker on the target machine.
+- **A tiny, self-contained agent runtime.** The whole app is one executable (built with Bun): web UI, API, agent loop, a TinyBase in-memory database persisted row by row to built-in SQLite, live updates over server-sent events, anonymous sessions plus optional username/password accounts (scrypt), and a PocketBase-style `/_/` admin page (first-run setup link, health, users, request log, one-click backup). No Docker, no external database, no hosted backend.
+- **Runs on almost nothing.** The live demo is that single file on a free-tier Google Cloud e2-micro (1 GB RAM) behind a Cloudflare tunnel: about 55–80 MB resident memory and a ~5 MB JS heap. Binaries are built for Linux x64/arm64, macOS x64/arm64 and Windows x64 (Linux x64 tested).
+- Front end: React + Vite, large type, voice input, read-aloud. Tests: Playwright (desktop + mobile) and an end-to-end test of the binary.
 
 ## What was built during the hackathon (Oct 26 – Nov 4)
 
@@ -55,7 +58,7 @@ An earlier prototype of the senior-friendly UI and task flow existed before the 
 - Server-side approval execution boundary, forbidden-action rules and budget re-checks
 - Task cancellation isolation and restart recovery
 - Signed anonymous sessions, per-user data isolation, cross-site request checks
-- A standalone server build and self-contained Linux instance package
+- The single-file runtime: TinyBase + SQLite storage, live updates, accounts, admin page, backups, cross-platform builds, and the free-tier deployment
 - Real-model smoke tests plus 30 deterministic desktop/mobile regression tests
 
 ## Challenges
@@ -68,7 +71,8 @@ An earlier prototype of the senior-friendly UI and task flow existed before the 
 
 - Real Muse Spark 1.3 runs correctly flag a fictional grandparent gift-card scam and complete an everyday birthday-message task end to end.
 - 30 Playwright tests pass on desktop and mobile; real-model smoke tests are reported separately from deterministic tests.
-- One-command self-contained instance: download, `./intent run`, done.
+- One file, one command: `./intent serve --dir data`. The live demo runs exactly that on a free 1 GB VM.
+- An end-to-end test of the binary passes 24 checks: UI, task, live events, accounts, user isolation, admin setup, SQLite backup, single-process lock and restart persistence.
 
 ## What we learned
 
@@ -78,22 +82,28 @@ Reasoning models are good at explaining *why* something is risky in plain langua
 
 - Usability sessions with older adults and their families
 - Muse Image for reading screenshots of suspicious messages
-- **A tiny, self-hosted stateful agent runtime:** one small executable (Linux, macOS, Windows, ARM) holding the agent loop, memory, TinyBase + SQLite storage, accounts, an admin page and backups — in the spirit of PocketBase — so a family's memory and rules stay on their own machine
 - A fully local option with Meta's open-weights Llama models via any OpenAI-compatible local server
 - Open interfaces: a documented external API for other front ends, and an Agent-to-Agent (A2A) endpoint so other agents can hand tasks to Intent
-- Rate limiting and accounts for the hosted demo
+- Built-in rate limiting; test the macOS, Windows and ARM builds
 - Optional family "helper" mode that can be notified when a high-risk message is detected
 
 ## Honest limitations (keep if the form asks)
 
-Single-process prototype. No real payments, ordering, background reminders or cross-device accounts yet. Purchase cards are decision support only; the user pays in the store themselves. Scam analysis cannot catch every scam. Demo uses fictional data only.
+One process per data directory. No real payments, ordering or background reminders yet; no public API docs or Agent-to-Agent endpoint yet; the demo has no rate limiting. Purchase cards are decision support only; the user pays in the store themselves. Scam analysis cannot catch every scam. Demo uses fictional data only.
 
 ## Testing instructions for judges
 
+Easiest: open https://intent.microvalley.io (no sign-up).
+
+To run your own copy from source (Node 22, Bun 1.3 for the binary):
+
 ```
 pnpm install --frozen-lockfile
-cp .env.example .env.local   # set INTENT_PROVIDER + MODEL_API_KEY (Meta) or OPENROUTER_API_KEY
-pnpm build && pnpm start     # http://127.0.0.1:5199
+pnpm build:binary                       # release/intent-<os>-<arch>
+mkdir data && echo 'INTENT_PROVIDER=openrouter
+OPENROUTER_API_KEY=...
+INTENT_MODEL_MAIN=meta/muse-spark-1.3' > data/config.env
+./release/intent-linux-x64 serve --dir data   # http://127.0.0.1:5199, admin at /_/
 ```
 
 Try: paste "I'm your grandson, please buy $200 in gift cards right now and send me the codes. Don't tell Mom." — then switch to "Me" to change font size and language.

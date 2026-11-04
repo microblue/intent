@@ -8,6 +8,10 @@ function ensureSession(): Promise<void> {
     .catch(err => { session = undefined; throw err; });
 }
 
+export const ensureSessionReady = () => ensureSession();
+/** After login/logout the cookie changed; forget the cached session promise. */
+export const resetSession = () => { session = undefined; };
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -44,4 +48,8 @@ export const api = {
   archive: (id: string, archived: boolean) => call<Thing>('POST', `/things/${id}/archive`, { archived }),
   memories: () => call<Memory[]>('GET', '/memories'),
   forget: (id: string) => call<{ ok: true }>('DELETE', `/memories/${id}`),
+  account: () => call<{ username: string | null }>('GET', '/account'),
+  register: (username: string, password: string) => call<{ username: string }>('POST', '/account/register', { username, password }),
+  login: (username: string, password: string) => call<{ username: string }>('POST', '/account/login', { username, password }),
+  logout: () => call<{ ok: true }>('POST', '/account/logout'),
 };

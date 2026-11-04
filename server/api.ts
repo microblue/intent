@@ -1,12 +1,14 @@
 /**
  * HTTP API, written against the Web Request/Response types so the same
- * handler runs in the Vite dev server and in a Vercel function.
+ * handler runs in the Vite dev server and the standalone runtime.
  */
 import { z } from 'zod';
 import type { Entry, ThingDetail, UserInput } from '../shared/types';
 import type { AgentDeps } from './agent/turn';
 import { checkPurchase } from './agent/policy';
-import { isSameOrigin, newSession, sessionUser } from './session';
+import { randomBytes } from 'node:crypto';
+import { clearSessionCookie, isSameOrigin, newSession, sessionCookie, sessionUser } from './session';
+import { hashPassword, normalizeUsername, noteFailure, tooManyFailures, verifyPassword } from './accounts';
 import { cancelTurn, runTurn } from './agent/turn';
 import { serverText } from './agent/text';
 
@@ -37,6 +39,41 @@ const userInput = z.discriminatedUnion('type', [
   z.object({ type: z.literal('stop') }),
 ]);
 
+const credentials = z.object({ username: z.string().min(1).max(64), password: z.string().min(6).max(128) });
+
+/** Log in: this browser becomes the account's user. */
+async function login(req: Request, deps: AgentDeps): Promise<Response> {
+  const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
+  if (tooManyFailures(ip)) return fail(429, 'too many attempts');
+  const p = credentials.safeParse(await req.json().catch(() => ({})));
+  const username = p.success ? normalizeUsername(p.data.username) : null;
+  const account = username ? await deps.store.getAccount(username) : null;
+  if (!p.success || !account || !(await verifyPassword(p.data.password, account.hash))) {
+    noteFailure(ip);
+    return fail(401, 'wrong username or password');
+  }
+  return new Response(JSON.stringify({ username: account.username }), {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Set-Cookie': sessionCookie(req, account.userId) },
+  });
+}
+
+/** Server-sent events: tell this user's open pages which data changed. */
+function events(store: AgentDeps['store'], userId: string): Response {
+  const enc = new TextEncoder();
+  let stop = () => {};
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const send = (s: string) => { try { controller.enqueue(enc.encode(s)); } catch { stop(); } };
+      send('retry: 3000\n: connected\n\n');
+      const unsubscribe = store.subscribe(userId, (e) => send(`data: ${JSON.stringify(e)}\n\n`));
+      const ping = setInterval(() => send(': ping\n\n'), 25_000);
+      stop = () => { clearInterval(ping); unsubscribe(); };
+    },
+    cancel() { stop(); },
+  });
+  return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' } });
+}
+
 const mutations = new Map<string, Promise<Response>>();
 /** Serialize one user's mutations so simultaneous approvals cannot exceed a shared cap. */
 export async function handle(req: Request, deps: AgentDeps, waitUntil: WaitUntil): Promise<Response> {
@@ -53,13 +90,32 @@ async function handleInner(req: Request, deps: AgentDeps, waitUntil: WaitUntil):
   const url = new URL(req.url);
   const parts = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
   if (!isSameOrigin(req)) return fail(403, 'cross-origin request');
-  if (url.pathname === '/api/session' && req.method === 'POST') return newSession(req);
+  if (url.pathname === '/api/session' && req.method === 'POST') return newSession(req, () => randomBytes(32).toString('hex'));
+  if (url.pathname === '/api/account/login' && req.method === 'POST') return login(req, deps);
   const userId = sessionUser(req);
   if (!userId) return fail(401, 'missing identity');
   const { store } = deps;
   const body = async () => (req.method === 'GET' || req.method === 'DELETE' ? {} : await req.json().catch(() => ({})));
 
   try {
+    if (url.pathname === '/api/events' && req.method === 'GET') return events(store, userId);
+    if (parts[0] === 'account') {
+      if (parts.length === 1 && req.method === 'GET') {
+        const a = await store.getAccountByUser(userId);
+        return json({ username: a?.username ?? null });
+      }
+      if (parts[1] === 'register' && req.method === 'POST') {
+        const p = credentials.safeParse(await body());
+        const username = p.success ? normalizeUsername(p.data.username) : null;
+        if (!p.success || !username) return fail(400, 'bad username or password');
+        if (await store.getAccountByUser(userId)) return fail(409, 'already has account');
+        const ok = await store.createAccount({ username, userId, hash: await hashPassword(p.data.password), createdAt: new Date().toISOString() });
+        return ok ? json({ username }) : fail(409, 'username taken');
+      }
+      if (parts[1] === 'logout' && req.method === 'POST') {
+        return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': clearSessionCookie(req) } });
+      }
+    }
     if (url.pathname === '/api/runtime' && req.method === 'GET') {
       return json({ provider: deps.chat.id, model: deps.models.main, scripted: deps.chat.id === 'fake', search: deps.search.id });
     }
