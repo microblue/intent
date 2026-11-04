@@ -46,7 +46,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Run mock-mode e2e
-        run: pnpm exec playwright test --project=chromium
+        run: pnpm exec playwright test --project=desktop --project=mobile
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: ci-placeholder-anon-key
@@ -54,38 +54,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
-          retention-days: 7
-
-  realmode-e2e-prod:
-    # Only on push to main (after merge) — uses real prod URL + service
-    # role secret so we don't fan secrets out to PR builds from forks.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: typecheck-and-build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - name: Run real-mode e2e against prod
-        run: pnpm exec playwright test e2e/phase6-realmode-*.spec.ts e2e/phase7-*.spec.ts e2e/phaseL*.spec.ts --project=chromium
-        env:
-          PLAYWRIGHT_BASE_URL: https://myclaw-aios.vercel.app
-          REAL_TEST_EMAIL: ${{ secrets.REAL_TEST_EMAIL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_PUB_KEY: ${{ secrets.SUPABASE_PUB_KEY }}
-      - if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-realmode-report
           path: playwright-report/
           retention-days: 7

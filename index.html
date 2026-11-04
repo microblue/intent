@@ -1,17 +1,27 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="aios-light">
+<html lang="zh-CN" data-theme="intent">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MyClaw</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#fffdf9" />
+    <title>Intent</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
     />
+    <script>
+      // Apply the saved text size and language before first paint, so the page never jumps.
+      try {
+        var s = JSON.parse(localStorage.getItem('intent.prefs') || '{}');
+        if (s.fontScale) document.documentElement.dataset.size = String(s.fontScale);
+        var lang = s.lang || ((navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en');
+        document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+      } catch (e) {}
+    </script>
   </head>
-  <body class="min-h-screen bg-base-100 text-base-content antialiased">
+  <body class="min-h-screen antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

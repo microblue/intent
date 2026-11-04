@@ -25,3 +25,13 @@ src-tauri/target/
 .ralph/status.json
 .ralph/session/
 .ralph/.*
+
+# Local Intent API data (dev store)
+.data/
+
+dist-server/
+*.session-key
+
+release/
+instance/
+.claude/scheduled_tasks.lock

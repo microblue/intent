@@ -1,1 +1,0 @@
-../../../myclaw/docs/aios-ui-spec.md

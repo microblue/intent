@@ -1,1 +1,0 @@
-../../../myclaw-studio/docs/aios-plan.md
