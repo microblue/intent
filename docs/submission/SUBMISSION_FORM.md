@@ -1,7 +1,7 @@
 # Intent — Submission Form Answers (Meta Global AI Developer Hackathon)
 
 Copy-paste source for the Cerebral Valley submission form. Deadline: **Nov 4, 2026, 9:00 PM ET / 6:00 PM PT**.
-The demo video page is live; upload the video to it before judging starts. Everything below matches what the code actually does (see `VERIFICATION.md`).
+The demo video (2:10, 1080p, English narration and captions) plays at https://microvalley.io/intent/demo/. Everything below matches what the code actually does (see `VERIFICATION.md`).
 
 ---
 
